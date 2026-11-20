@@ -27,7 +27,7 @@ logger = logging.getLogger("app.rehearsal")
 # --- The Evidence panel and the Evidence Project ---------------------------------
 
 
-def _repository(student: Student) -> StudentToRead:
+def _student_to_read(student: Student) -> StudentToRead:
     return StudentToRead(
         student.github_login, student.project, student.default_repository
     )
@@ -106,14 +106,14 @@ def _panel(
     source = request.app.state.repository_reading
     try:
         reading = (
-            source.refresh(_repository(student))
+            source.refresh(_student_to_read(student))
             if refresh
-            else source.read(_repository(student))
+            else source.read(_student_to_read(student))
         )
     except Exception:  # the panel says so; the page and the closing step go on
         logger.exception("The repository of %s could not be read", student.github_login)
         return evidence_panel.unavailable_panel(
-            competency, _repository(student), declaration
+            competency, _student_to_read(student), declaration
         )
     return evidence_panel.build_panel(competency, reading, declaration)
 

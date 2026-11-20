@@ -128,7 +128,7 @@ def close_competency(
     student: Student = Depends(current_student),
 ) -> EvidencePlanVersion:
     """The closing step, one send: the Evidence Plan confirmed, with one example for the
-    Eval, the Evidence Project declared there if any, and a snapshot of the evidence
+    Eval, the Evidence Project declared there if any, and a snapshot of the Evidence
     panel as shown."""
     page = _page(request, competency, student)
     if not sent.example.strip():

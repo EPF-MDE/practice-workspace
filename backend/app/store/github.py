@@ -2,8 +2,8 @@
 
 - At first sign-in (`open_record`), the Student's issue is opened on the
   repository, labelled `rehearsal`, its body a short header: Student, Group,
-  repository, and a hidden marker with their numeric GitHub id, by which the Store
-  finds it again after a restart. The body is never rewritten.
+  default repository, and a hidden marker with their numeric GitHub id, by
+  which the Store finds it again after a restart. The body is never rewritten.
 - Each send is one comment: a human-readable line (a question's text quoted
   below it), then a fenced block, info string `json rehearsal`, holding one
   line of JSON: `kind`, `competency`, `step` (answer, question) or `drawing`
