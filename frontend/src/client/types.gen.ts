@@ -1099,7 +1099,7 @@ export type sessionMeResponses = {
 
 export type sessionMeResponse = sessionMeResponses[keyof sessionMeResponses];
 
-export type rehearsalCompetencyPageData = {
+export type practiceCompetencyPageData = {
     body?: never;
     path: {
         /**
@@ -1111,25 +1111,25 @@ export type rehearsalCompetencyPageData = {
     url: '/api/competencies/{competency}';
 };
 
-export type rehearsalCompetencyPageErrors = {
+export type practiceCompetencyPageErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalCompetencyPageError = rehearsalCompetencyPageErrors[keyof rehearsalCompetencyPageErrors];
+export type practiceCompetencyPageError = practiceCompetencyPageErrors[keyof practiceCompetencyPageErrors];
 
-export type rehearsalCompetencyPageResponses = {
+export type practiceCompetencyPageResponses = {
     /**
      * Successful Response
      */
     200: CompetencyPage;
 };
 
-export type rehearsalCompetencyPageResponse = rehearsalCompetencyPageResponses[keyof rehearsalCompetencyPageResponses];
+export type practiceCompetencyPageResponse = practiceCompetencyPageResponses[keyof practiceCompetencyPageResponses];
 
-export type rehearsalSendAnswerData = {
+export type practiceSendAnswerData = {
     body: AnswerIn;
     path: {
         /**
@@ -1145,25 +1145,25 @@ export type rehearsalSendAnswerData = {
     url: '/api/competencies/{competency}/steps/{step_id}/answer';
 };
 
-export type rehearsalSendAnswerErrors = {
+export type practiceSendAnswerErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalSendAnswerError = rehearsalSendAnswerErrors[keyof rehearsalSendAnswerErrors];
+export type practiceSendAnswerError = practiceSendAnswerErrors[keyof practiceSendAnswerErrors];
 
-export type rehearsalSendAnswerResponses = {
+export type practiceSendAnswerResponses = {
     /**
      * Successful Response
      */
     200: AnswerSent;
 };
 
-export type rehearsalSendAnswerResponse = rehearsalSendAnswerResponses[keyof rehearsalSendAnswerResponses];
+export type practiceSendAnswerResponse = practiceSendAnswerResponses[keyof practiceSendAnswerResponses];
 
-export type rehearsalAskQuestionData = {
+export type practiceAskQuestionData = {
     body: QuestionIn;
     path: {
         /**
@@ -1179,25 +1179,25 @@ export type rehearsalAskQuestionData = {
     url: '/api/competencies/{competency}/steps/{step_id}/questions';
 };
 
-export type rehearsalAskQuestionErrors = {
+export type practiceAskQuestionErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalAskQuestionError = rehearsalAskQuestionErrors[keyof rehearsalAskQuestionErrors];
+export type practiceAskQuestionError = practiceAskQuestionErrors[keyof practiceAskQuestionErrors];
 
-export type rehearsalAskQuestionResponses = {
+export type practiceAskQuestionResponses = {
     /**
      * Successful Response
      */
     200: Question;
 };
 
-export type rehearsalAskQuestionResponse = rehearsalAskQuestionResponses[keyof rehearsalAskQuestionResponses];
+export type practiceAskQuestionResponse = practiceAskQuestionResponses[keyof practiceAskQuestionResponses];
 
-export type rehearsalMyDrawingData = {
+export type practiceMyDrawingData = {
     body?: never;
     path: {
         /**
@@ -1213,25 +1213,25 @@ export type rehearsalMyDrawingData = {
     url: '/api/competencies/{competency}/steps/{step_id}/drawing';
 };
 
-export type rehearsalMyDrawingErrors = {
+export type practiceMyDrawingErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalMyDrawingError = rehearsalMyDrawingErrors[keyof rehearsalMyDrawingErrors];
+export type practiceMyDrawingError = practiceMyDrawingErrors[keyof practiceMyDrawingErrors];
 
-export type rehearsalMyDrawingResponses = {
+export type practiceMyDrawingResponses = {
     /**
      * Successful Response
      */
     200: MyDrawing;
 };
 
-export type rehearsalMyDrawingResponse = rehearsalMyDrawingResponses[keyof rehearsalMyDrawingResponses];
+export type practiceMyDrawingResponse = practiceMyDrawingResponses[keyof practiceMyDrawingResponses];
 
-export type rehearsalSendDrawingData = {
+export type practiceSendDrawingData = {
     body: DrawingIn;
     path: {
         /**
@@ -1247,25 +1247,25 @@ export type rehearsalSendDrawingData = {
     url: '/api/competencies/{competency}/steps/{step_id}/drawing';
 };
 
-export type rehearsalSendDrawingErrors = {
+export type practiceSendDrawingErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalSendDrawingError = rehearsalSendDrawingErrors[keyof rehearsalSendDrawingErrors];
+export type practiceSendDrawingError = practiceSendDrawingErrors[keyof practiceSendDrawingErrors];
 
-export type rehearsalSendDrawingResponses = {
+export type practiceSendDrawingResponses = {
     /**
      * Successful Response
      */
     200: DrawingStored;
 };
 
-export type rehearsalSendDrawingResponse = rehearsalSendDrawingResponses[keyof rehearsalSendDrawingResponses];
+export type practiceSendDrawingResponse = practiceSendDrawingResponses[keyof practiceSendDrawingResponses];
 
-export type rehearsalTickMissedCheckPointsData = {
+export type practiceTickMissedCheckPointsData = {
     body: CheckPointsIn;
     path: {
         /**
@@ -1281,25 +1281,25 @@ export type rehearsalTickMissedCheckPointsData = {
     url: '/api/competencies/{competency}/steps/{step_id}/check-points';
 };
 
-export type rehearsalTickMissedCheckPointsErrors = {
+export type practiceTickMissedCheckPointsErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalTickMissedCheckPointsError = rehearsalTickMissedCheckPointsErrors[keyof rehearsalTickMissedCheckPointsErrors];
+export type practiceTickMissedCheckPointsError = practiceTickMissedCheckPointsErrors[keyof practiceTickMissedCheckPointsErrors];
 
-export type rehearsalTickMissedCheckPointsResponses = {
+export type practiceTickMissedCheckPointsResponses = {
     /**
      * Successful Response
      */
     200: CheckPointsSent;
 };
 
-export type rehearsalTickMissedCheckPointsResponse = rehearsalTickMissedCheckPointsResponses[keyof rehearsalTickMissedCheckPointsResponses];
+export type practiceTickMissedCheckPointsResponse = practiceTickMissedCheckPointsResponses[keyof practiceTickMissedCheckPointsResponses];
 
-export type rehearsalSendSelfAssessmentData = {
+export type practiceSendSelfAssessmentData = {
     body: SelfAssessmentIn;
     path: {
         /**
@@ -1311,25 +1311,25 @@ export type rehearsalSendSelfAssessmentData = {
     url: '/api/competencies/{competency}/self-assessment';
 };
 
-export type rehearsalSendSelfAssessmentErrors = {
+export type practiceSendSelfAssessmentErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalSendSelfAssessmentError = rehearsalSendSelfAssessmentErrors[keyof rehearsalSendSelfAssessmentErrors];
+export type practiceSendSelfAssessmentError = practiceSendSelfAssessmentErrors[keyof practiceSendSelfAssessmentErrors];
 
-export type rehearsalSendSelfAssessmentResponses = {
+export type practiceSendSelfAssessmentResponses = {
     /**
      * Successful Response
      */
     200: Stored;
 };
 
-export type rehearsalSendSelfAssessmentResponse = rehearsalSendSelfAssessmentResponses[keyof rehearsalSendSelfAssessmentResponses];
+export type practiceSendSelfAssessmentResponse = practiceSendSelfAssessmentResponses[keyof practiceSendSelfAssessmentResponses];
 
-export type rehearsalDraftEvidencePlanData = {
+export type practiceDraftEvidencePlanData = {
     body: LevelsIn;
     path: {
         /**
@@ -1341,25 +1341,25 @@ export type rehearsalDraftEvidencePlanData = {
     url: '/api/competencies/{competency}/evidence-plan/draft';
 };
 
-export type rehearsalDraftEvidencePlanErrors = {
+export type practiceDraftEvidencePlanErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalDraftEvidencePlanError = rehearsalDraftEvidencePlanErrors[keyof rehearsalDraftEvidencePlanErrors];
+export type practiceDraftEvidencePlanError = practiceDraftEvidencePlanErrors[keyof practiceDraftEvidencePlanErrors];
 
-export type rehearsalDraftEvidencePlanResponses = {
+export type practiceDraftEvidencePlanResponses = {
     /**
      * Successful Response
      */
     200: Draft;
 };
 
-export type rehearsalDraftEvidencePlanResponse = rehearsalDraftEvidencePlanResponses[keyof rehearsalDraftEvidencePlanResponses];
+export type practiceDraftEvidencePlanResponse = practiceDraftEvidencePlanResponses[keyof practiceDraftEvidencePlanResponses];
 
-export type rehearsalSendEvidencePlanData = {
+export type practiceSendEvidencePlanData = {
     body: EvidencePlanIn;
     path: {
         /**
@@ -1371,25 +1371,25 @@ export type rehearsalSendEvidencePlanData = {
     url: '/api/competencies/{competency}/evidence-plan';
 };
 
-export type rehearsalSendEvidencePlanErrors = {
+export type practiceSendEvidencePlanErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalSendEvidencePlanError = rehearsalSendEvidencePlanErrors[keyof rehearsalSendEvidencePlanErrors];
+export type practiceSendEvidencePlanError = practiceSendEvidencePlanErrors[keyof practiceSendEvidencePlanErrors];
 
-export type rehearsalSendEvidencePlanResponses = {
+export type practiceSendEvidencePlanResponses = {
     /**
      * Successful Response
      */
     200: EvidencePlanVersion;
 };
 
-export type rehearsalSendEvidencePlanResponse = rehearsalSendEvidencePlanResponses[keyof rehearsalSendEvidencePlanResponses];
+export type practiceSendEvidencePlanResponse = practiceSendEvidencePlanResponses[keyof practiceSendEvidencePlanResponses];
 
-export type rehearsalCloseCompetencyData = {
+export type practiceCloseCompetencyData = {
     body: ClosingIn;
     path: {
         /**
@@ -1401,25 +1401,25 @@ export type rehearsalCloseCompetencyData = {
     url: '/api/competencies/{competency}/close';
 };
 
-export type rehearsalCloseCompetencyErrors = {
+export type practiceCloseCompetencyErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalCloseCompetencyError = rehearsalCloseCompetencyErrors[keyof rehearsalCloseCompetencyErrors];
+export type practiceCloseCompetencyError = practiceCloseCompetencyErrors[keyof practiceCloseCompetencyErrors];
 
-export type rehearsalCloseCompetencyResponses = {
+export type practiceCloseCompetencyResponses = {
     /**
      * Successful Response
      */
     200: EvidencePlanVersion;
 };
 
-export type rehearsalCloseCompetencyResponse = rehearsalCloseCompetencyResponses[keyof rehearsalCloseCompetencyResponses];
+export type practiceCloseCompetencyResponse = practiceCloseCompetencyResponses[keyof practiceCloseCompetencyResponses];
 
-export type rehearsalEvidencePanelViewData = {
+export type practiceEvidencePanelViewData = {
     body?: never;
     path: {
         /**
@@ -1431,25 +1431,25 @@ export type rehearsalEvidencePanelViewData = {
     url: '/api/competencies/{competency}/evidence-panel';
 };
 
-export type rehearsalEvidencePanelViewErrors = {
+export type practiceEvidencePanelViewErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalEvidencePanelViewError = rehearsalEvidencePanelViewErrors[keyof rehearsalEvidencePanelViewErrors];
+export type practiceEvidencePanelViewError = practiceEvidencePanelViewErrors[keyof practiceEvidencePanelViewErrors];
 
-export type rehearsalEvidencePanelViewResponses = {
+export type practiceEvidencePanelViewResponses = {
     /**
      * Successful Response
      */
     200: EvidencePanel;
 };
 
-export type rehearsalEvidencePanelViewResponse = rehearsalEvidencePanelViewResponses[keyof rehearsalEvidencePanelViewResponses];
+export type practiceEvidencePanelViewResponse = practiceEvidencePanelViewResponses[keyof practiceEvidencePanelViewResponses];
 
-export type rehearsalRefreshEvidencePanelData = {
+export type practiceRefreshEvidencePanelData = {
     body?: never;
     path: {
         /**
@@ -1461,87 +1461,87 @@ export type rehearsalRefreshEvidencePanelData = {
     url: '/api/competencies/{competency}/evidence-panel/refresh';
 };
 
-export type rehearsalRefreshEvidencePanelErrors = {
+export type practiceRefreshEvidencePanelErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalRefreshEvidencePanelError = rehearsalRefreshEvidencePanelErrors[keyof rehearsalRefreshEvidencePanelErrors];
+export type practiceRefreshEvidencePanelError = practiceRefreshEvidencePanelErrors[keyof practiceRefreshEvidencePanelErrors];
 
-export type rehearsalRefreshEvidencePanelResponses = {
+export type practiceRefreshEvidencePanelResponses = {
     /**
      * Successful Response
      */
     200: EvidencePanel;
 };
 
-export type rehearsalRefreshEvidencePanelResponse = rehearsalRefreshEvidencePanelResponses[keyof rehearsalRefreshEvidencePanelResponses];
+export type practiceRefreshEvidencePanelResponse = practiceRefreshEvidencePanelResponses[keyof practiceRefreshEvidencePanelResponses];
 
-export type rehearsalCheckProjectAccessData = {
+export type practiceCheckProjectAccessData = {
     body: ProjectIn;
     path?: never;
     query?: never;
     url: '/api/evidence-project/check';
 };
 
-export type rehearsalCheckProjectAccessErrors = {
+export type practiceCheckProjectAccessErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalCheckProjectAccessError = rehearsalCheckProjectAccessErrors[keyof rehearsalCheckProjectAccessErrors];
+export type practiceCheckProjectAccessError = practiceCheckProjectAccessErrors[keyof practiceCheckProjectAccessErrors];
 
-export type rehearsalCheckProjectAccessResponses = {
+export type practiceCheckProjectAccessResponses = {
     /**
      * Successful Response
      */
     200: Access;
 };
 
-export type rehearsalCheckProjectAccessResponse = rehearsalCheckProjectAccessResponses[keyof rehearsalCheckProjectAccessResponses];
+export type practiceCheckProjectAccessResponse = practiceCheckProjectAccessResponses[keyof practiceCheckProjectAccessResponses];
 
-export type rehearsalWithdrawEvidenceProjectData = {
+export type practiceWithdrawEvidenceProjectData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/evidence-project/declaration';
 };
 
-export type rehearsalWithdrawEvidenceProjectResponses = {
+export type practiceWithdrawEvidenceProjectResponses = {
     /**
      * Successful Response
      */
     200: unknown;
 };
 
-export type rehearsalDeclareEvidenceProjectData = {
+export type practiceDeclareEvidenceProjectData = {
     body: DeclarationIn;
     path?: never;
     query?: never;
     url: '/api/evidence-project/declaration';
 };
 
-export type rehearsalDeclareEvidenceProjectErrors = {
+export type practiceDeclareEvidenceProjectErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalDeclareEvidenceProjectError = rehearsalDeclareEvidenceProjectErrors[keyof rehearsalDeclareEvidenceProjectErrors];
+export type practiceDeclareEvidenceProjectError = practiceDeclareEvidenceProjectErrors[keyof practiceDeclareEvidenceProjectErrors];
 
-export type rehearsalDeclareEvidenceProjectResponses = {
+export type practiceDeclareEvidenceProjectResponses = {
     /**
      * Successful Response
      */
     200: Declaration;
 };
 
-export type rehearsalDeclareEvidenceProjectResponse = rehearsalDeclareEvidenceProjectResponses[keyof rehearsalDeclareEvidenceProjectResponses];
+export type practiceDeclareEvidenceProjectResponse = practiceDeclareEvidenceProjectResponses[keyof practiceDeclareEvidenceProjectResponses];
 
 export type healthHealthData = {
     body?: never;

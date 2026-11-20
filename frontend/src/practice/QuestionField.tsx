@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { RehearsalService, type StepOut } from "@/client";
+import { PracticeService, type StepOut } from "@/client";
 import { Button } from "@/components/ui/button";
 import { type DraftScope, drafts, errorMessage } from "./progress";
 
@@ -18,7 +18,7 @@ function useQuestion({ studentId, competency, step }: Props) {
   const ask = useMutation({
     mutationFn: async () =>
       (
-        await RehearsalService.askQuestion({
+        await PracticeService.askQuestion({
           path: { competency, step_id: step.id },
           body: { text },
         })

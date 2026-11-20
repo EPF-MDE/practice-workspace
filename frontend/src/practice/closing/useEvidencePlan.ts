@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { type CompetencyPage, RehearsalService } from "@/client";
+import { type CompetencyPage, PracticeService } from "@/client";
 import { evidencePanelsKey } from "../evidence/EvidencePanel";
 import {
   closingDrafts,
@@ -27,7 +27,7 @@ export function usePlan(
     queryKey: ["competency", competency, "draft", forDraft],
     queryFn: async () =>
       (
-        await RehearsalService.draftEvidencePlan({
+        await PracticeService.draftEvidencePlan({
           path: { competency },
           body: { levels: forDraft },
         })
@@ -96,10 +96,10 @@ async function sendPlan({
 }) {
   if (confirming)
     return (
-      await RehearsalService.closeCompetency({ path: { competency }, body })
+      await PracticeService.closeCompetency({ path: { competency }, body })
     ).data;
   return (
-    await RehearsalService.sendEvidencePlan({
+    await PracticeService.sendEvidencePlan({
       path: { competency },
       body: { text: body.text, drafted: body.drafted },
     })

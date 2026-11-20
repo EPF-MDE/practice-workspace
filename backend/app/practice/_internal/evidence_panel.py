@@ -28,7 +28,7 @@ from .steps import (
 )
 
 
-@router.get("/api/competencies/{competency}/evidence-panel", tags=["rehearsal"])
+@router.get("/api/competencies/{competency}/evidence-panel", tags=["practice"])
 def evidence_panel_view(
     competency: str, request: Request, student: Student = Depends(current_student)
 ) -> EvidencePanel:
@@ -37,9 +37,7 @@ def evidence_panel_view(
     return _read_panel(request, student, competency, refresh=False)
 
 
-@router.post(
-    "/api/competencies/{competency}/evidence-panel/refresh", tags=["rehearsal"]
-)
+@router.post("/api/competencies/{competency}/evidence-panel/refresh", tags=["practice"])
 def refresh_evidence_panel(
     competency: str, request: Request, student: Student = Depends(current_student)
 ) -> EvidencePanel:
@@ -64,7 +62,7 @@ def _read_panel(
     )
 
 
-@router.post("/api/evidence-project/check", tags=["rehearsal"])
+@router.post("/api/evidence-project/check", tags=["practice"])
 def check_project_access(
     sent: ProjectIn,
     request: Request,
@@ -85,7 +83,7 @@ def check_project_access(
     )
 
 
-@router.post("/api/evidence-project/declaration", tags=["rehearsal"])
+@router.post("/api/evidence-project/declaration", tags=["practice"])
 def declare_evidence_project(
     sent: DeclarationIn,
     request: Request,
@@ -101,7 +99,7 @@ def declare_evidence_project(
     )
 
 
-@router.delete("/api/evidence-project/declaration", tags=["rehearsal"])
+@router.delete("/api/evidence-project/declaration", tags=["practice"])
 def withdraw_evidence_project(
     request: Request, student: Student = Depends(current_student)
 ) -> None:

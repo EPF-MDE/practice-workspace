@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { type Access, type EvidencePanel, RehearsalService } from "@/client";
+import { type Access, type EvidencePanel, PracticeService } from "@/client";
 import { Button } from "@/components/ui/button";
 import { type EvidenceDraft, errorMessage } from "../progress";
 import {
@@ -40,14 +40,14 @@ function useEvidenceRequests({ draft, onDraft }: Props) {
   const check = useMutation({
     mutationFn: async () =>
       (
-        await RehearsalService.checkProjectAccess({
+        await PracticeService.checkProjectAccess({
           body: { url: draft.url },
         })
       ).data,
   });
   const declare = useMutation({
     mutationFn: async () =>
-      (await RehearsalService.declareEvidenceProject({ body: draft })).data,
+      (await PracticeService.declareEvidenceProject({ body: draft })).data,
     onSuccess: () => {
       onDraft(null);
       return changed();
@@ -55,7 +55,7 @@ function useEvidenceRequests({ draft, onDraft }: Props) {
   });
   const withdraw = useMutation({
     mutationFn: async () =>
-      (await RehearsalService.withdrawEvidenceProject()).data,
+      (await PracticeService.withdrawEvidenceProject()).data,
     onSuccess: changed,
   });
   return { check, declare, withdraw };

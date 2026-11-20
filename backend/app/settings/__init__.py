@@ -53,9 +53,9 @@ class Settings(BaseSettings):
     # Which Store keeps the sends: "memory" (tests, local runs; lost on restart)
     # or "github" (one issue per Student on `repository`, as the Store App).
     store: Literal["memory", "github"] = "memory"
-    # The label of the Students' issues: "rehearsal"; staging uses its own, so
+    # The label of the Students' issues: "practice"; staging uses its own, so
     # the Instructor's tests on staging never mix with the Students' issues.
-    store_label: str = "rehearsal"
+    store_label: str = "practice"
     data_branch: str = "workspace-data"
     # The content files (c1.md...): the artefact's `content/`. No default course:
     # without it (or the artefact's folder), the app refuses to start.

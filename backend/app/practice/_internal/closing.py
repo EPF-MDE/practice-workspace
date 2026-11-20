@@ -47,7 +47,7 @@ from .steps import (
 )
 
 
-@router.post("/api/competencies/{competency}/self-assessment", tags=["rehearsal"])
+@router.post("/api/competencies/{competency}/self-assessment", tags=["practice"])
 def send_self_assessment(
     competency: str,
     sent: SelfAssessmentIn,
@@ -78,7 +78,7 @@ def send_self_assessment(
     return Stored(version=entry.version, sent_at=entry.at)
 
 
-@router.post("/api/competencies/{competency}/evidence-plan/draft", tags=["rehearsal"])
+@router.post("/api/competencies/{competency}/evidence-plan/draft", tags=["practice"])
 def draft_evidence_plan(
     competency: str,
     sent: LevelsIn,
@@ -92,7 +92,7 @@ def draft_evidence_plan(
     return Draft(text=_draft(page, _store(request).record(student), levels))
 
 
-@router.post("/api/competencies/{competency}/evidence-plan", tags=["rehearsal"])
+@router.post("/api/competencies/{competency}/evidence-plan", tags=["practice"])
 def send_evidence_plan(
     competency: str,
     sent: EvidencePlanIn,
@@ -120,7 +120,7 @@ def send_evidence_plan(
     return _plan_version(entry)
 
 
-@router.post("/api/competencies/{competency}/close", tags=["rehearsal"])
+@router.post("/api/competencies/{competency}/close", tags=["practice"])
 def close_competency(
     competency: str,
     sent: ClosingIn,

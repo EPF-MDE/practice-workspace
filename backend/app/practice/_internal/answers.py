@@ -57,7 +57,7 @@ from .steps import (
 )
 
 
-@router.get("/api/competencies/{competency}", tags=["rehearsal"])
+@router.get("/api/competencies/{competency}", tags=["practice"])
 def competency_page(
     competency: str, request: Request, student: Student = Depends(current_student)
 ) -> CompetencyPage:
@@ -87,9 +87,7 @@ def competency_page(
     )
 
 
-@router.post(
-    "/api/competencies/{competency}/steps/{step_id}/answer", tags=["rehearsal"]
-)
+@router.post("/api/competencies/{competency}/steps/{step_id}/answer", tags=["practice"])
 def send_answer(
     competency: str,
     step_id: str,
@@ -138,7 +136,7 @@ def send_answer(
 
 
 @router.post(
-    "/api/competencies/{competency}/steps/{step_id}/questions", tags=["rehearsal"]
+    "/api/competencies/{competency}/steps/{step_id}/questions", tags=["practice"]
 )
 def ask_question(
     competency: str,
@@ -182,7 +180,7 @@ def _png(png_base64: str) -> bytes:
 
 
 @router.post(
-    "/api/competencies/{competency}/steps/{step_id}/drawing", tags=["rehearsal"]
+    "/api/competencies/{competency}/steps/{step_id}/drawing", tags=["practice"]
 )
 def send_drawing(
     competency: str,
@@ -215,9 +213,7 @@ def send_drawing(
     )
 
 
-@router.get(
-    "/api/competencies/{competency}/steps/{step_id}/drawing", tags=["rehearsal"]
-)
+@router.get("/api/competencies/{competency}/steps/{step_id}/drawing", tags=["practice"])
 def my_drawing(
     competency: str,
     step_id: str,
@@ -236,7 +232,7 @@ def my_drawing(
 
 
 @router.post(
-    "/api/competencies/{competency}/steps/{step_id}/check-points", tags=["rehearsal"]
+    "/api/competencies/{competency}/steps/{step_id}/check-points", tags=["practice"]
 )
 def tick_missed_check_points(
     competency: str,

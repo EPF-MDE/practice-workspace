@@ -29,7 +29,7 @@ function Opening() {
     <main className="mx-auto flex max-w-5xl flex-col gap-8 p-8">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">Rehearsal workspace</h1>
+          <h1 className="text-3xl font-semibold">Practice workspace</h1>
           <p className="text-muted-foreground">
             {student.name}, your Project is{" "}
             <strong data-testid="project">{student.project}</strong>.

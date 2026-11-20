@@ -15,10 +15,10 @@ from app.store._internal.model import (
     Kind,
 )
 
-FENCE = "json rehearsal"
-_BLOCK = re.compile(r"^```json rehearsal\n(\{.*\})\n```$", re.MULTILINE)
-_MARKER = "<!-- rehearsal-student-id: {} -->"
-_MARKER_RE = re.compile(r"<!-- rehearsal-student-id: (\d+) -->")
+FENCE = "json practice"
+_BLOCK = re.compile(r"^```json practice\n(\{.*\})\n```$", re.MULTILINE)
+_MARKER = "<!-- practice-student-id: {} -->"
+_MARKER_RE = re.compile(r"<!-- practice-student-id: (\d+) -->")
 # The name the block gives an entry's key, per kind; other kinds have none.
 _KEY_NAME: dict[str, str] = {
     Kind.ANSWER: "step",
@@ -159,7 +159,7 @@ def _header(student: Student) -> str:
         f"**Student:** {student.name} (`{student.github_login}`)\n"
         f"**Group:** {student.group}\n"
         f"**Evidence Project:** [{student.evidence_project}](https://github.com/{student.evidence_project})\n\n"
-        "Each comment below is one send from the Rehearsal workspace: a line to read, "
+        "Each comment below is one send from the Practice workspace: a line to read, "
         f"then a `{FENCE}` block the workspace reads back. Comments by people are "
         "ignored by it.\n"
     )

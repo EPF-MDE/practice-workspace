@@ -10,7 +10,7 @@ and their current state is the latest entry of each kind.
 Two implementations stand behind `Store`:
 
 - `InMemoryStore` (here): tests and local runs.
-- `GitHubStore` (`github.py`): one `rehearsal` issue per Student, one comment
+- `GitHubStore` (`github.py`): one `practice` issue per Student, one comment
   per send; a drawing's PNG and snapshot on `workspace-data` besides.
 
 The Store checks no cut-off and no content: callers decide what may be sent

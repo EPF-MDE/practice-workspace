@@ -1,4 +1,4 @@
-"""The Rehearsal's pages: one long page per Competency, its locked answers, its
+"""The Practice's pages: one long page per Competency, its locked answers, its
 questions.
 
 The page API sends the Student's Group's content with every answer block

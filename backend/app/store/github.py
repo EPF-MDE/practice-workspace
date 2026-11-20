@@ -1,11 +1,11 @@
 """The GitHub Store: one issue per Student, one comment per send.
 
 - At first sign-in (`open_record`), the Student's issue is opened on the
-  repository, labelled `rehearsal`, its body a short header: Student, Group,
+  repository, labelled `practice`, its body a short header: Student, Group,
   Evidence Project, and a hidden marker with their numeric GitHub id, by
   which the Store finds it again after a restart. The body is never rewritten.
 - Each send is one comment: a human-readable line (a question's text quoted
-  below it), then a fenced block, info string `json rehearsal`, holding one
+  below it), then a fenced block, info string `json practice`, holding one
   line of JSON: `kind`, `competency`, `step` (answer, question) or `drawing`
   (drawing, check-points), `version`, `payload`. The comment's timestamp
   dates the version.
@@ -117,7 +117,7 @@ class GitHubStore:
         self,
         http: httpx.Client,
         repository: str,
-        label: str = "rehearsal",
+        label: str = "practice",
         data_branch: str = "workspace-data",
         sleep: Callable[[float], None] = time.sleep,
         bot_login: str = STORE_BOT,
@@ -195,7 +195,7 @@ class GitHubStore:
                     "POST",
                     f"/repos/{self._repository}/issues",
                     json={
-                        "title": f"Rehearsal: {student.name} ({student.group})",
+                        "title": f"Practice: {student.name} ({student.group})",
                         "body": _header(student),
                         "labels": [self._label],
                     },

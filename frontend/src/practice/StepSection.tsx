@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { type CompetencyPage, RehearsalService, type StepOut } from "@/client";
+import { type CompetencyPage, PracticeService, type StepOut } from "@/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ClosingStep } from "./closing/ClosingStep";
@@ -29,7 +29,7 @@ function useAnswer({ studentId, competency, step }: Props) {
   const send = useMutation({
     mutationFn: async () =>
       (
-        await RehearsalService.sendAnswer({
+        await PracticeService.sendAnswer({
           path: { competency, step_id: step.id },
           body: { fields },
         })

@@ -1,4 +1,4 @@
-"""The Rehearsal workspace: one FastAPI app, serving its API and its React build.
+"""The Practice workspace: one FastAPI app, serving its API and its React build.
 
 `create_app()` assembles the pieces; `app` is the instance uvicorn runs
 (`uvicorn app.main:app`, one worker: the Store serialises its writes in-process).
@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import auth, observability, rehearsal
+from app import auth, observability, practice
 from app.auth import FakeIdentity, GitHubIdentity, Identity
 from app.content import load_content
 from app.evidence_panel import (
@@ -207,7 +207,7 @@ def create_app(
         app.state.signals.shutdown()
 
     app = FastAPI(
-        title="Rehearsal workspace",
+        title="Practice workspace",
         lifespan=lifespan,
         # "<tag>-<function>": the generated client's SessionService.me(), etc.
         generate_unique_id_function=lambda route: (
@@ -273,7 +273,7 @@ def create_app(
     )
 
     app.include_router(auth.router)
-    app.include_router(rehearsal.router)
+    app.include_router(practice.router)
 
     @app.get("/api/health", tags=["health"])
     def health() -> dict[str, Any]:

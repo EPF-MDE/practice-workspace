@@ -18,7 +18,7 @@ function SignIn() {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>
-            <h1 className="text-2xl">Rehearsal workspace</h1>
+            <h1 className="text-2xl">Practice workspace</h1>
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">

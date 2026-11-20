@@ -6,9 +6,6 @@
     reading = reader.read(student)
     # 2 requests if no ref moved; else recomputes the refs that moved
     reading = reader.refresh(student)
-
-See NOTES.md of the rehearsal, in the course repository this engine came from, for the
-interface the Evidence panel and the Eval read.
 """
 
 from .github import (

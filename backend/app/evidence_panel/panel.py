@@ -48,7 +48,7 @@ DOCUMENTATION_ADVICE = (
     "a docs folder) "
     "and say in your note which branch, folder, pull request or file to read."
 )
-# A snapshot is stored in one comment of the Rehearsal issue (at most 65,536
+# A snapshot is stored in one comment of the Student's issue (at most 65,536
 # characters).
 SNAPSHOT_MAX_CHARS = 40_000
 
@@ -246,7 +246,7 @@ def unavailable_panel(
 
 
 def snapshot(panel: EvidencePanel) -> dict[str, Any]:
-    """The panel as the Student saw it, for the Rehearsal record: small enough for one
+    """The panel as the Student saw it, for the Student's record: small enough for one
     comment.
 
     A repository with very many changed files keeps each fact's sentence and drops the

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { Fragment } from "react";
-import { type EvidencePanel, type PanelFact, RehearsalService } from "@/client";
+import { type EvidencePanel, type PanelFact, PracticeService } from "@/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "../progress";
@@ -19,7 +19,7 @@ export function useEvidencePanel(competency: string) {
   return useQuery({
     queryKey: evidencePanelKey(competency),
     queryFn: async () =>
-      (await RehearsalService.evidencePanelView({ path: { competency } })).data,
+      (await PracticeService.evidencePanelView({ path: { competency } })).data,
   });
 }
 
@@ -114,7 +114,7 @@ export function EvidencePanelView({
   const panel = useEvidencePanel(competency);
   const refresh = useMutation({
     mutationFn: async () =>
-      (await RehearsalService.refreshEvidencePanel({ path: { competency } }))
+      (await PracticeService.refreshEvidencePanel({ path: { competency } }))
         .data,
     onSuccess: (fresh) =>
       queryClient.setQueryData(evidencePanelKey(competency), fresh),

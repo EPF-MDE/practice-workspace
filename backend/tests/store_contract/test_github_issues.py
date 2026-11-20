@@ -23,7 +23,7 @@ def test_first_sign_in_opens_one_labelled_issue_with_a_short_header(
     store.open_record(ADA)
 
     (issue,) = github.issues.values()
-    assert [label["name"] for label in issue["labels"]] == ["rehearsal"]
+    assert [label["name"] for label in issue["labels"]] == ["practice"]
     assert "Ada Lovelace" in issue["title"]
     assert (
         "Ada Lovelace" in issue["body"]
@@ -103,7 +103,7 @@ def test_a_send_comment_is_a_line_to_read_then_a_block_to_parse(
 
     assert answer == (
         "**Answer** to C1, step `guided-calculation` (version 1)\n\n"
-        "```json rehearsal\n"
+        "```json practice\n"
         '{"kind": "answer", "competency": "C1", "step": "guided-calculation", '
         '"version": 1, '
         '"payload": {"fields": {"sentence": "D ≤ 2 h"}}}\n'
@@ -111,7 +111,7 @@ def test_a_send_comment_is_a_line_to_read_then_a_block_to_parse(
     )
     assert question == (
         "**Question** at C1, step `read-the-chain`:\n\n> Why 10\n> seconds?\n\n"
-        "```json rehearsal\n"
+        "```json practice\n"
         '{"kind": "question", "competency": "C1", "step": "read-the-chain", '
         '"version": 1, '
         '"payload": {"text": "Why 10\\nseconds?"}}\n'
@@ -166,7 +166,7 @@ def test_a_declaration_comment_stores_one_for_every_competency(
 def _block(body: str) -> dict[str, Any]:
     """The JSON block a send's comment holds."""
     block: dict[str, Any] = json.loads(
-        body.split("```json rehearsal\n", 1)[1].split("\n```", 1)[0]
+        body.split("```json practice\n", 1)[1].split("\n```", 1)[0]
     )
     return block
 
@@ -306,11 +306,11 @@ def test_github_unreachable_makes_the_store_unavailable() -> None:
 
 
 def test_the_label_is_a_setting(github: FakeGitHub) -> None:
-    github_store(github, label="rehearsal-staging").open_record(ADA)
+    github_store(github, label="practice-staging").open_record(ADA)
 
-    assert github_store(github, label="rehearsal").record(ADA).entries == ()
+    assert github_store(github, label="practice").record(ADA).entries == ()
     assert [label["name"] for label in github.issues[401]["labels"]] == [
-        "rehearsal-staging"
+        "practice-staging"
     ]
 
 

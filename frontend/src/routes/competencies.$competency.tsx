@@ -1,17 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { type CompetencyPage as PageData, RehearsalService } from "@/client";
-import { Html } from "@/rehearsal/Html";
+import { type CompetencyPage as PageData, PracticeService } from "@/client";
+import { Html } from "@/practice/Html";
 import {
   type DraftScope,
   finishedSteps,
   greyedSteps,
   readSteps,
   startedAt,
-} from "@/rehearsal/progress";
-import { Sidebar } from "@/rehearsal/Sidebar";
-import { StepSection } from "@/rehearsal/StepSection";
+} from "@/practice/progress";
+import { Sidebar } from "@/practice/Sidebar";
+import { StepSection } from "@/practice/StepSection";
 import { requireStudent } from "@/session";
 
 export const Route = createFileRoute("/competencies/$competency")({
@@ -105,7 +105,7 @@ function CompetencyPage() {
   const page = useQuery({
     queryKey: ["competency", competency],
     queryFn: async () =>
-      (await RehearsalService.competencyPage({ path: { competency } })).data,
+      (await PracticeService.competencyPage({ path: { competency } })).data,
   });
 
   if (page.isPending) return <main className="p-8">Loading {competency}…</main>;

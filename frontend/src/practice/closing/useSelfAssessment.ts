@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   type CheckPointOut,
   type CompetencyPage,
-  RehearsalService,
+  PracticeService,
 } from "@/client";
 import { closingDrafts, type DraftScope, type LevelDraft } from "../progress";
 
@@ -116,7 +116,7 @@ export function useSendLevels(
           .map(([s, t]) => [s, t.missed])
       );
       return (
-        await RehearsalService.sendSelfAssessment({
+        await PracticeService.sendSelfAssessment({
           path: { competency: scope.competency },
           body: { levels: rated, missed_check_points: local },
         })

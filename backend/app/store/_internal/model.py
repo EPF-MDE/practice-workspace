@@ -218,7 +218,7 @@ class StoreUnavailable(RuntimeError):
 
 
 class Store(Protocol):
-    """Where the Rehearsal's sends live. One instance for the whole app."""
+    """Where the Practice's sends live. One instance for the whole app."""
 
     def open_record(self, student: Student) -> None:
         """At sign-in: make the Student's record ready (the GitHub Store opens their

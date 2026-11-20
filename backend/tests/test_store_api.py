@@ -205,7 +205,7 @@ def test_the_store_is_a_setting(test_settings: Settings) -> None:
         test_settings.model_copy(
             update={
                 "store": "github",
-                "store_label": "rehearsal-staging",
+                "store_label": "practice-staging",
                 "store_app_id": "1",
                 "store_app_private_key_base64": "LS0t",
                 "store_app_installation_id": "2",

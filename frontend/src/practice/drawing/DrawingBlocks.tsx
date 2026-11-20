@@ -13,7 +13,7 @@ import {
   type DrawingIn,
   type ExampleDrawingBlock,
   type ReferenceDrawingBlock,
-  RehearsalService,
+  PracticeService,
   type StepOut,
 } from "@/client";
 import { Button } from "@/components/ui/button";
@@ -94,7 +94,7 @@ export function StudentCanvas(props: CanvasProps) {
     queryKey: ["drawing", competency, step.id],
     queryFn: async () =>
       (
-        await RehearsalService.myDrawing({
+        await PracticeService.myDrawing({
           path: { competency, step_id: step.id },
         })
       ).data,
@@ -135,7 +135,7 @@ function useSendDrawing(
       }
       setEmpty(false);
       return (
-        await RehearsalService.sendDrawing({
+        await PracticeService.sendDrawing({
           path: { competency, step_id: step.id },
           body: {
             png_base64: drawing.png_base64,
