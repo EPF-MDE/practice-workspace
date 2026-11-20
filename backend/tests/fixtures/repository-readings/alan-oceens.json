@@ -1,0 +1,84 @@
+{
+  "branches_read": 4,
+  "checked_at": "2026-11-18T07:30:00+00:00",
+  "competencies": {
+    "C1": {
+      "competency": "C1",
+      "facts": [
+        {
+          "credited_to": "student",
+          "detail": {
+            "branch": "feature/order-timeout",
+            "closest": "course-2026-fallback-ci",
+            "files": [
+              {
+                "additions": 80,
+                "changes": 85,
+                "path": "oceens/orders.py"
+              },
+              {
+                "additions": 12,
+                "changes": 12,
+                "path": "oceens/settings.py"
+              },
+              {
+                "additions": 28,
+                "changes": 28,
+                "path": "tests/test_orders.py"
+              }
+            ],
+            "last_change": "2026-10-14",
+            "lines_added": 120
+          },
+          "link": "https://github.com/alan-oceens/OceENS/compare/course-2026-fallback-ci...feature/order-timeout",
+          "point": "C1",
+          "text": "`feature/order-timeout` changes 3 files beyond `course-2026-fallback-ci`, 120 lines added; last change on 2026-10-14."
+        }
+      ],
+      "not_visible": [],
+      "nothing_found": []
+    },
+    "C2": {
+      "competency": "C2",
+      "facts": [
+        {
+          "credited_to": "student",
+          "detail": {
+            "required_checks": ["architecture", "test"]
+          },
+          "link": "https://github.com/alan-oceens/OceENS/settings/rules",
+          "point": "C2.c",
+          "text": "The ruleset on `main` requires `architecture` and `test`; other rules: deletion, non fast forward."
+        },
+        {
+          "credited_to": "course-2026-fallback-clean-bench",
+          "detail": {
+            "fallback": "course-2026-fallback-clean-bench"
+          },
+          "link": null,
+          "point": "C2.b",
+          "text": "`main` contains the Clean Bench Fallback Branch (it is built on `course-2026-fallback-clean-bench`)."
+        }
+      ],
+      "not_visible": ["C2.f", "C2.g"],
+      "nothing_found": ["C2.a", "C2.d", "C2.e"]
+    },
+    "C3": {
+      "competency": "C3",
+      "facts": [],
+      "not_visible": ["C3.a", "C3.c", "C3.d", "C3.f"],
+      "nothing_found": ["C3.b", "C3.e"]
+    }
+  },
+  "default_branch": "main",
+  "empty": false,
+  "pull_requests_read": 2,
+  "read_at": "2026-11-18T07:30:00+00:00",
+  "refs": {},
+  "student": {
+    "evidence_project": "alan-oceens/OceENS",
+    "login": "alan-oceens",
+    "project": "OcéENS"
+  },
+  "upstream_shas": {}
+}

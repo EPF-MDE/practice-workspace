@@ -54,7 +54,13 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             frontend/package-lock.json
+      # The browser tests start the back end on the Demo course.
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - run: |
           npm ci --no-audit --no-fund
           npm --prefix frontend ci --no-audit --no-fund
+          (cd frontend && npx playwright install --with-deps chromium)
       - run: npm run check -- frontend
