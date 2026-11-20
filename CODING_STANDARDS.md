@@ -10,6 +10,10 @@ A test starts the app on a Course folder and asks it what a Student or the Instr
 
 How an entry is written, and read back, is the Store's business. The Store's contract suite runs the same tests on every implementation of the Store, and it is the only place a stored format is asserted. Every other test reads a Student's record back through the API.
 
+## A test checks behaviour, not wording
+
+A test is there to fail when something stops working. A prompt, a doc, an ADR or a comment has no behaviour: a test that reads one and asserts its words fails on every rewording, and still passes when the text says something wrong. Such a test is a finding, even when a ticket changed that text. A change that is only text ships with no test; its reader is its review.
+
 ## One name per idea, the glossary's
 
 An idea has one name, the one in [GLOSSARY.md](./GLOSSARY.md), on the screen, in the API, in the Store's entry kinds, in the code and in the tests. A word on the glossary's _Avoid_ list is a finding. A new idea gets its glossary entry in the same change that names it.
