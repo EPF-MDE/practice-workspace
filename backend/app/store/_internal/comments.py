@@ -64,10 +64,10 @@ def _line(
                 ", confirmed at the closing step" if payload.get("confirmed") else ""
             )
             confirmed += ", the draft untouched" if payload.get("drafted") else ""
-            # The closing step's one send also carries the evidence panel shown and any
+            # The closing step's one send also carries the Evidence panel shown and any
             # declaration made there.
             snapshot = (
-                ", with the evidence panel as shown"
+                ", with the Evidence panel as shown"
                 if "evidence_panel_snapshot" in payload
                 else ""
             )
@@ -154,7 +154,7 @@ def _header(student: Student) -> str:
         f"{_MARKER.format(student.github_id)}\n"
         f"**Student:** {student.name} (`{student.github_login}`)\n"
         f"**Group:** {student.group}\n"
-        f"**Repository:** [{student.repository}](https://github.com/{student.repository})\n\n"
+        f"**Default repository:** [{student.default_repository}](https://github.com/{student.default_repository})\n\n"
         "Each comment below is one send from the Rehearsal workspace: a line to read, "
         f"then a `{FENCE}` block the workspace reads back. Comments by people are "
         "ignored by it.\n"

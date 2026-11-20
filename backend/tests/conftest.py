@@ -12,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.auth import FakeIdentity, Identity
-from app.evidence_panel import AccessCheck, ReadingSource
+from app.evidence_panel import AccessCheck, RepositoryReadingSource
 from app.main import create_app
 from app.roster import RosterSource, StaticRoster, parse_roster
 from app.settings import PARIS, Settings
@@ -69,7 +69,7 @@ class MakeClient(Protocol):
         roster: RosterSource | None = None,
         identity: Identity | None = None,
         store: Store = ...,
-        repository_reading: ReadingSource | None = None,
+        repository_reading: RepositoryReadingSource | None = None,
         access_check: AccessCheck | None = None,
     ) -> TestClient: ...
 
@@ -85,7 +85,7 @@ def make_client(
         roster: RosterSource | None = None,
         identity: Identity | None = None,
         store: Store = store,
-        repository_reading: ReadingSource | None = None,
+        repository_reading: RepositoryReadingSource | None = None,
         access_check: AccessCheck | None = None,
     ) -> TestClient:
         app = create_app(

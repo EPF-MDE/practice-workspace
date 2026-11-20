@@ -2,7 +2,7 @@
 
 Its interface speaks the domain, never GitHub: *read a Student's record*,
 *save an answer*, *save a drawing*, *save the Self-assessment*, *save the
-Evidence Plan*, *save a declaration*, *save a question*, *save an evidence panel
+Evidence Plan*, *save a declaration*, *save a question*, *save an Evidence panel
 snapshot*. Each `save_*` is one send: it stores a new dated entry and never
 rewrites an earlier one, so a Student's record is the history of their sends,
 and their current state is the latest entry of each kind.

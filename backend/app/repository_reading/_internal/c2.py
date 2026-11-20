@@ -27,7 +27,9 @@ class _C2Facts(_ReadingState):
 
     def _runs(self) -> list[dict[str, Any]]:
         runs: list[dict[str, Any]] = []
-        path: str | None = f"repos/{self.s.repository}/actions/runs?per_page=100"
+        path: str | None = (
+            f"repos/{self.s.default_repository}/actions/runs?per_page=100"
+        )
         for _ in range(RUNS_PAGES):
             if not path:
                 break
@@ -93,7 +95,7 @@ class _C2Facts(_ReadingState):
                         credited_to=STUDENT
                         if path in own
                         else (a["closest"] or a.get("fallback") or STUDENT),
-                        link=f"https://github.com/{self.s.repository}/blob/{self.default}/{path}",
+                        link=f"https://github.com/{self.s.default_repository}/blob/{self.default}/{path}",
                         detail={"workflow": path},
                     )
                 )
@@ -114,7 +116,8 @@ class _C2Facts(_ReadingState):
 
     def _c2c(self, branch_list: list[dict[str, Any]]) -> None:
         r = self.r.github.get(
-            f"repos/{self.s.repository}/rules/branches/{quote(self.default, safe='')}"
+            f"repos/{self.s.default_repository}/rules/branches/"
+            f"{quote(self.default, safe='')}"
         )
         rules = r.body if r.status == 200 and isinstance(r.body, list) else []
         checks = sorted(
@@ -132,7 +135,8 @@ class _C2Facts(_ReadingState):
         )
         if not rules and protected:
             b = self.r.github.get(
-                f"repos/{self.s.repository}/branches/{quote(self.default, safe='')}"
+                f"repos/{self.s.default_repository}/branches/"
+                f"{quote(self.default, safe='')}"
             )
             protection = (
                 (b.body or {}).get("protection") or {} if b.status == 200 else {}
@@ -156,7 +160,7 @@ class _C2Facts(_ReadingState):
             Fact(
                 point="C2.c",
                 text=text,
-                link=f"https://github.com/{self.s.repository}/settings/rules",
+                link=f"https://github.com/{self.s.default_repository}/settings/rules",
                 detail={"source": source, "required_checks": checks, "rules": kinds},
             )
         )
@@ -225,7 +229,9 @@ class _C2Facts(_ReadingState):
         )
 
     def _deployments(self) -> dict[str, dict[str, Any]]:
-        r = self.r.github.get(f"repos/{self.s.repository}/deployments?per_page=100")
+        r = self.r.github.get(
+            f"repos/{self.s.default_repository}/deployments?per_page=100"
+        )
         found = r.body if r.status == 200 and isinstance(r.body, list) else []
         latest: dict[str, dict[str, Any]] = {}
         for d in found:
@@ -243,7 +249,7 @@ class _C2Facts(_ReadingState):
             if not d:
                 continue
             r = self.r.github.get(
-                f"repos/{self.s.repository}/deployments/{d['id']}/statuses?per_page=1"
+                f"repos/{self.s.default_repository}/deployments/{d['id']}/statuses?per_page=1"
             )
             status = r.body[0] if r.status == 200 and r.body else {}
             state = status.get("state", "unknown")
@@ -253,7 +259,7 @@ class _C2Facts(_ReadingState):
                     text=f"The last deployment to {kind}, "
                     f"on {_date(d['created_at'])}, "
                     f"runs commit `{d['sha'][:7]}` ({state}).",
-                    link=f"https://github.com/{self.s.repository}/commit/{d['sha']}",
+                    link=f"https://github.com/{self.s.default_repository}/commit/{d['sha']}",
                     detail={
                         "environment": d["environment"],
                         "sha": d["sha"],

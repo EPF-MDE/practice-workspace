@@ -129,7 +129,7 @@ def test_an_evidence_plan_comment_names_it_and_stores_its_kind(
 
     assert plan.startswith(
         "**Evidence Plan** for C1 (version 1), confirmed at the closing step, "
-        "with the evidence panel as shown; "
+        "with the Evidence panel as shown; "
         "**Evidence Project** declared: https://github.com/ada/bakery\n\n"
     )
     assert '{"kind": "evidence-plan", "competency": "C1", "version": 1' in plan

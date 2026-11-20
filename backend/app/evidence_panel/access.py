@@ -34,7 +34,9 @@ READABLE = (
     "Readable: the course GitHub App can read `{repository}`. "
     "Only access was checked, never the contents."
 )
-YOUR_REPOSITORY = "Your repository: the Reading Day reads it in any case."
+YOUR_DEFAULT_REPOSITORY = (
+    "Your default repository: the Reading Day reads it in any case."
+)
 NOT_READABLE = "Not readable yet: grant read-only access."
 NOT_CHECKED = (
     "Not readable yet, as far as the workspace can tell: it could not check access "
@@ -109,13 +111,13 @@ class AccessCheck(Protocol):
 
 
 def access(
-    project: Project, repository: str, check: AccessCheck, app_slug: str
+    project: Project, default_repository: str, check: AccessCheck, app_slug: str
 ) -> Access:
     """What the Student reads about a declared project's access."""
     if project.host == "gitlab":
         return Access(status="gitlab", message=GITLAB_MESSAGE, how=GITLAB_HOW)
-    if project.repository.lower() == repository.lower():
-        return Access(status="readable", message=YOUR_REPOSITORY, how=None)
+    if project.repository.lower() == default_repository.lower():
+        return Access(status="readable", message=YOUR_DEFAULT_REPOSITORY, how=None)
     readable = check.can_read(project.repository)
     if readable:
         return Access(

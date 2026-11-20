@@ -58,6 +58,8 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Repository reading**: What the Practice workspace reads of a Student's Evidence Project, to show the Student and the Instructor where it stands for each Competency. It never changes what a Path shows. _Avoid_: fork reading, scan
 
+**Evidence panel**: For one Student and each Competency, shown beside their Path and at its closing step: what the Repository reading finds on their default repository, and the Evidence Project they declared. What it showed at the closing step is kept with their Evidence Plan. _Avoid_: fork panel
+
 ### Time
 
 **Close**: The instant a Course's Practice stops taking new answers, set in the Course folder. After it, a Self-assessment point can only move up, and the Evidence Plan and Evidence Project stay editable until the Reading Day. _Avoid_: deadline, cut-off

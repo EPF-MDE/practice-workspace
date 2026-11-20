@@ -6,12 +6,12 @@ import { path, signIn } from "./helpers/path";
 // signs in. The Repository reading is the fake one: Alan's reading is
 // backend/tests/fixtures/repository-readings/alan-oceens.json, Hedy's repository reads
 // as empty. Access: a repository whose name says "private" is not readable.
-const ALAN = 1041; // OcéENS, work on a branch of his repository
-const HEDY = 1042; // MATHutrice, an empty repository
+const ALAN = 1041; // OcéENS, work on a branch of his default repository
+const HEDY = 1042; // MATHutrice, an empty default repository
 
 const sidebar = (page: Page) => path(page).getByTestId("evidence-panel");
 
-test("the evidence panel says what the Reading Day would find, then the closing step declares an Evidence Project", async ({
+test("the Evidence panel says what the Reading Day would find, then the closing step declares an Evidence Project", async ({
   page,
 }) => {
   await signIn(page, ALAN);
@@ -35,21 +35,21 @@ test("the evidence panel says what the Reading Day would find, then the closing 
     "Version 1 confirmed"
   );
 
-  // That Competency's repository facts are greyed.
+  // That Competency's default repository facts are greyed.
   const panel = sidebar(page);
-  await expect(panel.getByTestId("evidence-greyed")).toHaveText(
-    "The Reading Day reads alan/bakery for C1, not your repository."
+  await expect(panel.getByTestId("evidence-panel-greyed")).toHaveText(
+    "The Reading Day reads alan/bakery for C1, not your default repository."
   );
   await expect(close.evidence.getByTestId("declared")).toContainText(
     "https://github.com/alan/bakery"
   );
 
-  // Withdrawn: the repository is read again.
+  // Withdrawn: the default repository is read again.
   await close.evidence
-    .getByRole("button", { name: "Withdraw it: read my repository" })
+    .getByRole("button", { name: "Withdraw it: read my default repository" })
     .click();
   await expect(close.evidence).toContainText("None declared");
-  await expect(panel.getByTestId("evidence-greyed")).toHaveCount(0);
+  await expect(panel.getByTestId("evidence-panel-greyed")).toHaveCount(0);
 });
 
 /** Facts naming their point, when they were read, a refresh, and a way to ask. */
@@ -59,13 +59,15 @@ async function readThePanel(page: Page) {
     "feature/order-timeout changes 3 files"
   );
   await expect(panel.getByTestId("fact-C1")).toContainText("→ C1");
-  await expect(panel.getByTestId("evidence-not-judged")).toContainText(
+  await expect(panel.getByTestId("evidence-panel-not-judged")).toContainText(
     "does not judge them"
   );
 
-  const checked = await panel.getByTestId("evidence-checked-at").textContent();
+  const checked = await panel
+    .getByTestId("evidence-panel-checked-at")
+    .textContent();
   await panel.getByRole("button", { name: "Refresh" }).click();
-  await expect(panel.getByTestId("evidence-checked-at")).not.toHaveText(
+  await expect(panel.getByTestId("evidence-panel-checked-at")).not.toHaveText(
     checked ?? ""
   );
 
@@ -84,7 +86,7 @@ async function checkAccess(evidence: Locator) {
     "an AI tool (Mistral, which may train on what it reads)"
   );
   await expect(evidence.getByTestId("notice")).toContainText(
-    "declare your repository instead"
+    "declare your default repository instead"
   );
   await expect(evidence.getByTestId("declare-help")).toContainText(
     "behind a login"
@@ -110,10 +112,10 @@ test("an empty repository reads as a provisional reading, and GitLab is told abo
   await signIn(page, HEDY);
   await page.goto("/competencies/C1");
 
-  await expect(sidebar(page).getByTestId("evidence-empty")).toContainText(
-    "On your repository, no branch or pull request changes a file beyond the course's code (1 branch, 0 pull requests read)."
+  await expect(sidebar(page).getByTestId("evidence-panel-empty")).toContainText(
+    "On your default repository, no branch or pull request changes a file beyond the course's code (1 branch, 0 pull requests read)."
   );
-  await expect(sidebar(page).getByTestId("evidence-empty")).toContainText(
+  await expect(sidebar(page).getByTestId("evidence-panel-empty")).toContainText(
     "a provisional reading, not a zero"
   );
 

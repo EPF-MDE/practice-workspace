@@ -353,9 +353,9 @@ export type EvidencePanel = {
      */
     competency: string;
     /**
-     * Repository
+     * Default Repository
      */
-    repository: string;
+    default_repository: string;
     /**
      * Available
      */
@@ -609,9 +609,9 @@ export type Me = {
      */
     project: string;
     /**
-     * Repository
+     * Default Repository
      */
-    repository: string;
+    default_repository: string;
 };
 
 /**

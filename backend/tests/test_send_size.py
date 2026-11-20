@@ -17,7 +17,7 @@ from app.repository_reading import (
     CompetencyReading,
     Fact,
     RepositoryReading,
-    StudentRepository,
+    StudentToRead,
 )
 from app.store import GitHubStore
 
@@ -38,7 +38,7 @@ def a_repository_with_very_many_files() -> RepositoryReading:
         detail={"branch": "feature/cache", "files": files},
     )
     return RepositoryReading(
-        student=StudentRepository("ada-oceens", "OcéENS", "ada-oceens/OceENS"),
+        student=StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS"),
         default_branch="main",
         read_at=READ_AT,
         checked_at=READ_AT,

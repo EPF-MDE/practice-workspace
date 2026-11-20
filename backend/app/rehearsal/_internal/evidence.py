@@ -1,4 +1,4 @@
-"""The evidence panel and the Evidence Project, as the routes send them."""
+"""The Evidence panel and the Evidence Project, as the routes send them."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from fastapi import HTTPException, Request
 
 from app import evidence_panel
 from app.evidence_panel import Declaration, EvidencePanel, NotAProject
-from app.repository_reading import COMPETENCIES, StudentRepository
+from app.repository_reading import COMPETENCIES, StudentToRead
 from app.roster import Student
 from app.settings import Settings
 
@@ -24,11 +24,13 @@ from .models import (
 logger = logging.getLogger("app.rehearsal")
 
 
-# --- The evidence panel and the Evidence Project ---------------------------------
+# --- The Evidence panel and the Evidence Project ---------------------------------
 
 
-def _repository(student: Student) -> StudentRepository:
-    return StudentRepository(student.github_login, student.project, student.repository)
+def _repository(student: Student) -> StudentToRead:
+    return StudentToRead(
+        student.github_login, student.project, student.default_repository
+    )
 
 
 def _changed(current: dict[str, Any], new: dict[str, Any]) -> bool:
@@ -54,7 +56,7 @@ def _declaration_payload(
     settings: Settings = request.app.state.settings
     checked = evidence_panel.access(
         project,
-        student.repository,
+        student.default_repository,
         request.app.state.access_check,
         settings.github_app_slug,
     )
@@ -82,11 +84,12 @@ def _declaration_out(
         note=payload.get("note", ""),
         repository=project.repository,
         host=project.host,
-        is_default_repository=project.repository.lower() == student.repository.lower(),
+        is_default_repository=project.repository.lower()
+        == student.default_repository.lower(),
         declared_at=at,
         access=evidence_panel.access(
             project,
-            student.repository,
+            student.default_repository,
             request.app.state.access_check,
             settings.github_app_slug,
         ),
@@ -116,7 +119,7 @@ def _panel(
 
 
 def _competency(request: Request, competency: str, student: Student) -> str:
-    """A Competency of the course: its evidence panel and declaration exist before its
+    """A Competency of the course: its Evidence panel and declaration exist before its
     content does."""
     if competency not in COMPETENCIES:
         raise HTTPException(404, f"No Competency {competency}")

@@ -32,7 +32,7 @@ from app.settings import Settings
 
 from .github import HttpGitHub, installation_token, static_token
 from .reader import RepositoryReader
-from .reading import RepositoryReading, StudentRepository
+from .reading import RepositoryReading, StudentToRead
 from .storage import (
     DirectoryReadings,
     GitHubWorkspaceData,
@@ -43,14 +43,16 @@ from .storage import (
 )
 
 
-def roster_students(csv_text: str) -> list[StudentRepository]:
+def roster_students(csv_text: str) -> list[StudentToRead]:
     rows = csv.DictReader(io.StringIO(csv_text.lstrip("﻿")))
     return [
-        StudentRepository(
-            r["github_login"].strip(), r["project"].strip(), r["repository"].strip()
+        StudentToRead(
+            r["github_login"].strip(),
+            r["project"].strip(),
+            r["default_repository"].strip(),
         )
         for r in rows
-        if r.get("repository")
+        if r.get("default_repository")
     ]
 
 
@@ -65,7 +67,7 @@ def _silent(line: str) -> None:
 
 
 def read_all(
-    students: list[StudentRepository],
+    students: list[StudentToRead],
     reader: RepositoryReader,
     log: Callable[[str], None] = _silent,
 ) -> BatchResult:
@@ -87,7 +89,7 @@ def read_all(
 
 
 def run_batch(
-    students: list[StudentRepository],
+    students: list[StudentToRead],
     reader: RepositoryReader,
     data: WorkspaceData,
     log: Callable[[str], None] = _silent,

@@ -11,7 +11,7 @@ export const evidencePanelKey = (competency: string) => [
   competency,
 ];
 
-/** The evidence panel of one Competency: read from the server, shared by the sidebar and the closing step. */
+/** The Evidence panel of one Competency: read from the server, shared by the sidebar and the closing step. */
 export function useEvidencePanel(competency: string) {
   return useQuery({
     queryKey: evidencePanelKey(competency),
@@ -96,13 +96,13 @@ function Fact({ fact }: { fact: PanelFact }) {
 }
 
 /**
- * What the Reading Day would find on the Student's repository today, for one
+ * What the Reading Day would find on the Student's default repository today, for one
  * Competency: facts naming the point they support, never a Band.
  */
 export function EvidencePanelView({
   competency,
   onMyWorkMissing,
-  title = "What the Reading Day would find on your repository",
+  title = "What the Reading Day would find on your default repository",
 }: {
   competency: string;
   onMyWorkMissing: () => void;
@@ -120,14 +120,16 @@ export function EvidencePanelView({
 
   return (
     <section
-      aria-label={`Your repository for ${competency}`}
+      aria-label={`Your default repository for ${competency}`}
       data-testid="evidence-panel"
       className="flex flex-col gap-2 rounded-lg border p-4 text-sm"
     >
       <h2 className="font-semibold">{title}</h2>
-      {panel.isPending && <p>Reading your repository…</p>}
+      {panel.isPending && <p>Reading your default repository…</p>}
       {panel.isError && (
-        <p role="alert">Your repository's panel cannot be shown just now.</p>
+        <p role="alert">
+          Your default repository's panel cannot be shown just now.
+        </p>
       )}
       {panel.data && (
         <PanelBody
@@ -150,12 +152,15 @@ function PanelFindings({ panel }: { panel: EvidencePanel }) {
   return (
     <>
       {panel.empty_text && (
-        <p data-testid="evidence-empty" className="rounded-md border p-2">
+        <p data-testid="evidence-panel-empty" className="rounded-md border p-2">
           {panel.empty_text}
         </p>
       )}
       {panel.not_judged && panel.facts.length > 0 && (
-        <p data-testid="evidence-not-judged" className="text-muted-foreground">
+        <p
+          data-testid="evidence-panel-not-judged"
+          className="text-muted-foreground"
+        >
           {panel.not_judged}
         </p>
       )}
@@ -216,7 +221,10 @@ function PanelBody({ panel, ...actions }: PanelBodyProps) {
   return (
     <>
       {panel.greyed && panel.greyed_text && (
-        <p data-testid="evidence-greyed" className="rounded-md bg-muted p-2">
+        <p
+          data-testid="evidence-panel-greyed"
+          className="rounded-md bg-muted p-2"
+        >
           <Sentence text={panel.greyed_text} />.
         </p>
       )}
@@ -225,10 +233,12 @@ function PanelBody({ panel, ...actions }: PanelBodyProps) {
         data-greyed={panel.greyed}
       >
         <p className="text-muted-foreground">
-          <code>{panel.repository}</code>, read{" "}
-          <span data-testid="evidence-read-at">{when(panel.read_at)}</span>;
-          last checked for a push{" "}
-          <span data-testid="evidence-checked-at">
+          <code>{panel.default_repository}</code>, read{" "}
+          <span data-testid="evidence-panel-read-at">
+            {when(panel.read_at)}
+          </span>
+          ; last checked for a push{" "}
+          <span data-testid="evidence-panel-checked-at">
             {when(panel.checked_at)}
           </span>
           .

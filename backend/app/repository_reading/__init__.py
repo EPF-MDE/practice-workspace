@@ -8,7 +8,7 @@
     reading = reader.refresh(student)
 
 See NOTES.md of the rehearsal, in the course repository this engine came from, for the
-interface the evidence panel and the Eval read.
+interface the Evidence panel and the Eval read.
 """
 
 from .github import GitHub, HttpGitHub, Response, installation_token, static_token
@@ -18,7 +18,7 @@ from .reading import (
     CompetencyReading,
     Fact,
     RepositoryReading,
-    StudentRepository,
+    StudentToRead,
 )
 from .storage import (
     DirectoryReadings,
@@ -41,7 +41,7 @@ __all__ = [
     "InMemoryReadings",
     "ReadingStore",
     "Response",
-    "StudentRepository",
+    "StudentToRead",
     "WorkspaceDataReadings",
     "installation_token",
     "static_token",

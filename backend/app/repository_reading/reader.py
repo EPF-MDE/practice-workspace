@@ -30,7 +30,7 @@ from ._internal.rules import (
 from .github import GitHub, GitHubError
 from .reading import (
     RepositoryReading,
-    StudentRepository,
+    StudentToRead,
 )
 from .storage import ReadingStore
 
@@ -56,7 +56,7 @@ class RepositoryReader:
     # --- The interface
     # ---------------------------------------------------------------------
 
-    def read(self, student: StudentRepository) -> RepositoryReading:
+    def read(self, student: StudentToRead) -> RepositoryReading:
         """The stored reading (the batch's, or the last refresh's); a repository never
         read is read now."""
         stored = self.readings.load(student.login)
@@ -64,7 +64,7 @@ class RepositoryReader:
             return stored
         return self.read_now(student)
 
-    def refresh(self, student: StudentRepository) -> RepositoryReading:
+    def refresh(self, student: StudentToRead) -> RepositoryReading:
         """Lists the repository's refs; recomputes only if a ref changed (else 2
         requests)."""
         stored = self.readings.load(student.login)
@@ -80,7 +80,7 @@ class RepositoryReader:
         return self.read_now(student, previous=stored)
 
     def read_now(
-        self, student: StudentRepository, previous: RepositoryReading | None = None
+        self, student: StudentToRead, previous: RepositoryReading | None = None
     ) -> RepositoryReading:
         """A full reading, reusing what `previous` computed for refs that did not
         change."""
@@ -103,13 +103,15 @@ class RepositoryReader:
         return items
 
     def _list_refs(
-        self, student: StudentRepository
+        self, student: StudentToRead
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Every branch, and every pull request with its head (`refs/pull/<n>/head`): 2
         requests."""
         return (
-            self.get_all(f"repos/{student.repository}/branches?per_page=100"),
-            self.get_all(f"repos/{student.repository}/pulls?state=all&per_page=100"),
+            self.get_all(f"repos/{student.default_repository}/branches?per_page=100"),
+            self.get_all(
+                f"repos/{student.default_repository}/pulls?state=all&per_page=100"
+            ),
         )
 
     def upstream_branches(self, upstream: str) -> dict[str, str]:

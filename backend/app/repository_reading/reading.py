@@ -15,8 +15,9 @@ from app.roster import GROUPS
 
 COMPETENCIES = ("C1", "C2", "C3")
 
-# Points no repository can show (#451 points 4 and 5): the panel says "Not visible from
-# your repository: show it at the Eval" (C2) or "show your PostHog at the Eval" (C3).
+# Points no repository can show (#451 points 4 and 5): the panel says "Not visible
+# from your default repository: show it at the Eval" (C2) or "show your PostHog at the
+# Eval" (C3).
 NOT_VISIBLE = {
     "C1": (),
     "C2": ("C2.f", "C2.g"),
@@ -34,12 +35,12 @@ STUDENT = "student"
 
 
 @dataclass(frozen=True)
-class StudentRepository:
+class StudentToRead:
     """A roster row, as far as the Repository reading needs it."""
 
     login: str
     project: str  # the roster's `project`: "OcéENS" or "MATHutrice"
-    repository: str  # "owner/repo"
+    default_repository: str  # "owner/repo"
 
     @property
     def upstream(self) -> str:
@@ -86,7 +87,7 @@ class RepositoryReading:
     computed for it, so that a refresh recomputes only the refs that changed.
     """
 
-    student: StudentRepository
+    student: StudentToRead
     default_branch: str
     read_at: datetime
     checked_at: datetime
@@ -109,7 +110,7 @@ class RepositoryReading:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> RepositoryReading:
         return cls(
-            student=StudentRepository(**d["student"]),
+            student=StudentToRead(**d["student"]),
             default_branch=d["default_branch"],
             read_at=datetime.fromisoformat(d["read_at"]),
             checked_at=datetime.fromisoformat(d["checked_at"]),

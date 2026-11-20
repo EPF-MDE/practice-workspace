@@ -18,15 +18,15 @@ from app.repository_reading import (
     CompetencyReading,
     ReadingStore,
     RepositoryReading,
-    StudentRepository,
+    StudentToRead,
 )
 from app.repository_reading.reading import LOOKED_FOR, NOT_VISIBLE
 
 
-class ReadingSource(Protocol):
-    def read(self, student: StudentRepository) -> RepositoryReading: ...
+class RepositoryReadingSource(Protocol):
+    def read(self, student: StudentToRead) -> RepositoryReading: ...
 
-    def refresh(self, student: StudentRepository) -> RepositoryReading: ...
+    def refresh(self, student: StudentToRead) -> RepositoryReading: ...
 
 
 class OfflineRepositoryReading:
@@ -50,7 +50,7 @@ class OfflineRepositoryReading:
     def put(self, reading: RepositoryReading) -> None:
         self._readings[reading.student.login] = reading
 
-    def read(self, student: StudentRepository) -> RepositoryReading:
+    def read(self, student: StudentToRead) -> RepositoryReading:
         found = self._readings.get(student.login) or (
             self._seed.load(student.login) if self._seed else None
         )
@@ -59,13 +59,13 @@ class OfflineRepositoryReading:
         self._readings[student.login] = found
         return found
 
-    def refresh(self, student: StudentRepository) -> RepositoryReading:
+    def refresh(self, student: StudentToRead) -> RepositoryReading:
         self.refreshes += 1
         fresh = replace(self.read(student), checked_at=self._now())
         self._readings[student.login] = fresh
         return fresh
 
-    def _empty(self, student: StudentRepository) -> RepositoryReading:
+    def _empty(self, student: StudentToRead) -> RepositoryReading:
         now = self._now()
         return RepositoryReading(
             student=student,
@@ -82,23 +82,23 @@ class OfflineRepositoryReading:
         )
 
 
-class LazyReadingSource:
+class LazyRepositoryReadingSource:
     """Builds the real source on first use, so an app starts even when GitHub cannot be
     reached."""
 
-    def __init__(self, build: Callable[[], ReadingSource]):
+    def __init__(self, build: Callable[[], RepositoryReadingSource]):
         self._build = build
-        self._source: ReadingSource | None = None
+        self._source: RepositoryReadingSource | None = None
         self._lock = threading.Lock()
 
-    def _get(self) -> ReadingSource:
+    def _get(self) -> RepositoryReadingSource:
         with self._lock:
             if self._source is None:
                 self._source = self._build()
             return self._source
 
-    def read(self, student: StudentRepository) -> RepositoryReading:
+    def read(self, student: StudentToRead) -> RepositoryReading:
         return self._get().read(student)
 
-    def refresh(self, student: StudentRepository) -> RepositoryReading:
+    def refresh(self, student: StudentToRead) -> RepositoryReading:
         return self._get().refresh(student)

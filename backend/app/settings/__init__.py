@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     content_dir: str = ""
     # A local roster file instead of `roster.csv` on the data branch (local runs).
     roster_file: str = ""
-    # Where the evidence panel's readings come from: "github" (the Repository reading,
+    # Where the Evidence panel's readings come from: "github" (the Repository reading,
     # with the Student Connector, stored on `data_branch`) or "fake" (no GitHub:
     # readings from `repository_readings_dir`, else an empty repository). "auto": fake
     # with the fake sign-in, github otherwise.

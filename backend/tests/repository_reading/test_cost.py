@@ -8,7 +8,7 @@ from app.repository_reading import (
     InMemoryReadings,
     RepositoryReader,
     Response,
-    StudentRepository,
+    StudentToRead,
 )
 
 from .conftest import NOW, Recorded
@@ -54,7 +54,7 @@ def test_a_refresh_recomputes_only_the_ref_that_moved(recorded: type[Recorded]) 
 
     # A push to `course-2026`: its tip becomes a new commit, compared as the old tip
     # was.
-    branches_path = f"repos/{r.student.repository}/branches?per_page=100"
+    branches_path = f"repos/{r.student.default_repository}/branches?per_page=100"
     branches = copy.deepcopy(r.github.recording[branches_path]["body"])
     moved = next(b for b in branches if b["name"] == "course-2026")
     old, new = moved["commit"]["sha"], "f" * 40
@@ -164,7 +164,7 @@ def test_a_full_reading_of_the_largest_shape_stays_within_its_estimate() -> None
     github = LargestShape()
     reader = RepositoryReader(github, InMemoryReadings(), now=lambda: NOW)
 
-    reading = reader.read(StudentRepository("student", "OcéENS", github.repository))
+    reading = reader.read(StudentToRead("student", "OcéENS", github.repository))
 
     assert (reading.branches_read, reading.pull_requests_read) == (19, 16)
     assert len(github.requests) <= 500

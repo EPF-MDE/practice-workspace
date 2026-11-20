@@ -61,7 +61,7 @@ export function ClosingStep({ studentId, competency, step, page }: Props) {
       <PlanEditor plan={plan} over={over} />
       <EvidencePanelView
         competency={competency}
-        title="Your repository, before you choose your Evidence Project"
+        title="Your default repository, before you choose your Evidence Project"
         onMyWorkMissing={() => openQuestion(step.id)}
       />
       <EvidenceProject

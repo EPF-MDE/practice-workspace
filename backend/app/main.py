@@ -27,9 +27,9 @@ from app.evidence_panel import (
     AccessCheck,
     AppAccessCheck,
     FakeAccessCheck,
-    LazyReadingSource,
+    LazyRepositoryReadingSource,
     OfflineRepositoryReading,
-    ReadingSource,
+    RepositoryReadingSource,
 )
 from app.github_app import installation_client, read_file
 from app.repository_reading import (
@@ -148,7 +148,7 @@ def _fake_repository_reading(settings: Settings) -> bool:
     return settings.repository_reading == "fake"
 
 
-def default_repository_reading(settings: Settings) -> ReadingSource:
+def default_repository_reading(settings: Settings) -> RepositoryReadingSource:
     if _fake_repository_reading(settings):
         folder = (
             Path(settings.repository_readings_dir)
@@ -159,7 +159,7 @@ def default_repository_reading(settings: Settings) -> ReadingSource:
             DirectoryReadings(folder) if folder.is_dir() else None
         )
 
-    def build() -> ReadingSource:
+    def build() -> RepositoryReadingSource:
         # Raises until the Student Connector has an installation: the panel then says
         # the repository could not be read now, and the next view tries again.
         token = installation_token(
@@ -177,7 +177,7 @@ def default_repository_reading(settings: Settings) -> ReadingSource:
         )
         return RepositoryReader(HttpGitHub(token), WorkspaceDataReadings(data))
 
-    return LazyReadingSource(build)
+    return LazyRepositoryReadingSource(build)
 
 
 def default_access_check(settings: Settings) -> AccessCheck:
@@ -193,7 +193,7 @@ def create_app(
     roster: RosterSource | None = None,
     identity: Identity | None = None,
     store: Store | None = None,
-    repository_reading: ReadingSource | None = None,
+    repository_reading: RepositoryReadingSource | None = None,
     access_check: AccessCheck | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()

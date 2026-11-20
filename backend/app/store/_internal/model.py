@@ -34,7 +34,7 @@ class Kind(StrEnum):
     # key: the step id. payload: {"text": ...}. Every question counts, not only the
     # latest.
     QUESTION = "question"
-    # key: None. payload: the evidence panel as the Student saw it
+    # key: None. payload: the Evidence panel as the Student saw it
     EVIDENCE_PANEL_SNAPSHOT = "evidence-panel-snapshot"
 
 
@@ -256,6 +256,6 @@ class Store(Protocol):
     def save_evidence_panel_snapshot(
         self, student: Student, competency: str, snapshot: dict[str, Any]
     ) -> Entry:
-        """Save the evidence panel as the Student saw it at a Competency's closing
+        """Save the Evidence panel as the Student saw it at a Competency's closing
         step."""
         ...

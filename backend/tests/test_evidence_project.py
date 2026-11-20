@@ -54,7 +54,7 @@ def test_the_panel_tells_the_student_who_reads_a_declared_project_and_what_canno
     assert help["notice"].startswith(
         "The Instructor and an AI tool (Mistral, which may train on what it reads)"
     )
-    assert "declare your repository instead" in help["notice"]
+    assert "declare your default repository instead" in help["notice"]
     assert "behind a login" in help["password_example"]
     assert "in the repository itself" in help["documentation_advice"]
 
@@ -73,7 +73,7 @@ def test_a_readable_github_project_is_declared_and_greys_that_competencys_reposi
     assert panel["greyed"] is True
     assert (
         panel["greyed_text"]
-        == "The Reading Day reads `ada/bakery` for C2, not your repository"
+        == "The Reading Day reads `ada/bakery` for C2, not your default repository"
     )
     assert ada.get(f"{C2}/evidence-panel").json()["greyed"] is True
     assert (
@@ -292,7 +292,7 @@ def test_the_closing_step_stores_the_panel_and_the_declaration_in_its_one_send(
     assert panel["declaration"]["repository"] == "ada/bakery"
     assert (
         panel["greyed_text"]
-        == "The Reading Day reads `ada/bakery` for C1, not your repository"
+        == "The Reading Day reads `ada/bakery` for C1, not your default repository"
     )
     assert client.get(C1).json()["evidence_project"] == "https://github.com/ada/bakery"
     assert panel["declaration"]["note"] == BAKERY["note"]

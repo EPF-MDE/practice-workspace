@@ -1,8 +1,8 @@
 """The roster: who may sign in, and their Group, Project and default repository.
 
 `roster.csv` on the `workspace-data` branch, one row per Student:
-`github_login,github_id,name,group,project,repository`. A Student is found by the
-numeric `github_id`, never by login: a renamed account still gets in, and
+`github_login,github_id,name,group,project,default_repository`. A Student is found by
+the numeric `github_id`, never by login: a renamed account still gets in, and
 whoever takes over a freed login does not.
 """
 
@@ -50,7 +50,7 @@ class Student:
     name: str
     group: str  # "OcéENS" or "MATHutrice"
     project: str  # the Group's Project, same values as `group`
-    repository: str  # "owner/repo"
+    default_repository: str  # "owner/repo"
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -76,7 +76,14 @@ class RosterError(ValueError):
     """A roster the app refuses to read."""
 
 
-COLUMNS = ("github_login", "github_id", "name", "group", "project", "repository")
+COLUMNS = (
+    "github_login",
+    "github_id",
+    "name",
+    "group",
+    "project",
+    "default_repository",
+)
 
 
 def parse_roster(text: str) -> Roster:
@@ -106,7 +113,7 @@ def parse_roster(text: str) -> Roster:
                 name=row["name"].strip(),
                 group=row["group"].strip(),
                 project=row["project"].strip(),
-                repository=row["repository"].strip(),
+                default_repository=row["default_repository"].strip(),
             )
         )
     return Roster(students)

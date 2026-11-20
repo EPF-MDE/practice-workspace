@@ -51,7 +51,7 @@ def test_a_full_competency_path_makes_at_most_10_writes_and_none_before_a_send(
     # questions asked; then the closing step: the Self-assessment, carrying the
     # missed check points the browser kept, rated and drafted as the Student
     # goes; then one send confirming the Evidence Plan with an example for the
-    # Eval (#468 adds the evidence panel snapshot to that same send).
+    # Eval (#468 adds the Evidence panel snapshot to that same send).
     missed: dict[str, list[str]] = {}
     for step in page["steps"]:
         fields = [b["id"] for b in step["blocks"] if b["type"] == "field"]

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from app.repository_reading import InMemoryReadings, RepositoryReader, StudentRepository
+from app.repository_reading import InMemoryReadings, RepositoryReader, StudentToRead
 from app.repository_reading.recorded import RecordedGitHub
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -13,23 +13,21 @@ NOW = datetime(2026, 12, 11, 9, 0, tzinfo=UTC)
 # logins, branches, pull requests, commits and code are invented; their shapes, dates
 # and counts are kept. By the shape of #451 each one shows.
 REPOSITORIES = {
-    "empty-repository": StudentRepository(
+    "empty-repository": StudentToRead(
         "dorothy-math", "MATHutrice", "dorothy-math/MATHutrice"
     ),
-    "work-off-default": StudentRepository(
+    "work-off-default": StudentToRead(
         "rosalind-oceens", "OcéENS", "rosalind-oceens/OceENS"
     ),
-    "deleted-pr-branch": StudentRepository(
+    "deleted-pr-branch": StudentToRead(
         "barbara-oceens", "OcéENS", "barbara-oceens/OceENS"
     ),
-    "placeholder-email": StudentRepository(
+    "placeholder-email": StudentToRead(
         "frances-oceens", "OcéENS", "frances-oceens/OceENS"
     ),
-    "claude-author": StudentRepository("joan-oceens", "OcéENS", "joan-oceens/OceENS"),
-    "fallback-default": StudentRepository(
-        "radia-oceens", "OcéENS", "radia-oceens/OceENS"
-    ),
-    "both-environments": StudentRepository(
+    "claude-author": StudentToRead("joan-oceens", "OcéENS", "joan-oceens/OceENS"),
+    "fallback-default": StudentToRead("radia-oceens", "OcéENS", "radia-oceens/OceENS"),
+    "both-environments": StudentToRead(
         "emmy-math", "MATHutrice", "emmy-math/MATHutrice"
     ),
 }

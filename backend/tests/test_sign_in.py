@@ -26,7 +26,7 @@ def test_a_student_on_the_roster_signs_in_and_lands_on_the_opening(
         "name": "Ada Lovelace",
         "group": "OcéENS",
         "project": "OcéENS",
-        "repository": "ada-oceens/OceENS",
+        "default_repository": "ada-oceens/OceENS",
     }
 
 

@@ -1,4 +1,4 @@
-"""The evidence panel: one Competency's reading of the repository, worded for the
+"""The Evidence panel: one Competency's reading of the repository, worded for the
 Student.
 
 Facts, each naming the point it supports, and never a Band. The fixed
@@ -14,23 +14,26 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-from app.repository_reading import Fact, RepositoryReading, StudentRepository
+from app.repository_reading import Fact, RepositoryReading, StudentToRead
 
-NOT_VISIBLE = "Not visible from your repository: show it at the Eval"
-NOT_VISIBLE_C3 = "Not visible from your repository: show your PostHog at the Eval"
+NOT_VISIBLE = "Not visible from your default repository: show it at the Eval"
+NOT_VISIBLE_C3 = (
+    "Not visible from your default repository: show your PostHog at the Eval"
+)
 C1_NOT_JUDGED = (
     "These are the files you changed beyond the course's code, per branch and pull "
     "request. "
     "The workspace does not judge them: at the Eval, you explain what they do and why."
 )
 UNAVAILABLE = (
-    "Your repository could not be read just now. This says nothing about your work: "
-    "the Reading Day will read it. Press Refresh later."
+    "Your default repository could not be read just now. "
+    "This says nothing about your work: the Reading Day will read it. "
+    "Press Refresh later."
 )
 NOTICE = (
     "The Instructor and an AI tool (Mistral, which may train on what it reads) will "
     "read the project you declare. "
-    "If you cannot agree to that, declare your repository instead."
+    "If you cannot agree to that, declare your default repository instead."
 )
 PASSWORD_EXAMPLE = (
     "Evidence behind a password cannot be read on the Reading Day: for example an app "
@@ -63,18 +66,21 @@ def _looked(branches: int, pulls: int) -> str:
 
 def empty_text(branches: int, pulls: int) -> str:
     return (
-        "On your repository, no branch or pull request changes a file beyond the "
-        "course's code "
+        "On your default repository, no branch or pull request changes a file "
+        "beyond the course's code "
         f"({_looked(branches, pulls)} read). "
-        "What to do next: push your work to any branch of your repository, or open a "
-        "pull request, then press Refresh; "
+        "What to do next: push your work to any branch of your default repository, "
+        "or open a pull request, then press Refresh; "
         "or declare an Evidence Project for this Competency in its closing step. "
         "This is a provisional reading, not a zero."
     )
 
 
 def greyed_text(repository: str, competency: str) -> str:
-    return f"The Reading Day reads `{repository}` for {competency}, not your repository"
+    return (
+        f"The Reading Day reads `{repository}` for {competency}, "
+        "not your default repository"
+    )
 
 
 class PanelFact(BaseModel):
@@ -121,7 +127,7 @@ class DeclarationHelp(BaseModel):
 
 class EvidencePanel(BaseModel):
     competency: str
-    repository: str  # "owner/repo"
+    default_repository: str  # "owner/repo"
     # False: the repository could not be read now (`unavailable` says so)
     available: bool
     unavailable: str | None
@@ -175,7 +181,7 @@ def build_panel(
     looked = _looked(reading.branches_read, reading.pull_requests_read)
     return EvidencePanel(
         competency=competency,
-        repository=reading.student.repository,
+        default_repository=reading.student.default_repository,
         available=True,
         unavailable=None,
         read_at=reading.read_at,
@@ -190,7 +196,8 @@ def build_panel(
         facts=[_fact(f) for f in found.facts],
         nothing_found=list(found.nothing_found),
         nothing_found_text=(
-            f"Looked for on your repository ({looked} read), nothing found yet: "
+            f"Looked for on your default repository ({looked} read), "
+            "nothing found yet: "
             f"{', '.join(nothing)}."
             if nothing
             else None
@@ -210,13 +217,13 @@ def build_panel(
 
 
 def unavailable_panel(
-    competency: str, student: StudentRepository, declaration: Declaration | None
+    competency: str, student: StudentToRead, declaration: Declaration | None
 ) -> EvidencePanel:
     """The panel when the repository cannot be read now: said plainly, never a zero."""
     greyed, grey = _greyed(competency, declaration)
     return EvidencePanel(
         competency=competency,
-        repository=student.repository,
+        default_repository=student.default_repository,
         available=False,
         unavailable=UNAVAILABLE,
         read_at=None,

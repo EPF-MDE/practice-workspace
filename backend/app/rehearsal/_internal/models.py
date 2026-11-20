@@ -202,7 +202,7 @@ class QuestionIn(BaseModel):
 
 
 # The longest text each field takes. With them, the largest send (the closing step:
-# plan, example, declaration and an evidence panel snapshot of at most 40,000
+# plan, example, declaration and an Evidence panel snapshot of at most 40,000
 # characters) fits one GitHub comment; a send the Store still finds too large
 # (escapes counted) gets a 422 too, from app.main.
 MAX_FIELD_CHARS = 4_000  # one field of an answer

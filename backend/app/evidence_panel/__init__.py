@@ -1,4 +1,4 @@
-"""The evidence panel and the Evidence Project declarations (spec #460, ticket #468).
+"""The Evidence panel and the Evidence Project declarations (spec #460, ticket #468).
 
     # facts per point, never a Band
     panel = build_panel("C2", reading, declaration)
@@ -7,10 +7,10 @@
     # GitHub or GitLab, else NotAProject
     project = parse_project(url)
     # readable, "not readable yet", or GitLab's instruction
-    access(project, repository, check, app_slug)
+    access(project, default_repository, check, app_slug)
 
-The reading comes from a `ReadingSource`: the Repository reading (#467) in production,
-`OfflineRepositoryReading` locally and in tests. The access check is an
+The reading comes from a `RepositoryReadingSource`: the Repository reading (#467) in
+production, `OfflineRepositoryReading` locally and in tests. The access check is an
 `AccessCheck`: `AppAccessCheck` (the Student Connector App) or `FakeAccessCheck`.
 """
 
@@ -37,7 +37,11 @@ from .panel import (
     snapshot,
     unavailable_panel,
 )
-from .source import LazyReadingSource, OfflineRepositoryReading, ReadingSource
+from .source import (
+    LazyRepositoryReadingSource,
+    OfflineRepositoryReading,
+    RepositoryReadingSource,
+)
 
 __all__ = [
     "DOCUMENTATION_ADVICE",
@@ -50,8 +54,8 @@ __all__ = [
     "DeclarationHelp",
     "FakeAccessCheck",
     "EvidencePanel",
-    "ReadingSource",
-    "LazyReadingSource",
+    "RepositoryReadingSource",
+    "LazyRepositoryReadingSource",
     "NotAProject",
     "NotVisible",
     "OfflineRepositoryReading",

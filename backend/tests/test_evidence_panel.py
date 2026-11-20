@@ -1,4 +1,4 @@
-"""The evidence panel: what the Reading Day would find on the Student's repository
+"""The Evidence panel: what the Reading Day would find on the Student's repository
 today, per Competency, as facts tied to points and never a Band (#468)."""
 
 from __future__ import annotations
@@ -14,17 +14,17 @@ from app.repository_reading import (
     CompetencyReading,
     Fact,
     RepositoryReading,
-    StudentRepository,
+    StudentToRead,
 )
 from app.settings import Settings
 from app.store import InMemoryStore
 
 READ_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
-ADA_REPOSITORY = StudentRepository("ada-oceens", "OcéENS", "ada-oceens/OceENS")
+ADA_REPOSITORY = StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS")
 
 
 def reading(
-    student: StudentRepository = ADA_REPOSITORY,
+    student: StudentToRead = ADA_REPOSITORY,
     empty: bool = False,
     branches: int = 3,
     pulls: int = 2,
@@ -127,17 +127,17 @@ def test_a_point_the_repository_cannot_show_says_to_show_it_at_the_eval(
     assert c2["not_visible"] == [
         {
             "point": "C2.f",
-            "text": "Not visible from your repository: show it at the Eval",
+            "text": "Not visible from your default repository: show it at the Eval",
         },
         {
             "point": "C2.g",
-            "text": "Not visible from your repository: show it at the Eval",
+            "text": "Not visible from your default repository: show it at the Eval",
         },
     ]
     assert {n["point"] for n in c3["not_visible"]} == {"C3.a", "C3.c", "C3.d", "C3.f"}
     assert all("show your PostHog at the Eval" in n["text"] for n in c3["not_visible"])
     assert c2["nothing_found_text"] == (
-        "Looked for on your repository (3 branches, 2 pull requests read), "
+        "Looked for on your default repository (3 branches, 2 pull requests read), "
         "nothing found yet: C2.a, C2.d, C2.e."
     )
 
@@ -172,8 +172,8 @@ def test_an_empty_repository_says_where_it_looked_what_to_do_and_that_it_is_not_
     assert c1["empty"] is True
     text = c1["empty_text"]
     assert text.startswith(
-        "On your repository, no branch or pull request changes a file beyond the "
-        "course's code (1 branch, 0 pull requests read)."
+        "On your default repository, no branch or pull request changes a file "
+        "beyond the course's code (1 branch, 0 pull requests read)."
     )
     assert "What to do next" in text
     assert "a provisional reading, not a zero" in text
@@ -203,7 +203,7 @@ def test_a_repository_that_cannot_be_read_now_is_said_plainly_never_a_zero(
     make_client: MakeClient,
 ) -> None:
     class Down:
-        def read(self, student: StudentRepository) -> RepositoryReading:
+        def read(self, student: StudentToRead) -> RepositoryReading:
             raise RuntimeError("The GitHub App has no installation")
 
         refresh = read

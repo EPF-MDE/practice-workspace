@@ -1,4 +1,4 @@
-"""The evidence panel's and the Evidence Project's routes."""
+"""The Evidence panel's and the Evidence Project's routes."""
 
 from __future__ import annotations
 
@@ -31,8 +31,8 @@ from .steps import (
 def evidence_panel_view(
     competency: str, request: Request, student: Student = Depends(current_student)
 ) -> EvidencePanel:
-    """What the Reading Day would find on the Student's repository today for this
-    Competency: facts, never a Band."""
+    """What the Reading Day would find on the Student's default repository today for
+    this Competency: facts, never a Band."""
     c = _competency(request, competency, student)
     declared = _store(request).record(student).declaration(c)
     return _panel(
@@ -72,7 +72,7 @@ def check_project_access(
     settings: Settings = request.app.state.settings
     return evidence_panel.access(
         project,
-        student.repository,
+        student.default_repository,
         request.app.state.access_check,
         settings.github_app_slug,
     )
