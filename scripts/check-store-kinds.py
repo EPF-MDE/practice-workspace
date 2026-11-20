@@ -96,6 +96,11 @@ def main(paths: list[str]) -> int:
     modules = store_sources()
     values = kind_values(modules)
     takers = takes_a_kind(modules)
+    if not values:
+        print(
+            f"No Kind enum found under {OWNER}: has the Store moved?", file=sys.stderr
+        )
+        return 1
     failures = [
         f'{name}:{line}: "{value}"'
         for name in map(os.path.relpath, paths)

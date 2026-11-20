@@ -58,6 +58,17 @@ def answered(record, step):
 });
 
 describe("check-store-kinds refuses", () => {
+  it("fails when it finds no Kind enum under the Store", () => {
+    const result = checkOn("python3", script, {
+      "backend/app/practice/closing.py": "x = 1\n",
+    });
+
+    expect(result.stderr).toContain(
+      "No Kind enum found under backend/app/store"
+    );
+    expect(result.status).toBe(1);
+  });
+
   it("refuses a kind written as a literal where a Record is read", () => {
     const result = checkCode({
       "backend/app/practice/closing.py": `def latest(record):
