@@ -24,6 +24,7 @@ from app.repository_reading import (
 from app.repository_reading.reading import LOOKED_FOR, NOT_VISIBLE
 
 from .panel import (
+    READABLE_ACCESS,
     Declaration,
     EvidencePanel,
     build_panel,
@@ -51,7 +52,7 @@ def read_panel(
     reads: the one declared, else the roster's. A declared project the App cannot read
     is said as such, and never read as a zero."""
     if declaration is not None and not declaration.is_roster_evidence_project:
-        if declaration.access.status != "readable":
+        if declaration.access.status != READABLE_ACCESS:
             return unavailable_panel(
                 competency,
                 declaration.repository,
@@ -86,20 +87,20 @@ class OfflineRepositoryReading:
         self.refreshes = 0
 
     def put(self, reading: RepositoryReading) -> None:
-        self._readings[_key(reading.student)] = reading
+        self._readings[reading.student.key] = reading
 
     def read(self, student: StudentToRead) -> RepositoryReading:
         seeded = self._seed.load(student.login) if self._seed else None
         if seeded is not None and not seeded.reads(student):
             seeded = None
-        found = self._readings.get(_key(student)) or seeded or self._empty(student)
-        self._readings[_key(student)] = found
+        found = self._readings.get(student.key) or seeded or self._empty(student)
+        self._readings[student.key] = found
         return found
 
     def refresh(self, student: StudentToRead) -> RepositoryReading:
         self.refreshes += 1
         fresh = replace(self.read(student), checked_at=self._now())
-        self._readings[_key(student)] = fresh
+        self._readings[student.key] = fresh
         return fresh
 
     def _empty(self, student: StudentToRead) -> RepositoryReading:
@@ -117,10 +118,6 @@ class OfflineRepositoryReading:
                 for c in LOOKED_FOR
             },
         )
-
-
-def _key(student: StudentToRead) -> tuple[str, str]:
-    return student.login, student.evidence_project.lower()
 
 
 class LazyRepositoryReadingSource:

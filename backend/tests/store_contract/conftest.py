@@ -48,6 +48,18 @@ def store(request: pytest.FixtureRequest, github: FakeGitHub) -> Store:
     return github_store(github)
 
 
+def declared(url: str, note: str = "n") -> dict[str, Any]:
+    """A declaration's payload as the app stores it."""
+    host, repository = url.removeprefix("https://").split(".com/")
+    return {
+        "url": url,
+        "note": note,
+        "repository": repository,
+        "host": host,
+        "access": "gitlab" if host == "gitlab" else "readable",
+    }
+
+
 SENDS: dict[Kind, Callable[[Store, Student], Entry]] = {
     Kind.CHECK_POINTS: lambda s, who: s.save_missed_check_points(
         who, "C2", "redraw", ["queue", "retry"]
@@ -71,11 +83,7 @@ SENDS: dict[Kind, Callable[[Store, Student], Entry]] = {
             "confirmed": True,
             # the closing step's one send: the declaration made there, the repository
             # panel as shown
-            "declaration": {
-                "url": "https://github.com/ada/bakery",
-                "note": "été",
-                "access": "readable",
-            },
+            "declaration": declared("https://github.com/ada/bakery", "été"),
             "evidence_panel_snapshot": {
                 "competency": "C1",
                 "facts": [{"point": "C1", "files": []}],
@@ -84,7 +92,7 @@ SENDS: dict[Kind, Callable[[Store, Student], Entry]] = {
         },
     ),
     Kind.DECLARATION: lambda s, who: s.save_declaration(
-        who, {"url": "https://gitlab.com/a/b", "note": "été"}
+        who, declared("https://gitlab.com/a/b", "été")
     ),
     Kind.QUESTION: lambda s, who: s.save_question(
         who, "C1", "read-the-chain", "Why 10?\nAnd why ``` here?"

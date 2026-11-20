@@ -17,6 +17,8 @@ from .rules import (
 )
 from .state import _ReadingState
 
+# An analysis's flag: its ref was read on its own, every file the Student's.
+OWN_HISTORY = "own_history"
 UNREADABLE: dict[str, Any] = {"files": [], "closest": None, "unreadable": True}
 
 
@@ -128,7 +130,7 @@ class _Analysis(_ReadingState):
         committed = _Commit.model_validate(commit.body).committer.date
         return {
             "closest": None,
-            "own_history": True,
+            OWN_HISTORY: True,
             "files": [{"path": path} for path in paths],
             "lines_added": None,
             "last_change": _date(committed),

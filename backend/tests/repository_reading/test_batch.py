@@ -72,6 +72,7 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
             "note": "n",
             "repository": "radia/notes",
             "host": "github",
+            "access": "readable",
         },
     )
     store.save_declaration(
@@ -81,6 +82,7 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
             "note": "n",
             "repository": "b/api",
             "host": "gitlab",
+            "access": "gitlab",
         },
     )
 

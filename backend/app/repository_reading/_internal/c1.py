@@ -11,6 +11,7 @@ from ..reading import (
 
 if TYPE_CHECKING:
     pass
+from .analysis import OWN_HISTORY
 from .rules import (
     _plural,
 )
@@ -56,7 +57,7 @@ class _C1Facts(_ReadingState):
         text = (
             f"{where} holds {_plural(n, 'file')} of its own history, none from the "
             f"course's code; last change on {a['last_change']}."
-            if a.get("own_history")
+            if a.get(OWN_HISTORY)
             else f"{where} changes {_plural(n, 'file')} beyond `{a['closest']}`, "
             f"{_plural(a['lines_added'], 'line')} added; "
             f"last change on {a['last_change']}."

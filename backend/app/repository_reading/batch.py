@@ -28,12 +28,12 @@ import argparse
 import subprocess
 import sys
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from app.roster import Student, parse_roster
 from app.settings import Settings
-from app.store import GitHubStore, Store
+from app.store import GITLAB, GitHubStore, Store
 
 from .github import (
     HttpGitHub,
@@ -43,7 +43,7 @@ from .github import (
     static_token,
 )
 from .reader import RepositoryReader
-from .reading import RepositoryReading, StudentToRead
+from .reading import RepositoryReading, StudentToRead, not_read_on_gitlab
 from .storage import (
     DirectoryReadings,
     GitHubWorkspaceData,
@@ -63,18 +63,14 @@ def evidence_projects(
     gitlab: dict[str, str] = {}
     for student, record in zip(students, store.records(students), strict=True):
         declared = record.declaration()
-        repository = declared[0]["repository"] if declared else student.evidence_project
-        if declared and declared[0]["host"] == "gitlab":
-            gitlab[student.github_login] = repository
-            continue
-        to_read.append(StudentToRead(student.github_login, student.project, repository))
+        roster = StudentToRead.from_roster(student)
+        if declared is None:
+            to_read.append(roster)
+        elif declared.host == GITLAB:
+            gitlab[student.github_login] = declared.repository
+        else:
+            to_read.append(replace(roster, evidence_project=declared.repository))
     return to_read, gitlab
-
-
-def _roster_project(student: Student) -> StudentToRead:
-    return StudentToRead(
-        student.github_login, student.project, student.evidence_project
-    )
 
 
 @dataclass
@@ -188,7 +184,7 @@ def main(argv: list[str] | None = None) -> int:
         roster_rows = [s for s in roster_rows if s.github_login in wanted]
     gitlab: dict[str, str] = {}
     if args.roster_only:
-        students = [_roster_project(s) for s in roster_rows]
+        students = [StudentToRead.from_roster(s) for s in roster_rows]
     else:
         students, gitlab = evidence_projects(
             roster_rows, GitHubStore.from_settings(settings)
@@ -211,10 +207,7 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"{len(result.readings)} repositories read, {len(result.failures)} failed"
         + "".join(f"\n  {k}: {v}" for k, v in result.failures.items())
-        + "".join(
-            f"\n  {k}: GitLab project {v}, not read: show it at the Eval"
-            for k, v in gitlab.items()
-        )
+        + "".join(f"\n  {k}: {not_read_on_gitlab(v)}" for k, v in gitlab.items())
     )
     return 1 if result.failures else 0
 

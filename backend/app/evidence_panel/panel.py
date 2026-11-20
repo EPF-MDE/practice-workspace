@@ -15,6 +15,8 @@ from typing import Any, Literal
 from pydantic import BaseModel
 
 from app.repository_reading import Fact, RepositoryReading
+from app.repository_reading.reading import not_read_on_gitlab
+from app.store import GITLAB, Host
 
 NOT_VISIBLE = "Not visible from your Evidence Project: show it at the Eval"
 NOT_VISIBLE_C3 = "Not visible from your Evidence Project: show your PostHog at the Eval"
@@ -76,12 +78,8 @@ def empty_text(branches: int, pulls: int) -> str:
 
 def not_read_text(declaration: Declaration) -> str:
     """Why a declared Evidence Project is not read here: never a zero."""
-    if declaration.host == "gitlab":
-        return (
-            f"The workspace cannot read a GitLab project: nothing of "
-            f"`{declaration.repository}` shows here, which says nothing about your "
-            "work. The Reading Day reads it; show your evidence at the Eval."
-        )
+    if declaration.host == GITLAB:
+        return not_read_on_gitlab(declaration.repository)
     return (
         f"The course GitHub App cannot read `{declaration.repository}` yet: nothing of "
         "it shows here, which is not a zero. Grant read-only access, or show your "
@@ -104,11 +102,18 @@ class NotVisible(BaseModel):
     text: str
 
 
+# Whether the Reading Day can read a declared project.
+AccessStatus = Literal["readable", "not-readable", "gitlab"]
+READABLE_ACCESS: AccessStatus = "readable"
+NOT_READABLE_ACCESS: AccessStatus = "not-readable"
+GITLAB_ACCESS: AccessStatus = "gitlab"
+
+
 class Access(BaseModel):
     """Whether the Reading Day can read a declared project: access only, never its
     contents."""
 
-    status: Literal["readable", "not-readable", "gitlab"]
+    status: AccessStatus
     message: str
     how: str | None  # what to do to make it readable
 
@@ -117,7 +122,7 @@ class Declaration(BaseModel):
     url: str
     note: str  # what to read
     repository: str  # "owner/name" (GitLab: the project's full path)
-    host: Literal["github", "gitlab"]
+    host: Host
     is_roster_evidence_project: (
         bool  # the Student declared their Evidence Project itself
     )

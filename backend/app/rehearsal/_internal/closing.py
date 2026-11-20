@@ -8,15 +8,15 @@ from fastapi import Depends, HTTPException, Request
 
 from app import closing, evidence_panel
 from app.auth import current_student
+from app.repository_reading import StudentToRead
 from app.roster import Student
 from app.settings import Settings
-from app.store import Kind
+from app.store import Kind, StoredDeclaration
 
 from .evidence import (
     _changed,
-    _declaration_out,
     _declaration_payload,
-    _panel,
+    _declared,
 )
 from .models import (
     MAX_EXAMPLE_CHARS,
@@ -154,15 +154,14 @@ def close_competency(
     }
     plan |= _drafted(page, record, sent.text, sent.drafted)
     current = record.declaration()
-    if declaration and (current is None or _changed(current[0], declaration)):
+    if declaration and (current is None or _changed(current, declaration)):
         plan["declaration"] = declaration
-        current = (declaration, _now())
-    panel = _panel(
-        request,
-        student,
+        current = StoredDeclaration.from_payload(declaration, _now())
+    panel = evidence_panel.read_panel(
         competency,
-        _declaration_out(current, request, student),
-        refresh=False,
+        request.app.state.repository_reading,
+        StudentToRead.from_roster(student),
+        None if current is None else _declared(current, request, student),
     )
     plan["evidence_panel_snapshot"] = evidence_panel.snapshot(panel)
     return _plan_version(store.save_evidence_plan(student, competency, plan))

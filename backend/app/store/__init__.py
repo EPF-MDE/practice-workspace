@@ -27,14 +27,19 @@ from typing import Any
 
 from app.roster import Student
 from app.store._internal.model import (
+    EVERY_COMPETENCY,
+    GITHUB,
+    GITLAB,
     KINDS,
     MAX_SEND_CHARS,
     DrawingFiles,
     Entry,
+    Host,
     Kind,
     Record,
     SendTooLarge,
     Store,
+    StoredDeclaration,
     StoreUnavailable,
     check_size,
     drawing_paths,
@@ -44,16 +49,21 @@ from app.store._internal.model import (
 from app.store.github import GitHubStore
 
 __all__ = [
+    "EVERY_COMPETENCY",
+    "GITHUB",
+    "GITLAB",
     "KINDS",
     "MAX_SEND_CHARS",
     "DrawingFiles",
     "Entry",
     "GitHubStore",
+    "Host",
     "InMemoryStore",
     "Kind",
     "Record",
     "SendTooLarge",
     "Store",
+    "StoredDeclaration",
     "StoreUnavailable",
     "drawing_paths",
 ]
@@ -159,7 +169,9 @@ class InMemoryStore:
         return self._append(student, Kind.EVIDENCE_PLAN, competency, None, dict(plan))
 
     def save_declaration(self, student: Student, declaration: dict[str, Any]) -> Entry:
-        return self._append(student, Kind.DECLARATION, None, None, dict(declaration))
+        return self._append(
+            student, Kind.DECLARATION, EVERY_COMPETENCY, None, dict(declaration)
+        )
 
     def save_question(
         self, student: Student, competency: str, step: str, text: str

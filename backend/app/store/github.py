@@ -56,6 +56,7 @@ from app.store._internal.comments import (
     comment_body,
 )
 from app.store._internal.model import (
+    EVERY_COMPETENCY,
     GITHUB_COMMENT_LIMIT,
     DrawingFiles,
     Entry,
@@ -433,7 +434,9 @@ class GitHubStore:
         return self._append(student, Kind.EVIDENCE_PLAN, competency, None, dict(plan))
 
     def save_declaration(self, student: Student, declaration: dict[str, Any]) -> Entry:
-        return self._append(student, Kind.DECLARATION, None, None, dict(declaration))
+        return self._append(
+            student, Kind.DECLARATION, EVERY_COMPETENCY, None, dict(declaration)
+        )
 
     def save_question(
         self, student: Student, competency: str, step: str, text: str

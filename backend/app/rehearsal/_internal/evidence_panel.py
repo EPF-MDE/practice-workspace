@@ -7,15 +7,15 @@ from fastapi import Depends, HTTPException, Request
 from app import evidence_panel
 from app.auth import current_student
 from app.evidence_panel import Declaration, EvidencePanel, NotAProject
+from app.repository_reading import StudentToRead
 from app.roster import Student
 from app.settings import Settings
+from app.store import StoredDeclaration
 
 from .evidence import (
     _competency,
-    _declaration_out,
     _declaration_payload,
     _declared,
-    _panel,
 )
 from .models import (
     DeclarationIn,
@@ -34,11 +34,7 @@ def evidence_panel_view(
 ) -> EvidencePanel:
     """What the Reading Day would find on the Student's Evidence Project today for
     this Competency: facts, never a Band."""
-    c = _competency(request, competency, student)
-    declared = _store(request).record(student).declaration()
-    return _panel(
-        request, student, c, _declaration_out(declared, request, student), refresh=False
-    )
+    return _read_panel(request, student, competency, refresh=False)
 
 
 @router.post(
@@ -49,10 +45,22 @@ def refresh_evidence_panel(
 ) -> EvidencePanel:
     """Check the Evidence Project for a push since its last reading, and recompute what
     moved. Stores nothing in the record."""
+    return _read_panel(request, student, competency, refresh=True)
+
+
+def _read_panel(
+    request: Request, student: Student, competency: str, refresh: bool
+) -> EvidencePanel:
+    """A Competency's panel, from the Evidence Project declared now, its access checked
+    again."""
     c = _competency(request, competency, student)
     declared = _store(request).record(student).declaration()
-    return _panel(
-        request, student, c, _declaration_out(declared, request, student), refresh=True
+    return evidence_panel.read_panel(
+        c,
+        request.app.state.repository_reading,
+        StudentToRead.from_roster(student),
+        None if declared is None else _declared(declared, request, student),
+        refresh,
     )
 
 
@@ -88,7 +96,9 @@ def declare_evidence_project(
     declaration = _declaration_payload(request, student, sent)
     _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Project")
     entry = _store(request).save_declaration(student, declaration)
-    return _declared(entry.payload, entry.at, request, student)
+    return _declared(
+        StoredDeclaration.from_payload(entry.payload, entry.at), request, student
+    )
 
 
 @router.delete("/api/evidence-project/declaration", tags=["rehearsal"])

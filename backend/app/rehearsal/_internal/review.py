@@ -86,7 +86,7 @@ def _evidence_plan(record: Record, competency: str) -> EvidencePlan | None:
 
 def _evidence_project(record: Record) -> str | None:
     declared = record.declaration()
-    return declared[0]["url"] if declared else None
+    return declared.url if declared else None
 
 
 def _transfer(page: Page, record: Record) -> closing.Transfer | None:

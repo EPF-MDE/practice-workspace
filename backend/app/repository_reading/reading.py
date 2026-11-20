@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any
 
-from app.roster import GROUPS
+from app.roster import GROUPS, Student
 
 COMPETENCIES = ("C1", "C2", "C3")
 
@@ -43,9 +43,29 @@ class StudentToRead:
     project: str  # the roster's `project`: "OcéENS" or "MATHutrice"
     evidence_project: str  # "owner/repo"
 
+    @classmethod
+    def from_roster(cls, student: Student) -> StudentToRead:
+        """The Student with the Evidence Project the roster names for them."""
+        return cls(student.github_login, student.project, student.evidence_project)
+
     @property
     def upstream(self) -> str:
         return GROUPS[self.project].upstream
+
+    @property
+    def key(self) -> tuple[str, str]:
+        """Whose reading of which Evidence Project: the repository without case, as
+        GitHub names it."""
+        return self.login, self.evidence_project.lower()
+
+
+def not_read_on_gitlab(repository: str) -> str:
+    """Why a GitLab project shows nothing: the Repository reading reads GitHub only,
+    which is never a zero."""
+    return (
+        f"The workspace cannot read a GitLab project: nothing of `{repository}` is "
+        "read here, which says nothing about the work. Show the evidence at the Eval."
+    )
 
 
 @dataclass(frozen=True)
@@ -104,11 +124,7 @@ class RepositoryReading:
 
     def reads(self, student: StudentToRead) -> bool:
         """Whether this is a reading of that Student's Evidence Project."""
-        return (
-            self.student.login == student.login
-            and self.student.evidence_project.lower()
-            == student.evidence_project.lower()
-        )
+        return self.student.key == student.key
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)

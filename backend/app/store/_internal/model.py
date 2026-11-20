@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 from app.roster import Student
 
@@ -28,8 +28,8 @@ class Kind(StrEnum):
     # step's one send also carries "evidence_panel_snapshot" and, when declared
     # there, "declaration"
     EVIDENCE_PLAN = "evidence-plan"
-    # competency and key: None, one for every Competency. payload: {"url", "note",
-    # ...}, or {} when withdrawn
+    # competency: EVERY_COMPETENCY, key: None. payload: StoredDeclaration's fields but
+    # `at`, or {} when withdrawn
     DECLARATION = "declaration"
     # key: the step id. payload: {"text": ...}. Every question counts, not only the
     # latest.
@@ -40,17 +40,51 @@ class Kind(StrEnum):
 
 KINDS: tuple[Kind, ...] = tuple(Kind)
 
+# The competency of an entry that is for every Competency: a declaration.
+EVERY_COMPETENCY = None
+
 
 @dataclass(frozen=True)
 class Entry:
     """One send: what, for which Competency and step (or drawing, or none), and when."""
 
     kind: Kind
-    competency: str | None  # "C1", "C2", "C3"; None for a declaration
+    # "C1", "C2", "C3"; EVERY_COMPETENCY (None) for a declaration
+    competency: str | None
     key: str | None  # the step or drawing id; None for a per-Competency kind
     payload: dict[str, Any]  # JSON-safe
     version: int  # 1, 2... per (kind, competency, key)
     at: datetime  # when it was stored, timezone-aware
+
+
+# Where a declared Evidence Project is hosted.
+Host = Literal["github", "gitlab"]
+GITHUB: Host = "github"
+GITLAB: Host = "gitlab"
+_HOSTS: dict[str, Host] = {GITHUB: GITHUB, GITLAB: GITLAB}
+
+
+@dataclass(frozen=True)
+class StoredDeclaration:
+    """An Evidence Project declared for every Competency, as stored, and when."""
+
+    url: str
+    note: str  # what to read
+    repository: str  # "owner/name"; on GitLab, the project's full path
+    host: Host
+    access: str  # its access as checked when declared
+    at: datetime
+
+    @classmethod
+    def from_payload(cls, payload: dict[str, Any], at: datetime) -> StoredDeclaration:
+        return cls(
+            url=payload["url"],
+            note=payload["note"],
+            repository=payload["repository"],
+            host=_HOSTS[payload["host"]],
+            access=payload["access"],
+            at=at,
+        )
 
 
 @dataclass(frozen=True)
@@ -124,7 +158,7 @@ class Record:
             if e.kind == kind and competency in (None, e.competency)
         ]
 
-    def declaration(self) -> tuple[dict[str, Any], datetime] | None:
+    def declaration(self) -> StoredDeclaration | None:
         """The Evidence Project declared now for every Competency, and when: sent alone,
         or with any closing step's Evidence Plan. None if never declared, or withdrawn
         since (an empty declaration)."""
@@ -134,7 +168,7 @@ class Record:
                 found = (entry.payload, entry.at) if entry.payload else None
             elif entry.kind == Kind.EVIDENCE_PLAN and "declaration" in entry.payload:
                 found = (entry.payload["declaration"], entry.at)
-        return found
+        return None if found is None else StoredDeclaration.from_payload(*found)
 
     def missed_check_points(self, competency: str, drawing: str) -> list[str] | None:
         """The check points last ticked as missed on a drawing: sent alone, or with a

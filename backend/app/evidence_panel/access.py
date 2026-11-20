@@ -14,13 +14,14 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal, Protocol
+from typing import Protocol
 
 import httpx
 
 from app.github_app import API, HEADERS, InstallationAuth, private_key_from_base64
+from app.store import GITHUB, GITLAB, Host
 
-from .panel import Access
+from .panel import GITLAB_ACCESS, NOT_READABLE_ACCESS, READABLE_ACCESS, Access
 
 GITLAB_MESSAGE = (
     "On GitLab, the workspace cannot check access: give the Instructor Reporter access."
@@ -64,7 +65,7 @@ class NotAProject(ValueError):
 
 @dataclass(frozen=True)
 class Project:
-    host: Literal["github", "gitlab"]
+    host: Host
     repository: (
         str  # "owner/name"; on GitLab, the project's full path ("group/subgroup/name")
     )
@@ -90,7 +91,7 @@ def parse_project(url: str) -> Project:
         )
     host, path = m.group(1), m.group(2)
     parts = [p for p in path.split("/") if p]
-    if host == "github":
+    if host == GITHUB:
         parts = parts[:2]
     elif "-" in parts:  # GitLab: /group/project/-/tree/main
         parts = parts[: parts.index("-")]
@@ -112,19 +113,19 @@ def access(
     project: Project, evidence_project: str, check: AccessCheck, app_slug: str
 ) -> Access:
     """What the Student reads about a declared project's access."""
-    if project.host == "gitlab":
-        return Access(status="gitlab", message=GITLAB_MESSAGE, how=GITLAB_HOW)
+    if project.host == GITLAB:
+        return Access(status=GITLAB_ACCESS, message=GITLAB_MESSAGE, how=GITLAB_HOW)
     if project.repository.lower() == evidence_project.lower():
-        return Access(status="readable", message=YOUR_EVIDENCE_PROJECT, how=None)
+        return Access(status=READABLE_ACCESS, message=YOUR_EVIDENCE_PROJECT, how=None)
     readable = check.can_read(project.repository)
     if readable:
         return Access(
-            status="readable",
+            status=READABLE_ACCESS,
             message=READABLE.format(repository=project.repository),
             how=None,
         )
     return Access(
-        status="not-readable",
+        status=NOT_READABLE_ACCESS,
         message=NOT_READABLE if readable is False else NOT_CHECKED,
         how=github_how(app_slug, project.name),
     )

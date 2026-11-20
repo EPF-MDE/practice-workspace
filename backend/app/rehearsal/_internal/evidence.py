@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException, Request
 
 from app import evidence_panel
-from app.evidence_panel import Declaration, EvidencePanel, NotAProject
-from app.repository_reading import COMPETENCIES, StudentToRead
+from app.evidence_panel import Declaration, NotAProject
+from app.repository_reading import COMPETENCIES
 from app.roster import Student
 from app.settings import Settings
+from app.store import StoredDeclaration
 
 from .models import (
     MAX_NOTE_CHARS,
@@ -23,16 +23,8 @@ from .models import (
 # --- The Evidence panel and the Evidence Project ---------------------------------
 
 
-def _student_to_read(student: Student) -> StudentToRead:
-    """The Student as the roster names them: their Evidence Project unless declared
-    otherwise."""
-    return StudentToRead(
-        student.github_login, student.project, student.evidence_project
-    )
-
-
-def _changed(current: dict[str, Any], new: dict[str, Any]) -> bool:
-    return (current.get("url"), current.get("note")) != (new["url"], new["note"])
+def _changed(current: StoredDeclaration, new: dict[str, Any]) -> bool:
+    return (current.url, current.note) != (new["url"], new["note"])
 
 
 def _declaration_payload(
@@ -67,49 +59,27 @@ def _declaration_payload(
     }
 
 
-def _declaration_out(
-    declared: tuple[dict[str, Any], datetime] | None, request: Request, student: Student
-) -> Declaration | None:
+def _declared(
+    declared: StoredDeclaration, request: Request, student: Student
+) -> Declaration:
     """The declaration with its access checked now (the App may have been installed
     since)."""
-    return None if declared is None else _declared(*declared, request, student)
-
-
-def _declared(
-    payload: dict[str, Any], at: datetime, request: Request, student: Student
-) -> Declaration:
-    project = evidence_panel.parse_project(payload["url"])
+    project = evidence_panel.parse_project(declared.url)
     settings: Settings = request.app.state.settings
     return Declaration(
         url=project.url,
-        note=payload.get("note", ""),
+        note=declared.note,
         repository=project.repository,
         host=project.host,
         is_roster_evidence_project=project.repository.lower()
         == student.evidence_project.lower(),
-        declared_at=at,
+        declared_at=declared.at,
         access=evidence_panel.access(
             project,
             student.evidence_project,
             request.app.state.access_check,
             settings.github_app_slug,
         ),
-    )
-
-
-def _panel(
-    request: Request,
-    student: Student,
-    competency: str,
-    declaration: Declaration | None,
-    refresh: bool,
-) -> EvidencePanel:
-    return evidence_panel.read_panel(
-        competency,
-        request.app.state.repository_reading,
-        _student_to_read(student),
-        declaration,
-        refresh,
     )
 
 

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import NoReturn
+import json
+from typing import Any, NoReturn
 
 import httpx
 import pytest
@@ -140,20 +141,34 @@ def test_an_evidence_plan_comment_names_it_and_stores_its_kind(
     assert '{"kind": "evidence-panel-snapshot", "competency": "C2"' in snapshot
 
 
-def test_a_declaration_comment_is_for_every_competency(github: FakeGitHub) -> None:
+def test_a_declaration_comment_stores_one_for_every_competency(
+    github: FakeGitHub,
+) -> None:
     store = github_store(github)
     SENDS[Kind.DECLARATION](store, ADA)
     store.save_declaration(ADA, {})
 
-    declared, withdrawn = (c["body"] for c in github.comments[401])
+    declared, withdrawn = (_block(c["body"]) for c in github.comments[401])
 
-    assert declared.startswith(
-        "**Evidence Project** declared for every Competency (version 1)\n\n"
+    assert {k: declared[k] for k in ("kind", "competency", "version")} == {
+        "kind": "declaration",
+        "competency": None,
+        "version": 1,
+    }
+    assert declared["payload"]["url"] == "https://gitlab.com/a/b"
+    assert (withdrawn["competency"], withdrawn["version"], withdrawn["payload"]) == (
+        None,
+        2,
+        {},
     )
-    assert '{"kind": "declaration", "competency": null, "version": 1' in declared
-    assert withdrawn.startswith(
-        "**Evidence Project** withdrawn for every Competency (version 2)\n\n"
+
+
+def _block(body: str) -> dict[str, Any]:
+    """The JSON block a send's comment holds."""
+    block: dict[str, Any] = json.loads(
+        body.split("```json rehearsal\n", 1)[1].split("\n```", 1)[0]
     )
+    return block
 
 
 def test_a_send_before_sign_in_opened_the_issue_opens_it(github: FakeGitHub) -> None:
