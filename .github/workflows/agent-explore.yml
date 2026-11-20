@@ -15,8 +15,10 @@ name: Agent — Explore The Tickets
 #   once with a subagent, and closes the duplicates onto the oldest ticket.
 #
 # WHAT IT DOES — AND, MORE IMPORTANTLY, WHAT IT DOES NOT
-#   It reads. It reads the tickets and the code they would touch, and it hands
-#   back a plan: one entry per ticket, with the comment to post on it. It does
+#   It reads. It reads the tickets, the code they would touch, and the work
+#   already queued on that code: the open issues of every spec (`spec:*`) and
+#   the open pull requests with the files each changes. Then it hands back a
+#   plan: one entry per ticket, with the comment to post on it. It does
 #   not edit a file, open a branch or open a pull request.
 #
 #   It does not even post its own comments. There are two jobs:
@@ -27,7 +29,7 @@ name: Agent — Explore The Tickets
 #   Read where FACTORY_PAT goes before you read anything else. It is the
 #   enforcement, not the description. The prompt asks the agent to stay
 #   read-only. In the explore job the PAT goes to one step, the one that
-#   lists the batch, and that step runs before the agent exists and runs
+#   lists the batch, the spec queues and the open pull requests, and that step runs before the agent exists and runs
 #   nothing but `gh` and `jq`. The job's own GITHUB_TOKEN can read the code
 #   and nothing else. So the agent has nothing to write with.
 #
@@ -71,7 +73,7 @@ name: Agent — Explore The Tickets
 #     the PostHog plugin's hook reads it there to send the session's trace.
 #   secrets.FACTORY_PAT — a fine-grained personal access token on this
 #     repository. Every call this workflow makes to GitHub uses it: listing
-#     the batch, posting the findings, moving the labels, closing duplicates.
+#     the batch, the spec queues and the open pull requests, posting the findings, moving the labels, closing duplicates.
 #     One hop is why it exists at all. A label applied with the built-in
 #     GITHUB_TOKEN does NOT start another workflow. GitHub suppresses that on
 #     purpose, so a workflow cannot trigger itself into a loop. The chain from
@@ -145,6 +147,20 @@ jobs:
                 (.authorAssociation | IN("OWNER", "MEMBER", "COLLABORATOR"))
                 and (.body | contains("<!-- factory:status -->") | not))))' \
             > /tmp/explore/issues.json
+
+          # The work already queued, so a ticket can wait on it: the open
+          # issues of every spec, with their bodies (`Position:`, `Depends
+          # on:`), and the open pull requests, with the files each changes.
+          # Untrusted text too, so straight into files as well.
+          gh issue list --state open --limit 500 \
+            --json number,title,body,labels \
+            | jq 'map(select(any(.labels[].name; startswith("spec:"))))
+                | map(.labels |= map(.name))' \
+            > /tmp/explore/spec-queue.json
+          gh pr list --state open --limit 100 \
+            --json number,title,body,headRefName,files \
+            | jq 'map(.files |= map(.path))' \
+            > /tmp/explore/pull-requests.json
 
           numbers="$(jq -c '[.[].number] | sort' /tmp/explore/issues.json)"
           echo "Batch: $numbers"
