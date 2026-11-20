@@ -49,6 +49,10 @@ frontend() {
   frontend_types
   step "Front end: boundaries"
   frontend_boundaries
+  step "Front end: build"
+  npm --prefix frontend run --silent build
+  step "Front end: browser tests (the Path on the Demo course, own server and port)"
+  npm --prefix frontend run --silent test
 }
 
 [ $# -gt 0 ] || set -- $parts

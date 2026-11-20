@@ -13,3 +13,9 @@ __pycache__/
 
 # Screenshots and DOM readouts from the browser loop, local to one machine.
 /screenshots/
+
+# The front end's build and the browser tests' reports.
+frontend/dist/
+frontend/openapi.json
+frontend/playwright-report/
+frontend/test-results/

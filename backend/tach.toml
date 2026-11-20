@@ -7,7 +7,7 @@ source_roots = ["."]
 
 # tach's default exclude list contains "**/tests"; restated without it, so the
 # tests reach modules through their public surface like any other consumer.
-exclude = ["**/*__pycache__", "**/*egg-info", "**/docs", "**/venv", "**/.venv", "static"]
+exclude = ["**/*__pycache__", "**/*egg-info", "**/docs", "**/venv", "**/.venv", "static", "scripts"]
 
 forbid_circular_dependencies = true
 root_module = "allow"

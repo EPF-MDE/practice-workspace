@@ -12,6 +12,8 @@ const BYTES_PER_TOKEN = 4;
 const IGNORED = [
   /(^|\/)package-lock\.json$/,
   /(^|\/)uv\.lock$/,
+  /^frontend\/src\/client\//,
+  /^frontend\/src\/routeTree\.gen\.ts$/,
   /^\.github\/workflows\/[^/]+\.yml$/,
 ];
 
