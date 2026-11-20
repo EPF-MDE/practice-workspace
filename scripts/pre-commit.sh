@@ -19,6 +19,7 @@ run() {
 }
 
 run lint-staged npx lint-staged --no-stash --no-hide-partially-staged
+run sandcastle-types sandcastle_types
 run backend-types backend_types
 run backend-boundaries backend_boundaries
 run backend-cycles backend_cycles

@@ -19,6 +19,8 @@ repository() {
   npx biome format .
   step "Repository: lint (everything outside the front end)"
   npx oxlint -c .oxlintrc.json --ignore-pattern "frontend/**"
+  step "Repository: types (the Sandcastle scripts in .sandcastle/)"
+  sandcastle_types
 }
 
 backend() {

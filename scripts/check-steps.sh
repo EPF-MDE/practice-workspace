@@ -4,6 +4,11 @@
 
 uv_backend() { (cd backend && uv run --frozen "$@"); }
 
+sandcastle_types() {
+  npx tsc -p tsconfig.json --incremental \
+    --tsBuildInfoFile node_modules/.cache/sandcastle.tsbuildinfo
+}
+
 backend_types() { uv_backend mypy; }
 backend_boundaries() { uv_backend tach check; }
 backend_cycles() { uv_backend lint-imports; }
