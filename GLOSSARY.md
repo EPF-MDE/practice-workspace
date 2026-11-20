@@ -54,11 +54,11 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Evidence Plan**: For one Student and each Competency, for each point of their Self-assessment not yet done, the evidence they will put in their Evidence Project before the Reading Day, and what to do to get there. The Practice workspace drafts it from their Self-assessment and the Student amends it until the Reading Day. _Avoid_: Practice Plan, roadmap
 
-**Evidence Project**: The repository a Student puts their evidence in, the one the Roster names for them. For a Competency, they may declare another in its closing step, which the Reading Day reads instead. _Avoid_: default repository, fork, portfolio, project
+**Evidence Project**: The one repository a Student puts their evidence in, for every Competency: by default the one the Roster names for them, which they may change for another until the Reading Day. _Avoid_: default repository, fork, portfolio, project
 
 **Repository reading**: What the Practice workspace reads of a Student's Evidence Project, to show the Student and the Instructor where it stands for each Competency. It never changes what a Path shows. _Avoid_: fork reading, scan
 
-**Evidence panel**: For one Student and each Competency, shown beside their Path and at its closing step: what the Repository reading finds on their Evidence Project, and the one they declared instead, if any. What it showed at the closing step is kept with their Evidence Plan. _Avoid_: fork panel
+**Evidence panel**: For one Student and each Competency, shown beside their Path and at its closing step: what the Repository reading finds on their Evidence Project, as the Roster names it or as the Student changed it. What it showed at the closing step is kept with their Evidence Plan. _Avoid_: fork panel
 
 ### Time
 
