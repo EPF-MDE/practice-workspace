@@ -11,7 +11,7 @@ It is one public engine. Each course that uses it keeps its material private and
 You need Node 24 and [uv](https://docs.astral.sh/uv/).
 
 ```sh
-npm install && npm --prefix frontend install && (cd backend && uv sync)
+npm run setup
 npm run demo
 ```
 
