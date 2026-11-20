@@ -31,7 +31,7 @@ Include filenames, and lines of code. Remember that the agent that implements wi
    - A survivor's comment is skimmable, about 20 lines. Use the style guide in the /pr skill.
      - the tag, and one line on why;
      - whether the issue's claims hold up against the code, with evidence.
-     - the blast radius, in prose: the 2–3 places that matter (modules under app/modules/, routes, tables). A schema change or a migration goes first, and loudly;
+     - the blast radius, in prose: the 2–3 places that matter (Deep Modules: subpackages of backend/app, folders under frontend/src/packages; routes; the Store). A schema change or a migration goes first, and loudly;
      - whether it's a one-way or a two-way door
      - the duplicates closed onto it, crediting by number any detail only they had;
      - last, the open questions a human has to settle. An empty list is a claim, and usually a wrong one.
