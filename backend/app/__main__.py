@@ -10,7 +10,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app")
     commands = parser.add_subparsers(dest="command", required=True)
     check = commands.add_parser(
-        "check", help="load a Course folder as the app does at start"
+        "check", help="load a Course folder as the Engine does at start"
     )
     check.add_argument("folder", help="the Course folder")
     arguments = parser.parse_args(argv)
