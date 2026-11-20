@@ -22,7 +22,7 @@ class RepositoryReader:
         readings: ReadingStore,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
     ):
-        self.github = _CachedGitHub(github)
+        self._github = _CachedGitHub(github)
         self.readings = readings
         self.now = now
 
@@ -36,7 +36,7 @@ class RepositoryReader:
         stored = self._stored(student)
         if stored is None:
             return self.read_now(student)
-        branches, pulls = _ref_shas(*self.github.list_refs(student))
+        branches, pulls = _ref_shas(*self._github.list_refs(student))
         if branches == stored.refs.get("branches") and pulls == stored.refs.get(
             "pulls"
         ):
@@ -54,6 +54,6 @@ class RepositoryReader:
     def read_now(
         self, student: StudentToRead, previous: RepositoryReading | None = None
     ) -> RepositoryReading:
-        reading = _Reading(self.github, self.now, student, previous).run()
+        reading = _Reading(self._github, self.now, student, previous).run()
         self.readings.save(student.login, reading, changed=True)
         return reading
