@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "../progress";
 
-/** Every Competency's Evidence panel: one Evidence Project is read for all of them. */
 export const evidencePanelsKey = ["evidence-panel"];
 
 export const evidencePanelKey = (competency: string) => [
@@ -14,7 +13,6 @@ export const evidencePanelKey = (competency: string) => [
   competency,
 ];
 
-/** The Evidence panel of one Competency: read from the server, shared by the sidebar and the closing step. */
 export function useEvidencePanel(competency: string) {
   return useQuery({
     queryKey: evidencePanelKey(competency),
@@ -23,7 +21,6 @@ export function useEvidencePanel(competency: string) {
   });
 }
 
-/** The parts of a sentence, split on backticks, each keyed by where it starts. */
 function sentenceParts(text: string) {
   const parts = text.split("`");
   return parts.map((part, index) => ({
@@ -35,7 +32,6 @@ function sentenceParts(text: string) {
   }));
 }
 
-/** A sentence whose `code` spans (branch names, files) are shown as code. */
 export function Sentence({ text }: { text: string }) {
   return (
     <>
@@ -99,10 +95,6 @@ function Fact({ fact }: { fact: PanelFact }) {
   );
 }
 
-/**
- * What the Reading Day would find on the Student's Evidence Project today, for one
- * Competency: facts naming the point they support, never a Band.
- */
 export function EvidencePanelView({
   competency,
   onMyWorkMissing,
@@ -251,7 +243,6 @@ function PanelBody({ panel, ...actions }: PanelBodyProps) {
   );
 }
 
-/** Opens a step's question field, so the Student can say where their work is. */
 export function openQuestion(stepId: string) {
   const details = document.getElementById(`${stepId}-question`);
   if (!(details instanceof HTMLDetailsElement)) return;

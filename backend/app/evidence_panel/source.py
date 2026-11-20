@@ -1,11 +1,3 @@
-"""Where the panel gets a reading of the Evidence Project from, and which one it reads.
-
-In production, the Repository reading itself
-(`app.repository_reading.RepositoryReader`), built lazily so that an app whose Student
-Connector has no installation yet still starts. Locally and in tests,
-`OfflineRepositoryReading`: readings set by hand or read from a folder, never GitHub.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -48,9 +40,6 @@ def read_panel(
     declaration: Declaration | None,
     refresh: bool = False,
 ) -> EvidencePanel:
-    """The panel of one Competency, read from the Evidence Project the Reading Day
-    reads: the one declared, else the roster's. A declared project the App cannot read
-    is said as such, and never read as a zero."""
     if declaration is not None and not declaration.is_roster_evidence_project:
         if declaration.access.status != READABLE_ACCESS:
             return unavailable_panel(
@@ -62,20 +51,13 @@ def read_panel(
         student = replace(student, evidence_project=declaration.repository)
     try:
         reading = source.refresh(student) if refresh else source.read(student)
-    except Exception:  # the panel says so; the page and the closing step go on
+    except Exception:
         logger.exception("The Evidence Project of %s could not be read", student.login)
         return unavailable_panel(competency, student.evidence_project, declaration)
     return build_panel(competency, reading, declaration)
 
 
 class OfflineRepositoryReading:
-    """A fake Repository reading. `seed` (e.g. a folder of readings) is only read;
-    changes stay in memory.
-
-    A repository with no reading reads as a repository with its default branch only:
-    empty. Readings are kept per Student and Evidence Project.
-    """
-
     def __init__(
         self,
         seed: ReadingStore | None = None,
@@ -121,9 +103,6 @@ class OfflineRepositoryReading:
 
 
 class LazyRepositoryReadingSource:
-    """Builds the real source on first use, so an app starts even when GitHub cannot be
-    reached."""
-
     def __init__(self, build: Callable[[], RepositoryReadingSource]):
         self._build = build
         self._source: RepositoryReadingSource | None = None

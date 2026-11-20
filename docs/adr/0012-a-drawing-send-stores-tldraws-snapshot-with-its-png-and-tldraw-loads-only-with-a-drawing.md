@@ -1,0 +1,10 @@
+# A drawing Send stores tldraw's snapshot with its PNG, and tldraw loads only with a drawing
+
+In a drawing Step the Student redraws a system in tldraw, then compares it with the Reference Drawing. The Instructor reads a picture; the Student must be able to draw on from any browser. tldraw draws the Example, Reference and Student's drawings, and it is most of the front end's bundle. **So `send_drawing` in `backend/app/practice/_internal/answers.py` stores both the PNG tldraw exported in the browser and tldraw's own snapshot, as `getSnapshot(editor.store)` returns it (`{document, session}`), as a new version each time; and `frontend/src/practice/drawing/views.tsx` is the only file that imports tldraw's code, beyond its types, a file `DrawingBlocks.tsx` imports dynamically the first time a page shows a drawing.**
+
+- `send_drawing` checks that the snapshot has a `document` and that the PNG starts with its signature (`PNG_SIGNATURE`).
+- `my_drawing` serves the latest snapshot back to a browser that holds no copy, so that the Student draws on from the version sent (ADR-0015).
+- The check points the Student ticks as missed are a hint shown beside the point of the Self-assessment they belong to (`_hints` in `backend/app/practice/_internal/steps.py`), never a grade.
+- The ticks this browser kept since the drawing was sent ride with the Self-assessment's Send (`SelfAssessmentIn.missed_check_points`, ADR-0015). After the Close they can no longer change: `_ticks` in `backend/app/practice/_internal/review.py` refuses a change with 403.
+- Locally and in the browser tests tldraw runs in development mode and needs no licence key, so `tldraw_license_key` in the Instance's settings is empty by default. In production the hobby licence key comes from it, and `views.tsx` passes an empty key to tldraw as `undefined`.
+- `keepEveryChange` in `views.tsx` hands the canvas's snapshot to `onChange` 300 ms after the Student's last change, so that a drag does not write to `localStorage` on every frame, and at once on `pagehide`, so that leaving the page loses nothing.

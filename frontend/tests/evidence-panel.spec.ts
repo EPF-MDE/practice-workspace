@@ -2,12 +2,8 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 import { closing } from "./helpers/closing";
 import { path, signIn } from "./helpers/path";
 
-// Students of the Demo roster (demo-course/roster.csv) that only this file
-// signs in. The Repository reading is the fake one: Alan's reading is
-// backend/tests/fixtures/repository-readings/alan-oceens.json, Hedy's repository reads
-// as empty. Access: a repository whose name says "private" is not readable.
-const ALAN = 1041; // OcéENS, work on a branch of his Evidence Project
-const HEDY = 1042; // MATHutrice, an empty Evidence Project
+const ALAN = 1041;
+const HEDY = 1042;
 
 const sidebar = (page: Page) => path(page).getByTestId("evidence-panel");
 
@@ -18,14 +14,12 @@ test("the Evidence panel says what the Reading Day would find, then the closing 
   await page.goto("/competencies/C1");
   await readThePanel(page);
 
-  // The closing step brings the panel forward, with the Evidence Project.
   const close = closing(page);
   await expect(close.section.getByTestId("evidence-panel")).toContainText(
     "feature/order-timeout"
   );
   await checkAccess(close.evidence);
 
-  // The declaration rides with the closing step's one send.
   await close.rate("C1.a", "I understand");
   await close.sendSelfAssessment.click();
   await expect(close.section.getByTestId("sa-sent")).toContainText("Version 1");
@@ -38,7 +32,6 @@ test("the Evidence panel says what the Reading Day would find, then the closing 
     "https://github.com/alan/bakery"
   );
 
-  // The panel now reads the declared repository, for this Competency and the others.
   const panel = sidebar(page);
   await expect(panel.getByTestId("evidence-panel-project")).toHaveText(
     "alan/bakery"
@@ -52,7 +45,6 @@ test("the Evidence panel says what the Reading Day would find, then the closing 
     "https://github.com/alan/bakery"
   );
 
-  // Withdrawn: the roster's Evidence Project is read again.
   await closing(page)
     .evidence.getByRole("button", { name: /Withdraw it/ })
     .click();
@@ -68,7 +60,6 @@ test("the Evidence panel says what the Reading Day would find, then the closing 
   );
 });
 
-/** Facts naming their point, when they were read, a refresh, and a way to ask. */
 async function readThePanel(page: Page) {
   const panel = sidebar(page);
   await expect(panel.getByTestId("fact-C1")).toContainText(
@@ -87,7 +78,6 @@ async function readThePanel(page: Page) {
     checked ?? ""
   );
 
-  // "My work doesn't show here" opens the current step's question field.
   await panel
     .getByRole("button", { name: "My work doesn't show here" })
     .click();
@@ -96,7 +86,6 @@ async function readThePanel(page: Page) {
   ).toBeFocused();
 }
 
-/** The notice and help, then a private repository refused and a public one readable. */
 async function checkAccess(evidence: Locator) {
   await expect(evidence.getByTestId("notice")).toContainText(
     "an AI tool (Mistral, which may train on what it reads)"
@@ -135,7 +124,6 @@ test("an empty repository reads as a provisional reading; a GitLab project and a
     "a provisional reading, not a zero"
   );
 
-  // A GitLab project, declared with the confirmation: not read, never a zero.
   const close = closing(page);
   await expect(
     await close.declare("https://gitlab.com/hedy/radio", "The README first.")
@@ -147,7 +135,6 @@ test("an empty repository reads as a provisional reading; a GitLab project and a
   await close.confirm.click();
   await expectNotRead(sidebar(page), "hedy/radio");
 
-  // Changed for a GitHub repository the App cannot read: said as such too.
   await close.declare(
     "https://github.com/hedy/radio-private",
     "The README first."
@@ -163,7 +150,6 @@ test("an empty repository reads as a provisional reading; a GitLab project and a
   await expectNotRead(sidebar(page), "hedy/radio-private");
 });
 
-/** The panel names the project and says it is not read: no facts, not empty. */
 async function expectNotRead(panel: Locator, repository: string) {
   await expect(panel.getByTestId("evidence-panel-project")).toHaveText(
     repository

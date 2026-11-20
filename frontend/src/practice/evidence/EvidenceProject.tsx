@@ -28,10 +28,8 @@ type Props = {
   over: boolean;
 };
 
-/** The requests of the Evidence Project: check its access, declare it, withdraw it. */
 function useEvidenceRequests({ draft, onDraft }: Props) {
   const queryClient = useQueryClient();
-  // One Evidence Project for every Competency: each panel and page reads it again.
   const changed = () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: evidencePanelsKey }),
@@ -231,11 +229,6 @@ function DraftActions({
   );
 }
 
-/**
- * The Evidence Project, one for every Competency, in a closing step. Declared
- * there before that Evidence Plan is confirmed, it rides with that one send;
- * else a change or a withdrawal is its own send, until the Reading Day.
- */
 export function EvidenceProject(props: Props) {
   const { competency, draft, onDraft, over } = props;
   const panel = useEvidencePanel(competency);

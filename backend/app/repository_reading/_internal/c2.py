@@ -1,5 +1,3 @@
-"""C2's facts: the repository's checks, rules, workflows and deployments."""
-
 from __future__ import annotations
 
 from typing import Any
@@ -19,9 +17,6 @@ from .state import _ReadingState
 
 
 class _C2Facts(_ReadingState):
-    # --- C2
-    # --------------------------------------------------------------------------------
-
     def _runs(self) -> list[dict[str, Any]]:
         runs: list[dict[str, Any]] = []
         path: str | None = f"repos/{self.s.evidence_project}/actions/runs?per_page=100"
@@ -235,7 +230,7 @@ class _C2Facts(_ReadingState):
                 "production" if "prod" in env else "staging" if "stag" in env else None
             )
             if kind:
-                latest.setdefault(kind, d)  # listed newest first
+                latest.setdefault(kind, d)
         return latest
 
     def _c2e(self, deployments: dict[str, dict[str, Any]]) -> None:

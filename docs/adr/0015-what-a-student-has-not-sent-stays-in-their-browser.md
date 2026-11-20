@@ -1,0 +1,8 @@
+# What a Student has not sent stays in their browser
+
+A Send never rewrites an earlier one, and the Store keeps every version, so keeping a Student's half-typed answers there would fill it with versions they never chose to send. Yet a reload must lose nothing. **So everything a Student has not sent yet stays in their browser's `localStorage`, through `frontend/src/practice/progress.ts` (`drafts`, `closingDrafts`, `evidenceDrafts`, `readSteps`, `startedAt`), and nothing reaches the Store before they press a send button: no autosave.**
+
+- This covers a Step's fields, a question, the canvas of a redraw, the Steps read, the levels and links of the Self-assessment, the Evidence Plan text, the example for the Eval, and an Evidence Project being declared. `EditableDrawing` in `frontend/src/practice/drawing/views.tsx` hands every change of the canvas to the page, which keeps it in `localStorage`, never in the Store.
+- The browser's copy wins over what was sent. `StudentCanvas` in `frontend/src/practice/drawing/DrawingBlocks.tsx` fetches the drawing sent only when this browser holds no copy, and `ticks` in `frontend/src/practice/closing/useSelfAssessment.ts` shows this browser's ticks, else those sent.
+- The check points a Student ticks as missed on a Reference Drawing (`CheckPoints` in `DrawingBlocks.tsx`, through `closingDrafts.setTicks`) are not a Send of their own in the front end: they stay in the browser until the Self-assessment carries them, in one Send (ADR-0012). Once it is sent, `closingDrafts.clearTicks` drops them and the Store's ticks are the ones shown again.
+- The time a Student first opened a Competency (`startedAt`) is per browser: another browser starts its clock again.

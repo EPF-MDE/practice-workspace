@@ -1,37 +1,3 @@
-"""The GitHub Store: one issue per Student, one comment per send.
-
-- At first sign-in (`open_record`), the Student's issue is opened on the
-  repository, labelled `practice`, its body a short header: Student, Group,
-  Evidence Project, and a hidden marker with their numeric GitHub id, by
-  which the Store finds it again after a restart. The body is never rewritten.
-- Each send is one comment: a human-readable line (a question's text quoted
-  below it), then a fenced block, info string `json practice`, holding one
-  line of JSON: `kind`, `competency`, `step` (answer, question) or `drawing`
-  (drawing, check-points), `version`, `payload`. The comment's timestamp
-  dates the version.
-- A record is rebuilt from the issue's comments the first time it is read,
-  then kept in memory and written through: a send appends to it once GitHub
-  has stored the comment. Only the Store App's own comments count (its bot
-  login, not any App's), so the Instructor may comment on an issue without
-  changing a record.
-- GitHub's label search lags seconds behind a new issue, so a restart right
-  after a first sign-in may open a second issue for the same Student. A record
-  is therefore read from every issue carrying the Student's marker, merged by
-  date, its versions counted again in that order; sends go to the oldest issue.
-- Writes are serialised per Student in this process (one worker), so the
-  versions never collide. Any GitHub failure raises `StoreUnavailable`.
-- A drawing is two files on the data branch (`workspace-data`), at the paths
-  `drawing_paths()` gives, then its comment: three writes. A new version
-  overwrites the same paths, so Git history keeps every version; the comment
-  records the commit holding both files. Every write to the data branch is
-  serialised by one in-process lock and retried when the branch moved
-  meanwhile (409): the Repository reading's saves in this process take the same
-  lock (`app.github_app.data_branch_lock`), and its batch may write there too.
-
-Reading the questions with `gh`: every question comment's block has
-`"kind": "question"`, its `competency` and `step`, and its `payload.text`.
-"""
-
 from __future__ import annotations
 
 import base64
@@ -70,15 +36,12 @@ from app.store._internal.model import (
     snapshot_file,
 )
 
-# The Store App's bot: only its comments are sends.
 STORE_BOT = "epf-mde-cws-store[bot]"
 PER_PAGE = 100
-DATA_RETRIES = 5  # attempts at one file write while the data branch keeps moving
+DATA_RETRIES = 5
 
 
 class _OnIssue(BaseModel):
-    """The issue a comment of the repository's listing is on."""
-
     issue_url: str
 
     @property
@@ -87,14 +50,8 @@ class _OnIssue(BaseModel):
 
 
 class GitHubStore:
-    """The Store on GitHub Issues. `http` is a client on api.github.com, as the Store
-    App."""
-
     @classmethod
     def from_settings(cls, settings: Settings) -> GitHubStore:
-        """The Store as the settings name it: the Store App's installation, on the
-        course repository. Only the Store App's own comments are sends; its slug
-        defaults to the course's App."""
         client = installation_client(
             settings.store_app_id,
             settings.store_app_private_key_base64,
@@ -128,18 +85,12 @@ class GitHubStore:
         self._data_branch = data_branch
         self._sleep = sleep
         self._bot_login = bot_login
-        self._lock = threading.Lock()  # the issue index and the per-Student locks
-        # Every write to the data branch, one at a time: the Repository reading's saves
-        # take this lock too.
+        self._lock = threading.Lock()
         self._data_lock = data_branch_lock(repository, data_branch)
-        self._issues: dict[int, list[int]] | None = (
-            None  # github id -> its issue numbers, oldest first
-        )
+        self._issues: dict[int, list[int]] | None = None
         self._records: dict[int, list[Entry]] = {}
         self._student_locks: dict[int, threading.RLock] = {}
         self._drawings: dict[tuple[int, str, str], DrawingFiles] = {}
-
-    # --- GitHub --------------------------------------------------------------
 
     def _call(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
         try:
@@ -162,11 +113,7 @@ class GitHubStore:
                 return items
             response = self._call("GET", following)
 
-    # --- issues --------------------------------------------------------------
-
     def _index(self) -> dict[int, list[int]]:
-        """Every Student's issue numbers, oldest first, listed once (call with `_lock`
-        held)."""
         if self._issues is None:
             issues = self._all_pages(
                 f"/repos/{self._repository}/issues",
@@ -181,12 +128,10 @@ class GitHubStore:
         return self._issues
 
     def _issues_of(self, student: Student) -> list[int]:
-        """Every issue carrying the Student's marker, oldest first (usually one)."""
         with self._lock:
             return list(self._index().get(student.github_id, ()))
 
     def _issue(self, student: Student, create: bool) -> int | None:
-        """The issue sends go to: the Student's oldest."""
         with self._lock:
             numbers = self._index().get(student.github_id)
             number = numbers[0] if numbers else None
@@ -209,8 +154,6 @@ class GitHubStore:
             return self._student_locks.setdefault(student.github_id, threading.RLock())
 
     def _entries(self, student: Student) -> list[Entry]:
-        """The Student's entries, read from their issues once (call with their lock
-        held)."""
         if student.github_id not in self._records:
             entries: list[Entry] = []
             for number in self._issues_of(student):
@@ -227,8 +170,6 @@ class GitHubStore:
             )
         return self._records[student.github_id]
 
-    # --- the Store -----------------------------------------------------------
-
     def open_record(self, student: Student) -> None:
         self._issue(student, create=True)
 
@@ -237,7 +178,6 @@ class GitHubStore:
             return Record(student, tuple(self._entries(student)))
 
     def records(self, students: list[Student]) -> list[Record]:
-        """One listing of the repository's comments, rather than one per Student."""
         with self._lock:
             owners = {
                 number: github_id
@@ -354,11 +294,7 @@ class GitHubStore:
                 self._drawings[key] = DrawingFiles(png, snapshot)
             return self._drawings[key]
 
-    # --- the data branch -----------------------------------------------------
-
     def _put_file(self, folder: str, path: str, data: bytes, message: str) -> str:
-        """Create or overwrite one file on the data branch (call with `_data_lock`
-        held); its commit's sha."""
         url = f"/repos/{self._repository}/contents/"
         for attempt in range(DATA_RETRIES):
             body = {
@@ -373,9 +309,7 @@ class GitHubStore:
                 response = self._http.put(url + path, json=body)
             except httpx.HTTPError as error:
                 raise StoreUnavailable(f"GitHub did not answer: {error}") from error
-            if (
-                response.status_code == 409
-            ):  # the branch or the file moved meanwhile: read again
+            if response.status_code == 409:
                 self._sleep(0.5 * (attempt + 1))
                 continue
             if response.is_error:
@@ -387,8 +321,6 @@ class GitHubStore:
         raise StoreUnavailable(f"{self._data_branch} kept moving: {path} not written")
 
     def _file_sha(self, folder: str, path: str) -> str | None:
-        """The blob sha of a file on the data branch, or None: listed from its folder,
-        so no file is downloaded."""
         try:
             response = self._http.get(
                 f"/repos/{self._repository}/contents/{folder}",

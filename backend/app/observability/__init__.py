@@ -1,18 +1,3 @@
-"""The app's own C3: its errors and logs, sent to the Instructor's PostHog project.
-
-The Worked Examples' production signals (EPF-MDE/OceENS,
-`src/oceens/production_signals.py`), for this app. Three settings, all or
-none: `WORKSPACE_POSTHOG_PROJECT_TOKEN`, `WORKSPACE_POSTHOG_HOST` and
-`WORKSPACE_POSTHOG_ENVIRONMENT` (`staging` or `production`). Without the token
-nothing is wired and the app runs as before; with the token but not the other
-two, the app refuses to start, so staging's errors never mix silently with
-production's.
-
-`start()` is called when the app starts (its lifespan), never at import:
-uvicorn applies its own logging configuration after import, and would remove
-the handler set here.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -26,19 +11,13 @@ from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.resources import Resource
 
-# PostHog Logs' OTLP path, appended to the host.
 LOGS_PATH = "/i/v1/logs"
-# Under uvicorn these do not propagate to the root logger.
 SERVICE_LOGGERS = ("uvicorn", "uvicorn.error")
 
 
 def check_settings(
     token: str, host: str, environment: str
 ) -> tuple[str, str, str] | None:
-    """`(token, host, environment)`, or None without a token.
-
-    Raises ValueError, naming the setting, on a token without the other two.
-    """
     token, host, environment = (
         token.strip(),
         host.strip().rstrip("/"),
@@ -54,8 +33,6 @@ def check_settings(
 
 
 class Signals:
-    """What `start()` wired, and how to unwire it. Off when `client` is None."""
-
     def __init__(
         self,
         client: posthog.Posthog | None = None,
@@ -71,8 +48,6 @@ class Signals:
     def request_context(
         self, distinct_id: str | None, **properties: Any
     ) -> AbstractContextManager[None]:
-        """PostHog context of one request: an exception leaving it is captured
-        under the signed-in Student's identity, then re-raised unchanged."""
         if self._client is None:
             return nullcontext()
         return self._context(distinct_id, properties)
@@ -91,7 +66,6 @@ class Signals:
     def shutdown(self) -> None:
         if self._client is None:
             return
-        # Set together with the client, by `start()`.
         assert self._handler is not None and self._logger_provider is not None
         for logger in self._loggers:
             logger.removeHandler(self._handler)
@@ -100,7 +74,6 @@ class Signals:
 
 
 def start(service_name: str, token: str, host: str, environment: str) -> Signals:
-    """Wire errors and logs to PostHog, if the three settings are set."""
     settings = check_settings(token, host, environment)
     if settings is None:
         return Signals()

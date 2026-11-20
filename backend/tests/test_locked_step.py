@@ -1,9 +1,3 @@
-"""A Competency's long page, its locked answers, and sending an answer.
-
-Through the HTTP API only, signed in as a roster Student, on the fixture
-content (tests/fixtures/content) and the in-memory Store.
-"""
-
 from datetime import datetime
 from typing import Any
 
@@ -154,7 +148,6 @@ def test_one_students_answer_unlocks_nothing_for_another(client: TestClient) -> 
 def test_an_answer_names_only_the_steps_fields(ada: TestClient) -> None:
     assert ada.post(ANSWER, json={"fields": {"nope": "x"}}).status_code == 422
     assert ada.post(ANSWER, json={"fields": {"sentence": "  "}}).status_code == 422
-    # A field of the other Group's block is not one of Ada's.
     assert (
         ada.post(
             "/api/competencies/C1/steps/read-the-chain/answer",

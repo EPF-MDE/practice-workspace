@@ -1,6 +1,3 @@
-"""One ref of a repository, against every upstream `course-2026*` branch; or, for a
-repository GitHub does not link to the Group's upstream, on its own."""
-
 from __future__ import annotations
 
 import math
@@ -17,7 +14,6 @@ from .rules import (
 )
 from .state import _ReadingState
 
-# An analysis's flag: its ref was read on its own, every file the Student's.
 OWN_HISTORY = "own_history"
 UNREADABLE: dict[str, Any] = {"files": [], "closest": None, "unreadable": True}
 
@@ -40,9 +36,6 @@ class _Commit(BaseModel):
 
 
 class _Analysis(_ReadingState):
-    # --- One ref, against every upstream course-2026* branch
-    # -----------------------------
-
     def _analyse(self, sha: str) -> dict[str, Any]:
         if sha in self.upstream.values():
             return {"files": [], "closest": None}
@@ -52,15 +45,12 @@ class _Analysis(_ReadingState):
             if c is not None:
                 comparisons[name] = c
         if not comparisons:
-            # A repository GitHub links to the upstream shares its history: one that
-            # cannot be compared with it is unreadable, never read on its own.
             return UNREADABLE if self.linked_to_upstream else self._own_history(sha)
         merge_bases = {
             n: (c.get("merge_base_commit") or {}).get("sha")
             for n, c in comparisons.items()
         }
         if any(c["ahead_by"] == 0 for c in comparisons.values()):
-            # Every commit of this ref is on an upstream course-2026* branch.
             return {"files": [], "closest": None, "merge_bases": merge_bases}
 
         def counted(c: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -81,7 +71,7 @@ class _Analysis(_ReadingState):
                 key=lambda g: -1 if g is None else g["changes"],
             )
             if best is None or best["changes"] == 0:
-                continue  # equals its version on another upstream branch
+                continue
             files.append(
                 {
                     "path": path,
@@ -115,8 +105,6 @@ class _Analysis(_ReadingState):
         }
 
     def _own_history(self, sha: str) -> dict[str, Any]:
-        """A ref no upstream branch can be compared with: every file it holds is the
-        Student's (their lines are not counted)."""
         repo = self.s.evidence_project
         tree = self.r.github.get(f"repos/{repo}/git/trees/{sha}?recursive=1")
         commit = self.r.github.get(f"repos/{repo}/git/commits/{sha}")
@@ -157,8 +145,6 @@ class _Analysis(_ReadingState):
         return _date(commits[-1]["commit"]["committer"]["date"])
 
     def _fallback_on(self, sha: str) -> str | None:
-        """The last-built Fallback Branch the default branch contains, any version of
-        it."""
         for i in range(len(FALLBACK_CHAIN) - 1, 0, -1):
             name, parent = FALLBACK_CHAIN[i], FALLBACK_CHAIN[i - 1]
             if name not in self.upstream or parent not in self.upstream:

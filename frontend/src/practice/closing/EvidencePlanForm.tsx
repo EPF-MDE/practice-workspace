@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import { errorMessage } from "../progress";
 import type { Plan, useExample, useSendPlan } from "./useEvidencePlan";
 
-/** The Evidence Plan's text: drafted from the levels until the Student edits it. */
 export function PlanEditor({ plan, over }: { plan: Plan; over: boolean }) {
   return (
     <>

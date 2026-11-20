@@ -1,11 +1,3 @@
-"""The Store's contract: the same scenarios against the in-memory Store and the
-GitHub Store, GitHub's HTTP faked (`fake_github.FakeGitHub`).
-
-Every scenario goes through the `Store` interface only. The comment format is
-tested here and nowhere else, in the GitHub-only scenarios
-(`test_github_issues.py` and `test_github_drawings.py`).
-"""
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -49,7 +41,6 @@ def store(request: pytest.FixtureRequest, github: FakeGitHub) -> Store:
 
 
 def declared(url: str, note: str = "n") -> dict[str, Any]:
-    """A declaration's payload as the app stores it."""
     host, repository = url.removeprefix("https://").split(".com/")
     return {
         "url": url,
@@ -81,8 +72,6 @@ SENDS: dict[Kind, Callable[[Store, Student], Entry]] = {
             "text": "Redo the gate\n\nC1.b, été",
             "example": "my README",
             "confirmed": True,
-            # the closing step's one send: the declaration made there, the repository
-            # panel as shown
             "declaration": declared("https://github.com/ada/bakery", "été"),
             "evidence_panel_snapshot": {
                 "competency": "C1",

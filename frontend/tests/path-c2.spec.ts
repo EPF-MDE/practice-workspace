@@ -14,16 +14,9 @@ import {
   step,
 } from "./helpers/path";
 
-// C2's whole Path on the Demo course (demo-course/c2.md), one Student of each
-// Group: a Check of choice fields whose picks are kept across a reload and
-// whose explanation shows only once sent, a Locked answer, the Transfer, and
-// a closing step that declares a GitLab Evidence Project. The roster's
-// Students 1031 and 1032 are this file's alone.
-
 type Student = {
   id: number;
   group: Group;
-  /** The Student's picks, by the choice field's label. */
   picks: Record<string, string>;
   explained: string;
 };
@@ -76,7 +69,6 @@ for (const student of STUDENTS) {
   });
 }
 
-/** The Check: picks kept in the browser, the explanation withheld until sent. */
 async function check(page: Page, student: Student) {
   const predict = step(page, "predict-the-pipeline");
   await expectOwnGroupOnly(predict, student.group);
@@ -84,7 +76,7 @@ async function check(page: Page, student: Student) {
   await expect(predict.getByTestId("answer")).toHaveCount(0);
   const pick = student.picks[FAILS] ?? "";
   await choose(predict, FAILS, pick);
-  await page.reload(); // a draft is kept in the browser, not sent
+  await page.reload();
   await expect(
     predict
       .getByRole("radiogroup", { name: FAILS })
@@ -101,7 +93,6 @@ async function check(page: Page, student: Student) {
   await expectFinished(page, "predict-the-pipeline");
 }
 
-/** C2.a to C2.c, a GitLab Evidence Project declared with the confirmation. */
 async function closeC2(page: Page) {
   const close = closing(page);
   await close.rate("C2.a", "I can redo");

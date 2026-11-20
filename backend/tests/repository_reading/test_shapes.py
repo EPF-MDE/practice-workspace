@@ -1,6 +1,3 @@
-"""The shapes measured in #451, on fictional GitHub responses shaped on repositories
-recorded on 19 November 2026."""
-
 import gzip
 from typing import Any
 
@@ -38,9 +35,7 @@ def test_work_only_off_the_default_branch_is_found_on_its_branches(
 
     refs = c1_refs(reading)
     assert reading.default_branch == "course-2026-fallback-ci"
-    assert (
-        "course-2026-fallback-ci" not in refs
-    )  # the default branch is the Fallback Branch, untouched
+    assert "course-2026-fallback-ci" not in refs
     assert {"course-2026", "ci/architecture-violation"} <= refs.keys()
     assert not reading.empty
 
@@ -53,9 +48,7 @@ def test_a_pull_request_whose_branch_was_deleted_is_read_from_its_head(
 
     refs = c1_refs(reading)
     assert refs["#1"]["branch_deleted"] is True
-    assert {
-        f["path"] for f in refs["#1"]["files"]
-    }  # its changed files, read from refs/pull/1/head
+    assert {f["path"] for f in refs["#1"]["files"]}
     assert reading.pull_requests_read == 4
 
 
@@ -65,7 +58,7 @@ def test_commits_under_a_placeholder_email_count_as_the_students_work(
     raw = gzip.decompress(
         (FIXTURES / "placeholder-email.json.gz").read_bytes()
     ).decode()
-    assert "ton.email@exemple.com" in raw  # the recorded commits carry the placeholder
+    assert "ton.email@exemple.com" in raw
 
     r = recorded("placeholder-email")
     reading = r.reader.read(r.student)
@@ -95,7 +88,7 @@ def test_a_fallback_branch_as_default_is_credited_to_it_not_to_the_student(
     reading = r.reader.read(r.student)
 
     assert reading.default_branch == "course-2026-fallback-clean-bench"
-    assert reading.empty  # the Fallback Branch's code is not the Student's
+    assert reading.empty
     contained = [f for f in reading["C2"].facts_for("C2.b") if "Clean Bench" in f.text]
     assert contained and contained[0].credited_to == "course-2026-fallback-clean-bench"
     assert all(f.credited_to != "student" for f in reading["C2"].facts_for("C2.b"))

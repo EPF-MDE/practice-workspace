@@ -9,9 +9,6 @@ from app.repository_reading.recorded import RecordedGitHub
 FIXTURES = Path(__file__).parent / "fixtures"
 NOW = datetime(2026, 12, 11, 9, 0, tzinfo=UTC)
 
-# Fictional recordings, shaped on repositories recorded on 19 November 2026: their
-# logins, branches, pull requests, commits and code are invented; their shapes, dates
-# and counts are kept. By the shape of #451 each one shows.
 REPOSITORIES = {
     "empty-repository": StudentToRead(
         "dorothy-math", "MATHutrice", "dorothy-math/MATHutrice"

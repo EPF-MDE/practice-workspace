@@ -1,11 +1,3 @@
-/**
- * "A Software Factory Circa 2022", redrawn and annotated with C1, C2 and C3.
- *
- * The original is the final slide of a third-party talk, so it is redrawn,
- * never shown as it is, and credited below it, as the course does for Jem
- * Young's slides. The annotations are the course's.
- */
-
 const VIDEO = "https://www.youtube.com/watch?v=Ib5GBkD555M&t=220";
 
 type Box = { x: number; y: number; lines: string[]; strong?: boolean };
@@ -16,7 +8,6 @@ const ROW = [40, 160, 280, 400] as const;
 const COL = (i: number) => 50 + i * 155;
 
 const BOXES: Box[] = [
-  // The planning loop, then the build.
   { x: COL(0), y: ROW[0], lines: ["CEO / Vision"] },
   { x: COL(1), y: ROW[0], lines: ["Architecture", "proposal"] },
   { x: COL(2), y: ROW[0], lines: ["Sprint planning", "(1 hour on planning)"] },
@@ -27,34 +18,26 @@ const BOXES: Box[] = [
     lines: ["Engineers:", "someone builds", "the thing"],
   },
   { x: COL(5), y: ROW[0], lines: ["Automated", "testing"] },
-  // Loop #1, right to left.
   { x: COL(5), y: ROW[1], lines: ["Pull request"] },
   { x: COL(4), y: ROW[1], lines: ["CI/CD checks"] },
   { x: COL(3), y: ROW[1], lines: ["Human review"] },
   { x: COL(2), y: ROW[1], lines: ["Rollout to", "production"] },
-  // Production.
   { x: COL(2), y: ROW[2], lines: ["PROD"], strong: true },
   { x: COL(3), y: ROW[2], lines: ["MONITORING"], strong: true },
   { x: COL(4), y: ROW[2], lines: ["Incidents"] },
-  // Loop #2.
   { x: COL(2), y: ROW[3], lines: ["USERS"], strong: true },
   { x: COL(1), y: ROW[3], lines: ["Complaints /", "feature requests"] },
 ];
 
 const mid = (i: number) => i + H / 2;
 const ARROWS: string[] = [
-  // Row 1, left to right.
   ...[0, 1, 2, 3, 4].map((i) => `M${COL(i) + W} ${mid(ROW[0])} H${COL(i + 1)}`),
-  // Down into Loop #1, then right to left.
   `M${COL(5) + W / 2} ${ROW[0] + H} V${ROW[1]}`,
   ...[5, 4, 3].map((i) => `M${COL(i)} ${mid(ROW[1])} H${COL(i - 1) + W}`),
-  // Down to PROD, then along production.
   `M${COL(2) + W / 2} ${ROW[1] + H} V${ROW[2]}`,
   `M${COL(2) + W} ${mid(ROW[2])} H${COL(3)}`,
   `M${COL(3) + W} ${mid(ROW[2])} H${COL(4)}`,
-  // Incidents come back to the Engineers, between two boxes of Loop #1.
   `M${COL(4) + W} ${mid(ROW[2])} H${COL(5) - 12} V${ROW[0] + H + 20} H${COL(4) + W - 15} V${ROW[0] + H}`,
-  // Loop #2: PROD to its users, their complaints, back to the vision.
   `M${COL(2) + W / 2} ${ROW[2] + H} V${ROW[3]}`,
   `M${COL(2)} ${mid(ROW[3])} H${COL(1) + W}`,
   `M${COL(1)} ${mid(ROW[3])} H${COL(0) + W / 2} V${ROW[0] + H}`,

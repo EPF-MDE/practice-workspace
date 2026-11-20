@@ -1,5 +1,3 @@
-"""C3's facts: errors sent to PostHog, and fixes deployed to production."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -19,9 +17,6 @@ from .state import _ReadingState
 
 
 class _C3Facts(_ReadingState):
-    # --- C3
-    # --------------------------------------------------------------------------------
-
     def _c3b(self, default_sha: str | None) -> None:
         for sha, a in self.analyses.items():
             if a.get("posthog_identity"):

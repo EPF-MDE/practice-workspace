@@ -1,13 +1,3 @@
-"""Where readings are kept: one JSON file per Student,
-`repository-readings/<login>.json` on `workspace-data`, the reading of the Evidence
-Project read last. A reading names the repository it read: once the Student changes
-their Evidence Project, it is no longer served (`RepositoryReading.reads`).
-
-`ReadingStore` is the seam. Adapters: `InMemoryReadings` (tests, local development),
-`DirectoryReadings` (a local folder: the batch's dry run), and `WorkspaceDataReadings`
-(the `workspace-data` branch, through a `WorkspaceData` writer).
-"""
-
 from __future__ import annotations
 
 import base64
@@ -50,9 +40,7 @@ class ReadingStore(Protocol):
 
     def save(
         self, login: str, reading: RepositoryReading, changed: bool = True
-    ) -> None:
-        """`changed=False`: only the time of the check moved; nothing needs writing to
-        GitHub."""
+    ) -> None: ...
 
 
 class InMemoryReadings:
@@ -87,18 +75,12 @@ class DirectoryReadings:
 
 
 class WorkspaceData(Protocol):
-    """The `workspace-data` branch of this repo."""
-
     def read(self, path: str) -> bytes | None: ...
 
-    def write(self, files: dict[str, bytes], message: str) -> None:
-        """Writes every file in one commit."""
+    def write(self, files: dict[str, bytes], message: str) -> None: ...
 
 
 class WorkspaceDataReadings:
-    """Readings on `workspace-data`, kept in memory once read. A check with no change
-    writes nothing."""
-
     def __init__(self, data: WorkspaceData) -> None:
         self.data = data
         self._memory: dict[str, RepositoryReading] = {}
@@ -123,14 +105,6 @@ class WorkspaceDataReadings:
 
 
 class GitHubWorkspaceData:
-    """`workspace-data` through GitHub's Git Data API: many files, one commit.
-
-    A write is 5 requests, whatever the number of files. Writes are serialised by the
-    one in-process lock of that branch (`data_branch_lock`, which the Store's drawings
-    take too) and retried when the branch moved meanwhile. `token` is a token with
-    Contents write on the repo (the Store App's installation token).
-    """
-
     def __init__(
         self,
         repo: str,
@@ -144,7 +118,6 @@ class GitHubWorkspaceData:
         self._client = client or httpx.Client(
             base_url="https://api.github.com", timeout=30
         )
-        # Shared with the Store's drawing writes: one in-process lock per data branch.
         self._lock = data_branch_lock(repo, branch)
 
     def _req(self, method: str, path: str, **kw: Any) -> httpx.Response:
@@ -166,7 +139,7 @@ class GitHubWorkspaceData:
         body = r.json()
         if body.get("content"):
             return base64.b64decode(body["content"])
-        blob = self._req("GET", f"git/blobs/{body['sha']}")  # files over 1 MB
+        blob = self._req("GET", f"git/blobs/{body['sha']}")
         blob.raise_for_status()
         return base64.b64decode(blob.json()["content"])
 
@@ -177,8 +150,6 @@ class GitHubWorkspaceData:
                 head.raise_for_status()
                 parent = head.json()["object"]["sha"]
                 commit = self._req("GET", f"git/commits/{parent}").json()
-                # Readings are UTF-8 JSON, so they go inline in the tree: no request per
-                # file.
                 tree = [
                     {"path": p, "mode": "100644", "type": "blob", "content": d.decode()}
                     for p, d in files.items()
@@ -206,9 +177,7 @@ class GitHubWorkspaceData:
                 )
                 if moved.status_code == 200:
                     return
-                if (
-                    moved.status_code != 422
-                ):  # 422: not a fast-forward, the branch moved meanwhile
+                if moved.status_code != 422:
                     moved.raise_for_status()
                 time.sleep(0.5 * (attempt + 1))
             raise RuntimeError(

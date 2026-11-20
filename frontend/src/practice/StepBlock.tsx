@@ -97,13 +97,12 @@ export type StepBlockProps = Fields & {
   licenseKey: string;
 };
 
-/** One block of a step, as its type shows it. */
 export function StepBlock(props: StepBlockProps) {
   const { studentId, competency, step, block, closed, licenseKey } = props;
   const drawing = { studentId, competency, step, closed, licenseKey };
   switch (block.type) {
     case "point":
-      return null; // the closing step's form shows them, below
+      return null;
     case "markdown":
       return <Html html={block.html} />;
     case "field":

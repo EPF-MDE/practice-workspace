@@ -1,11 +1,3 @@
-"""Write the API's OpenAPI schema, for the front end's generated client.
-
-    uv run python scripts/openapi.py ../frontend/openapi.json
-
-Built with fake sign-in, the test roster and the test content: no setting, no
-GitHub.
-"""
-
 import json
 import sys
 from pathlib import Path

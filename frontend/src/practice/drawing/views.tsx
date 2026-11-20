@@ -8,15 +8,8 @@ import {
 } from "tldraw";
 import "tldraw/tldraw.css";
 
-/**
- * tldraw, loaded only on a page with a drawing step (it is most of the
- * bundle). Locally and in Playwright it runs in development mode and needs no
- * key; on production the hobby key comes from the app's settings.
- */
-
 export type Snapshot = Partial<TLEditorSnapshot> | TLStoreSnapshot;
 
-/** An Example or Reference Drawing: a read-only canvas, fitted to its shapes. */
 export function ReadOnlyDrawing({
   snapshot,
   licenseKey,
@@ -37,10 +30,6 @@ export function ReadOnlyDrawing({
   );
 }
 
-/**
- * Hands the snapshot to `onChange` 300 ms after the Student's last change, and
- * at once when the page goes away. Returns what stops it.
- */
 function keepEveryChange(
   mounted: Editor,
   onChange: (snapshot: TLEditorSnapshot) => void
@@ -71,11 +60,6 @@ function keepEveryChange(
   };
 }
 
-/**
- * The Student's canvas. Every change to the drawing reaches `onChange` (the
- * page keeps it in localStorage, never in the Store); `onEditor` hands the
- * editor to the send button.
- */
 export function EditableDrawing({
   initial,
   licenseKey,
@@ -108,7 +92,6 @@ export function EditableDrawing({
   );
 }
 
-/** The drawing as sent: the PNG tldraw exports, in base64, and the snapshot. */
 export async function exportDrawing(
   editor: Editor
 ): Promise<{ png_base64: string; snapshot: TLEditorSnapshot } | null> {

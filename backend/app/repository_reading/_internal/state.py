@@ -1,6 +1,3 @@
-"""What one reading of a repository holds while it runs, and the workflow files it
-reads, for every rule."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -19,10 +16,8 @@ if TYPE_CHECKING:
 
 
 class _ReadingState:
-    """One full reading of one repository: its state, shared by the rules."""
-
     default: str
-    linked_to_upstream: bool  # GitHub links the repository to the Group's upstream
+    linked_to_upstream: bool
     ref_names: dict[str, list[str]]
     upstream: dict[str, str]
     analyses: dict[str, dict[str, Any]]

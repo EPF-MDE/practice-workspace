@@ -1,12 +1,8 @@
-"""A content file, parsed: its steps and their nested directives."""
-
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import Any
-
-# --- The parsed file ---------------------------------------------------------
 
 
 @dataclass
@@ -14,10 +10,10 @@ class _Directive:
     name: str
     attrs: dict[str, str]
     children: list[_Node] = field(default_factory=list)
-    snapshot: dict[str, Any] | None = None  # a drawing directive's `src`, read
+    snapshot: dict[str, Any] | None = None
 
 
-_Node = str | _Directive  # a run of Markdown lines, or a directive
+_Node = str | _Directive
 
 
 @dataclass(frozen=True)

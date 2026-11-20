@@ -1,7 +1,3 @@
-// The survey job's "Find the spec and the frontier ticket" step, run as the
-// workflow runs it: its own script, from agent-implement-spec.yml, with a fake
-// `gh` on the PATH that answers with the queue and the open pull requests.
-
 import { spawnSync } from "node:child_process";
 import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -50,7 +46,6 @@ const issue = ({
   body: `Part of #${SPEC}\n\nPosition: ${position}\nDepends on: ${depends.join(", ")}\nShape: service-module\n\n---\n\nThe ticket.`,
 });
 
-// The pull request the chain opens for a ticket, from its branch name.
 const pullRequest = (ticket: number) => ({
   number: 100 + ticket,
   headRefName: `agent/spec-${SPEC}-ticket-${ticket}-123456`,

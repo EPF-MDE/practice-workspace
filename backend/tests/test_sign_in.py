@@ -1,8 +1,3 @@
-"""Signing in: GitHub says who you are, the roster says whether you get in.
-
-Through the HTTP API only, with GitHub replaced by `FakeIdentity`.
-"""
-
 from conftest import ADA, GRACE, MakeClient, sign_in
 from fastapi.testclient import TestClient
 
@@ -49,7 +44,6 @@ def test_a_renamed_account_still_gets_in(make_client: MakeClient) -> None:
 def test_a_login_on_the_roster_with_another_id_does_not_get_in(
     make_client: MakeClient,
 ) -> None:
-    # Someone who took over the login "ada-oceens" after Ada renamed hers.
     client = make_client(identity=FakeIdentity(logins={4242: "ada-oceens"}))
 
     response = sign_in(client, 4242)

@@ -1,7 +1,3 @@
-"""Fixtures every API test uses: a roster of two Students, and an app signed
-into through the real sign-in routes, with GitHub replaced by `FakeIdentity`.
-"""
-
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
@@ -20,12 +16,10 @@ from app.store import InMemoryStore, Store
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
-# A client, and how many writes its Store has made so far.
 Counted = tuple[TestClient, Callable[[], int]]
 
-# The fixture roster's two Students, one per Group.
-ADA = 1001  # OcéENS
-GRACE = 1002  # MATHutrice
+ADA = 1001
+GRACE = 1002
 
 
 @pytest.fixture
@@ -46,7 +40,6 @@ def test_settings() -> Settings:
 
 @pytest.fixture
 def store() -> InMemoryStore:
-    """The Store every client of a test shares, unless the test passes its own."""
     return InMemoryStore()
 
 
@@ -61,8 +54,6 @@ def future() -> datetime:
 
 
 class MakeClient(Protocol):
-    """The type of `make_client`: each piece left out is the fixtures' own."""
-
     def __call__(
         self,
         settings: Settings | None = None,
@@ -78,8 +69,6 @@ class MakeClient(Protocol):
 def make_client(
     roster_csv: str, test_settings: Settings, store: InMemoryStore
 ) -> MakeClient:
-    """A client for an app built from the given pieces, the fixtures by default."""
-
     def make(
         settings: Settings | None = None,
         roster: RosterSource | None = None,
@@ -107,7 +96,6 @@ def client(make_client: MakeClient) -> TestClient:
 
 
 def sign_in(client: TestClient, github_id: int) -> httpx.Response:
-    """Sign `github_id` in through /auth/login and the callback, as GitHub would."""
     response: httpx.Response = client.get(
         "/auth/login", params={"github_id": github_id}
     )

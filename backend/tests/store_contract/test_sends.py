@@ -1,5 +1,3 @@
-"""The Store's contract for every kind of send but drawings, on both Stores."""
-
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
@@ -69,7 +67,6 @@ def test_a_send_too_large_for_one_github_comment_is_refused_and_stores_nothing(
 
     with pytest.raises(SendTooLarge):
         store.save_evidence_plan(ADA, "C1", {"text": "x" * MAX_SEND_CHARS})
-    # JSON escaping counts: a newline is stored as two characters
     with pytest.raises(SendTooLarge):
         store.save_evidence_plan(ADA, "C1", {"text": "\n" * (MAX_SEND_CHARS // 2 + 1)})
 
@@ -84,11 +81,9 @@ def test_a_send_too_large_for_one_github_comment_is_refused_and_stores_nothing(
 
 def test_the_largest_send_accepted_fits_one_github_comment(github: FakeGitHub) -> None:
     store = github_store(github)
-    text = "é\n" * ((MAX_SEND_CHARS - 100) // 3)  # escaped, about MAX_SEND_CHARS
+    text = "é\n" * ((MAX_SEND_CHARS - 100) // 3)
 
-    store.save_question(
-        ADA, "C1", "read-the-chain", text
-    )  # its line quotes the text once more
+    store.save_question(ADA, "C1", "read-the-chain", text)
     store.save_evidence_plan(
         ADA, "C1", {"text": "y" * (MAX_SEND_CHARS - 100), "confirmed": True}
     )

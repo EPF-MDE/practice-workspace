@@ -1,7 +1,3 @@
-"""One in-process lock for every write to a data branch: the Store's drawings and the
-Repository reading's saves take the same one (#460: "serialised by an in-process
-lock")."""
-
 import threading
 import time
 
@@ -30,14 +26,12 @@ def test_every_writer_of_one_branch_gets_the_same_lock_and_other_branches_their_
 
 
 def test_a_drawing_and_a_repository_reading_write_one_at_a_time() -> None:
-    """Without one shared lock, the Repository reading's commit lands between a
-    drawing's two files."""
     github = FakeGitHub()
     log: list[str] = []
 
     def handle(request: httpx.Request) -> httpx.Response:
         path = request.url.path
-        if "/git/" in path:  # the Repository reading's Git Data API calls
+        if "/git/" in path:
             log.append("reading")
             time.sleep(0.02)
             if request.method == "GET" and "/git/ref/" in path:
@@ -74,5 +68,5 @@ def test_a_drawing_and_a_repository_reading_write_one_at_a_time() -> None:
     assert log[:2] == [
         "drawing",
         "drawing",
-    ]  # both files of the drawing, then the reading's commit
+    ]
     assert set(log[2:]) == {"reading"}

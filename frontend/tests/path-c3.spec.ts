@@ -17,12 +17,6 @@ import {
   stepOrder,
 } from "./helpers/path";
 
-// C3's whole Path on the Demo course (demo-course/c3.md), one Student of each
-// Group: a step that waits for an earlier step's answer and gives only its
-// Worked Example until then, a Locked answer with a link, a redraw whose check
-// points differ by Group, and a closing step that declares a GitHub Evidence
-// Project. The roster's Students 1051 and 1052 are this file's alone.
-
 type Student = {
   id: number;
   group: Group;
@@ -82,7 +76,7 @@ for (const student of STUDENTS) {
       "Ranking",
     ]);
     await expect(checkPoints).toHaveCount(student.checkPoints);
-    await checkPoints.last().check(); // missed: the one on C3.c
+    await checkPoints.last().check();
     await followTheFix(page, student);
     await sendFields(step(page, "transfer"), {
       project: BAKERY,
@@ -94,7 +88,6 @@ for (const student of STUDENTS) {
   });
 }
 
-/** Before the ranking: the Worked Example and a marker, no field, no Group block. */
 async function expectWaiting(page: Page) {
   const waiting = step(page, "follow-the-fix");
   await expect(waiting).toContainText("Pantry's fix");
@@ -111,7 +104,6 @@ async function expectWaiting(page: Page) {
   );
 }
 
-/** The Group's own errors; the ranking and its link once the Student's is sent. */
 async function rank(page: Page, student: Student) {
   const section = step(page, "rank-the-errors");
   await expectOwnGroupOnly(section, student.group);
@@ -128,7 +120,6 @@ async function rank(page: Page, student: Student) {
   await expect(answer.locator(`a[href="${student.notes}"]`)).toBeVisible();
 }
 
-/** Once the ranking is stored, the waiting step opens; its answer after the Student's. */
 async function followTheFix(page: Page, student: Student) {
   const fix = step(page, "follow-the-fix");
   await expect(fix).toContainText("Pantry's fix");
@@ -143,7 +134,6 @@ async function followTheFix(page: Page, student: Student) {
   await expect(followed).toContainText(student.whyFirst);
 }
 
-/** C3.a to C3.c, with the missed check point's hint, and a GitHub Evidence Project. */
 async function closeC3(page: Page) {
   const close = closing(page);
   await expect(close.section.getByTestId("hints-C3.c")).toBeVisible();

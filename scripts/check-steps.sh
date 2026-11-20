@@ -1,7 +1,3 @@
-# The commands `npm run check` and the pre-commit hook share, defined once.
-# Sourced, not run: check.sh runs them in sequence, pre-commit.sh runs them in
-# parallel. Each one runs from the repository's root.
-
 uv_backend() { (cd backend && uv run --frozen "$@"); }
 
 sandcastle_types() {
@@ -10,6 +6,10 @@ sandcastle_types() {
 }
 
 backend_types() { uv_backend mypy; }
+backend_comments() {
+  git ls-files -z '*.py' '*.sh' .husky/pre-commit |
+    xargs -0 uv run --project backend --frozen python scripts/check-comments.py
+}
 backend_boundaries() { uv_backend tach check; }
 backend_cycles() { uv_backend lint-imports; }
 

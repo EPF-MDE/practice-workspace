@@ -7,7 +7,6 @@ import {
 } from "@/client";
 import { closingDrafts, type DraftScope, type LevelDraft } from "../progress";
 
-/** The level that asks for a link to what the Student has done. */
 export const DONE = "done";
 
 export const LEVELS = [
@@ -18,7 +17,6 @@ export const LEVELS = [
 ];
 const LINK = /^https:\/\/(github\.com|gitlab\.com)\/[\w.-]+\/[\w.-]+(\/\S*)?$/;
 
-/** The check points ticked as missed, per drawing step: this browser's ticks, else those sent. */
 function ticks(studentId: number, page: CompetencyPage) {
   const out: Record<string, { local: boolean; missed: string[] }> = {};
   const scope = { studentId, competency: page.competency };
@@ -31,7 +29,6 @@ function ticks(studentId: number, page: CompetencyPage) {
   return out;
 }
 
-/** Per point, the check points ticked as missed that hint at it. */
 export function hints(
   studentId: number,
   page: CompetencyPage
@@ -52,7 +49,6 @@ export function hints(
   return out;
 }
 
-/** The points rated, as they are sent: a link only for "I have done it". */
 function ratedLevels(levels: Record<string, LevelDraft>) {
   return Object.fromEntries(
     Object.entries(levels)
@@ -64,7 +60,6 @@ function ratedLevels(levels: Record<string, LevelDraft>) {
   );
 }
 
-/** The levels as the Student rates them, kept in this browser, against those sent. */
 export function useLevels(scope: DraftScope, page: CompetencyPage) {
   const sent = page.self_assessment?.levels ?? {};
   const [levels, setLevels] = useState<Record<string, LevelDraft>>(() => ({
@@ -101,7 +96,6 @@ export function useLevels(scope: DraftScope, page: CompetencyPage) {
 
 export type Levels = ReturnType<typeof useLevels>;
 
-/** Sends the Self-assessment, with the check points this browser ticked. */
 export function useSendLevels(
   scope: DraftScope,
   page: CompetencyPage,

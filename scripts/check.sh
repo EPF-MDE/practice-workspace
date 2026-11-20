@@ -1,9 +1,4 @@
 #!/bin/sh
-# Everything, in one command: what an implementing agent, the review run, CI
-# and the Instructor all call green. The pre-commit hook runs its fast part.
-#
-# Usage: npm run check [-- part ...], a part being one of $parts below.
-# With no part, every part runs.
 set -e
 
 parts="repository backend frontend"
@@ -33,6 +28,8 @@ backend() {
   step "Back end: format and lint"
   uv_backend ruff format --check .
   uv_backend ruff check .
+  step "Back end: comments (and the shell scripts', against lint-rules/comments-baseline.json)"
+  backend_comments
   step "Back end: types"
   backend_types
   step "Back end: boundaries"

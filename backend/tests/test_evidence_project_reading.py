@@ -1,8 +1,3 @@
-"""What the Evidence panel reads, through the HTTP API: the Evidence Project the
-Reading Day reads, for every Competency. The one declared, if the App can read it,
-else the roster's; a GitLab project or a repository the App cannot read is said as
-such, never read as a zero (#514)."""
-
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -40,7 +35,6 @@ def declare(client: TestClient, url: str) -> None:
 
 
 def reading_of(repository: str, ruleset: str) -> RepositoryReading:
-    """A reading of `repository` whose one C2 fact names `ruleset`."""
     return RepositoryReading(
         student=StudentToRead("ada-oceens", "OcéENS", repository),
         default_branch="main",
@@ -60,8 +54,6 @@ def reading_of(repository: str, ruleset: str) -> RepositoryReading:
 
 
 class CountedReading(OfflineRepositoryReading):
-    """The fake Repository reading, counting the repositories it was asked to read."""
-
     def __init__(self) -> None:
         super().__init__()
         self.asked: list[str] = []
@@ -132,19 +124,13 @@ def test_a_project_the_app_cannot_read_is_said_as_such_never_a_zero(
         assert shown["empty"] is False
         assert shown["facts"] == []
         assert shown["evidence_project"] in url
-    assert repositories.asked == []  # neither it nor the roster's is read instead
+    assert repositories.asked == []
 
-
-# --- The Repository reading itself, on repositories not linked to the upstream ---
 
 UPSTREAM_BRANCHES = "repos/EPF-MDE/OceENS/branches?per_page=100"
 
 
 class OwnRepositories:
-    """GitHub, for repositories that share no history with the Group's upstream: each
-    has one branch, `main`, holding `files`. Anything else answers 404, so no upstream
-    branch can be compared with them. Those in `linked` GitHub links to the upstream."""
-
     def __init__(
         self, files: dict[str, list[str]], linked: tuple[str, ...] = ()
     ) -> None:

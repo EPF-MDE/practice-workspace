@@ -1,7 +1,3 @@
-"""Evidence Project declarations through the HTTP API: one for every Competency,
-declared with a note, told who reads it, its access checked (never its contents),
-changed or withdrawn until the Reading Day (#468, #514)."""
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -103,7 +99,7 @@ def test_access_is_checked_again_on_each_view_so_a_grant_shows_without_declaring
     ada: TestClient, access: FakeAccessCheck
 ) -> None:
     ada.post(DECLARATION, json={"url": "https://github.com/ada/secret", "note": "docs"})
-    access.rule = lambda repo: True  # the Student installed the App meanwhile
+    access.rule = lambda repo: True
 
     assert (
         ada.get(f"{C2}/evidence-panel").json()["declaration"]["access"]["status"]
@@ -114,7 +110,7 @@ def test_access_is_checked_again_on_each_view_so_a_grant_shows_without_declaring
 def test_when_access_cannot_be_checked_it_reads_not_readable_yet_and_says_why(
     ada: TestClient, access: FakeAccessCheck
 ) -> None:
-    access.rule = lambda repo: None  # the App could not be asked
+    access.rule = lambda repo: None
 
     checked = ada.post(CHECK, json={"url": "https://github.com/ada/secret"}).json()
 
@@ -221,8 +217,6 @@ def test_a_declaration_changes_until_the_reading_day_and_no_later(
     assert over.delete(DECLARATION).status_code == 403
 
 
-# --- The closing step: the snapshot and a declaration ride in its one send --
-
 C1 = "/api/competencies/C1"
 
 
@@ -237,13 +231,11 @@ def _rate_and_close(client: TestClient, **extra: Any) -> httpx.Response:
     return response
 
 
-# A signed-in client, its Store, and how many writes that Store has made so far.
 Counted = tuple[TestClient, Store, Callable[[], int]]
 
 
 @pytest.fixture(params=["memory", "github"])
 def counted(request: pytest.FixtureRequest, make_client: MakeClient) -> Counted:
-    """A signed-in client on either Store, the Store, and its writes so far."""
     store: Store
     if request.param == "memory":
         store = InMemoryStore()
@@ -293,12 +285,9 @@ def test_closing_without_a_declaration_still_stores_the_panel(counted: Counted) 
 
     assert _rate_and_close(client).status_code == 200
 
-    assert (
-        writes() == before + 2
-    )  # the Self-assessment, then the closing step's one send
+    assert writes() == before + 2
     assert client.get(C1).json()["evidence_plan"]["confirmed"] is True
     assert client.get(C1).json()["evidence_project"] is None
-    # the panel stored is the one shown: the closing step reads nothing again
     assert client.get(f"{C1}/evidence-panel").json()["read_at"] == shown["read_at"]
     assert client.get(f"{C1}/evidence-panel").json()["declaration"] is None
 

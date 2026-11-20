@@ -10,10 +10,6 @@ import {
 } from "../progress";
 import { DONE, type Levels } from "./useSelfAssessment";
 
-/**
- * The Evidence Plan as it stands: drafted from the levels in this browser
- * (nothing is stored), until the Student's own text wins once they edit it.
- */
 export function usePlan(
   scope: DraftScope,
   page: CompetencyPage,
@@ -39,7 +35,6 @@ export function usePlan(
     closingDrafts.getPlan(scope)
   );
   const stored = page.evidence_plan;
-  // Untouched, the plan stays a draft, even once confirmed: only an edit makes it the Student's text.
   const ownStored = stored && !stored.drafted ? stored.text : null;
   const edit = (text: string | null) => {
     setOwn(text);
@@ -57,7 +52,6 @@ export function usePlan(
 
 export type Plan = ReturnType<typeof usePlan>;
 
-/** The example for the Eval, kept in this browser until sent. */
 export function useExample(scope: DraftScope, stored: Plan["stored"]) {
   const [example, setExample] = useState(
     () => closingDrafts.getExample(scope) ?? stored?.example ?? ""
@@ -69,7 +63,6 @@ export function useExample(scope: DraftScope, stored: Plan["stored"]) {
   return { example, type };
 }
 
-/** The Evidence Project being declared, kept in this browser until sent. */
 export function useEvidence(scope: DraftScope) {
   const [evidence, setEvidence] = useState<EvidenceDraft>(
     () => evidenceDrafts.get(scope) ?? { url: "", note: "" }
@@ -81,7 +74,6 @@ export function useEvidence(scope: DraftScope) {
   return { evidence, draftEvidence };
 }
 
-/** Confirms the plan, with its example and any declaration, or sends its new text. */
 async function sendPlan({
   competency,
   confirming,
@@ -106,10 +98,6 @@ async function sendPlan({
   ).data;
 }
 
-/**
- * Sends the plan: the first send confirms it, with the example and the
- * Evidence Project declared before; later sends change its text only.
- */
 export function useSendPlan({
   competency,
   plan,
@@ -124,7 +112,6 @@ export function useSendPlan({
   const queryClient = useQueryClient();
   const { stored, own, isDraft, draftText } = plan;
   const confirming = !stored?.confirmed || example.trim() !== stored.example;
-  // Declared here before the plan is confirmed, the Evidence Project rides with that one send.
   const declaring =
     !stored?.confirmed &&
     evidence.url.trim() !== "" &&
@@ -146,7 +133,6 @@ export function useSendPlan({
     onSuccess: () => {
       plan.edit(null);
       if (declaring) draftEvidence(null);
-      // A declaration riding with this send is every Competency's Evidence Project.
       void queryClient.invalidateQueries({ queryKey: evidencePanelsKey });
       return queryClient.invalidateQueries({ queryKey: ["competency"] });
     },

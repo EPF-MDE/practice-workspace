@@ -1,5 +1,3 @@
-"""The page, and what a Student sends at a step: answers, questions, drawings."""
-
 from __future__ import annotations
 
 import base64
@@ -61,8 +59,6 @@ from .steps import (
 def competency_page(
     competency: str, request: Request, student: Student = Depends(current_student)
 ) -> CompetencyPage:
-    """A Competency's long page for the Student's Group, each answer locked until their
-    own is sent."""
     page = _page(request, competency, student)
     record = _store(request).record(student)
     settings: Settings = request.app.state.settings
@@ -95,8 +91,6 @@ def send_answer(
     request: Request,
     student: Student = Depends(current_student),
 ) -> AnswerSent:
-    """Store the Student's answer to a step (a new version each time) and release its
-    answer blocks."""
     page = _page(request, competency, student)
     step = _step(page, step_id)
     field_ids = {f.id for f in step.fields}
@@ -145,7 +139,6 @@ def ask_question(
     request: Request,
     student: Student = Depends(current_student),
 ) -> Question:
-    """Store a question, with its Competency and step, for the Instructor."""
     _step(_page(request, competency, student), step_id)
     if not question.text.strip():
         raise HTTPException(422, "Write your question before sending it")
@@ -189,8 +182,6 @@ def send_drawing(
     request: Request,
     student: Student = Depends(current_student),
 ) -> DrawingStored:
-    """Store the Student's drawing (its PNG and tldraw snapshot, a new version each
-    time) and release the Reference Drawing with its check points."""
     step = _drawing_step(_page(request, competency, student), step_id)
     png = _png(drawing.png_base64)
     if not isinstance(drawing.snapshot.get("document"), dict):
@@ -220,8 +211,6 @@ def my_drawing(
     request: Request,
     student: Student = Depends(current_student),
 ) -> MyDrawing:
-    """The Student's latest drawing for a step, to draw on again in a browser that has
-    no copy."""
     _drawing_step(_page(request, competency, student), step_id)
     store = _store(request)
     entry = store.record(student).latest(Kind.DRAWING, competency, step_id)
@@ -241,8 +230,6 @@ def tick_missed_check_points(
     request: Request,
     student: Student = Depends(current_student),
 ) -> CheckPointsSent:
-    """Store which of the Reference Drawing's check points the Student's drawing
-    missed."""
     step = _drawing_step(_page(request, competency, student), step_id)
     reference = step.reference
     known = [c.id for c in reference.check_points] if reference else []
@@ -258,9 +245,7 @@ def tick_missed_check_points(
             409,
             "Send your drawing first: the check points come with the Reference Drawing",
         )
-    missed = [
-        c for c in known if c in ticks.missed
-    ]  # in the reference's order, once each
+    missed = [c for c in known if c in ticks.missed]
     entry = store.save_missed_check_points(student, competency, step_id, missed)
     return CheckPointsSent(
         missed=entry.payload["missed"], version=entry.version, sent_at=entry.at

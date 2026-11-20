@@ -1,5 +1,3 @@
-"""The cut-off dates are settings: Paris time unless an offset is given."""
-
 from datetime import datetime
 from zoneinfo import ZoneInfo
 

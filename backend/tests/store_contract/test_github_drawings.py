@@ -1,5 +1,3 @@
-"""The GitHub Store's drawings: files on workspace-data, one comment."""
-
 from __future__ import annotations
 
 import json

@@ -1,0 +1,6 @@
+# The Repository reading's tests replay fictional recordings, trimmed to what the reading reads
+
+The Repository reading is tested on recorded GitHub responses, replayed by `RecordedGitHub` in `backend/app/repository_reading/recorded.py`, which counts every request so the tests can check the reading's cost. A recording of a real Evidence Project holds that Student's login, email, branches, commits and code, and this repository is public. **So only fictional recordings go in `backend/tests/repository_reading/fixtures/`: shaped on real repositories, their shapes, dates and counts kept, with logins, branches, pull requests, commits and code invented; and every recording is trimmed to the fields the reading reads.**
+
+- **`trim` in `backend/app/repository_reading/recorded.py` keeps only what the reading reads**, so a recording holds no names, emails or code beyond what a test needs: a patch keeps only its added lines that the PostHog rules look for, and a commit author's email is kept only when it is a placeholder, a no-reply address or an AI agent's.
+- **`backend/tests/repository_reading/record.py` records a real repository for study**, through `RecordingGitHub`, with read-only GET requests, and writes a trimmed fixture. Its output is not committed until it is made fictional.

@@ -21,8 +21,6 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 export class SessionService {
     /**
      * Sign In Page
-     *
-     * What the sign-in page says before the Student signs in.
      */
     public static signInPage<ThrowOnError extends boolean = true>(options?: Options<sessionSignInPageData, ThrowOnError>) {
         return (options?.client ?? client).get<sessionSignInPageResponses, unknown, ThrowOnError>({
@@ -34,8 +32,6 @@ export class SessionService {
     
     /**
      * Refusal
-     *
-     * Why the last sign-in was refused: not on the roster.
      */
     public static refusal<ThrowOnError extends boolean = true>(options?: Options<sessionRefusalData, ThrowOnError>) {
         return (options?.client ?? client).get<sessionRefusalResponses, unknown, ThrowOnError>({
@@ -47,8 +43,6 @@ export class SessionService {
     
     /**
      * Me
-     *
-     * The signed-in Student, with their Group and Project from the roster.
      */
     public static me<ThrowOnError extends boolean = true>(options?: Options<sessionMeData, ThrowOnError>) {
         return (options?.client ?? client).get<sessionMeResponses, unknown, ThrowOnError>({
@@ -62,9 +56,6 @@ export class SessionService {
 export class PracticeService {
     /**
      * Competency Page
-     *
-     * A Competency's long page for the Student's Group, each answer locked until their
-     * own is sent.
      */
     public static competencyPage<ThrowOnError extends boolean = true>(options: Options<practiceCompetencyPageData, ThrowOnError>) {
         return (options.client ?? client).get<practiceCompetencyPageResponses, practiceCompetencyPageErrors, ThrowOnError>({
@@ -76,9 +67,6 @@ export class PracticeService {
     
     /**
      * Send Answer
-     *
-     * Store the Student's answer to a step (a new version each time) and release its
-     * answer blocks.
      */
     public static sendAnswer<ThrowOnError extends boolean = true>(options: Options<practiceSendAnswerData, ThrowOnError>) {
         return (options.client ?? client).post<practiceSendAnswerResponses, practiceSendAnswerErrors, ThrowOnError>({
@@ -94,8 +82,6 @@ export class PracticeService {
     
     /**
      * Ask Question
-     *
-     * Store a question, with its Competency and step, for the Instructor.
      */
     public static askQuestion<ThrowOnError extends boolean = true>(options: Options<practiceAskQuestionData, ThrowOnError>) {
         return (options.client ?? client).post<practiceAskQuestionResponses, practiceAskQuestionErrors, ThrowOnError>({
@@ -111,9 +97,6 @@ export class PracticeService {
     
     /**
      * My Drawing
-     *
-     * The Student's latest drawing for a step, to draw on again in a browser that has
-     * no copy.
      */
     public static myDrawing<ThrowOnError extends boolean = true>(options: Options<practiceMyDrawingData, ThrowOnError>) {
         return (options.client ?? client).get<practiceMyDrawingResponses, practiceMyDrawingErrors, ThrowOnError>({
@@ -125,9 +108,6 @@ export class PracticeService {
     
     /**
      * Send Drawing
-     *
-     * Store the Student's drawing (its PNG and tldraw snapshot, a new version each
-     * time) and release the Reference Drawing with its check points.
      */
     public static sendDrawing<ThrowOnError extends boolean = true>(options: Options<practiceSendDrawingData, ThrowOnError>) {
         return (options.client ?? client).post<practiceSendDrawingResponses, practiceSendDrawingErrors, ThrowOnError>({
@@ -143,9 +123,6 @@ export class PracticeService {
     
     /**
      * Tick Missed Check Points
-     *
-     * Store which of the Reference Drawing's check points the Student's drawing
-     * missed.
      */
     public static tickMissedCheckPoints<ThrowOnError extends boolean = true>(options: Options<practiceTickMissedCheckPointsData, ThrowOnError>) {
         return (options.client ?? client).post<practiceTickMissedCheckPointsResponses, practiceTickMissedCheckPointsErrors, ThrowOnError>({
@@ -161,9 +138,6 @@ export class PracticeService {
     
     /**
      * Send Self Assessment
-     *
-     * Store the Self-assessment: one level per point rated, a link for "I have done
-     * it", and the missed check points this browser kept since the drawing was sent.
      */
     public static sendSelfAssessment<ThrowOnError extends boolean = true>(options: Options<practiceSendSelfAssessmentData, ThrowOnError>) {
         return (options.client ?? client).post<practiceSendSelfAssessmentResponses, practiceSendSelfAssessmentErrors, ThrowOnError>({
@@ -179,9 +153,6 @@ export class PracticeService {
     
     /**
      * Draft Evidence Plan
-     *
-     * The Evidence Plan drafted from levels not sent yet, as the Student rates. Stores
-     * nothing.
      */
     public static draftEvidencePlan<ThrowOnError extends boolean = true>(options: Options<practiceDraftEvidencePlanData, ThrowOnError>) {
         return (options.client ?? client).post<practiceDraftEvidencePlanResponses, practiceDraftEvidencePlanErrors, ThrowOnError>({
@@ -197,10 +168,6 @@ export class PracticeService {
     
     /**
      * Send Evidence Plan
-     *
-     * Store the Student's own Evidence Plan text, a new dated version; it wins over the
-     * draft. The example for the Eval and the confirmation carry over from the closing
-     * step.
      */
     public static sendEvidencePlan<ThrowOnError extends boolean = true>(options: Options<practiceSendEvidencePlanData, ThrowOnError>) {
         return (options.client ?? client).post<practiceSendEvidencePlanResponses, practiceSendEvidencePlanErrors, ThrowOnError>({
@@ -216,10 +183,6 @@ export class PracticeService {
     
     /**
      * Close Competency
-     *
-     * The closing step, one send: the Evidence Plan confirmed, with one example for the
-     * Eval, the Evidence Project declared there if any, and a snapshot of the Evidence
-     * panel as shown.
      */
     public static closeCompetency<ThrowOnError extends boolean = true>(options: Options<practiceCloseCompetencyData, ThrowOnError>) {
         return (options.client ?? client).post<practiceCloseCompetencyResponses, practiceCloseCompetencyErrors, ThrowOnError>({
@@ -235,9 +198,6 @@ export class PracticeService {
     
     /**
      * Evidence Panel View
-     *
-     * What the Reading Day would find on the Student's Evidence Project today for
-     * this Competency: facts, never a Band.
      */
     public static evidencePanelView<ThrowOnError extends boolean = true>(options: Options<practiceEvidencePanelViewData, ThrowOnError>) {
         return (options.client ?? client).get<practiceEvidencePanelViewResponses, practiceEvidencePanelViewErrors, ThrowOnError>({
@@ -249,9 +209,6 @@ export class PracticeService {
     
     /**
      * Refresh Evidence Panel
-     *
-     * Check the Evidence Project for a push since its last reading, and recompute what
-     * moved. Stores nothing in the record.
      */
     public static refreshEvidencePanel<ThrowOnError extends boolean = true>(options: Options<practiceRefreshEvidencePanelData, ThrowOnError>) {
         return (options.client ?? client).post<practiceRefreshEvidencePanelResponses, practiceRefreshEvidencePanelErrors, ThrowOnError>({
@@ -263,9 +220,6 @@ export class PracticeService {
     
     /**
      * Check Project Access
-     *
-     * Whether the Reading Day could read this project, before declaring it. Stores
-     * nothing.
      */
     public static checkProjectAccess<ThrowOnError extends boolean = true>(options: Options<practiceCheckProjectAccessData, ThrowOnError>) {
         return (options.client ?? client).post<practiceCheckProjectAccessResponses, practiceCheckProjectAccessErrors, ThrowOnError>({
@@ -281,9 +235,6 @@ export class PracticeService {
     
     /**
      * Withdraw Evidence Project
-     *
-     * Withdraw the Evidence Project declared: the Reading Day reads the roster's
-     * again.
      */
     public static withdrawEvidenceProject<ThrowOnError extends boolean = true>(options?: Options<practiceWithdrawEvidenceProjectData, ThrowOnError>) {
         return (options?.client ?? client).delete<practiceWithdrawEvidenceProjectResponses, unknown, ThrowOnError>({
@@ -295,9 +246,6 @@ export class PracticeService {
     
     /**
      * Declare Evidence Project
-     *
-     * Declare (or change) the Evidence Project of every Competency, until the Reading
-     * Day.
      */
     public static declareEvidenceProject<ThrowOnError extends boolean = true>(options: Options<practiceDeclareEvidenceProjectData, ThrowOnError>) {
         return (options.client ?? client).post<practiceDeclareEvidenceProjectResponses, practiceDeclareEvidenceProjectErrors, ThrowOnError>({
@@ -315,8 +263,6 @@ export class PracticeService {
 export class HealthService {
     /**
      * Health
-     *
-     * Answers once the app runs; the deploy waits for its revision.
      */
     public static health<ThrowOnError extends boolean = true>(options?: Options<healthHealthData, ThrowOnError>) {
         return (options?.client ?? client).get<healthHealthResponses, unknown, ThrowOnError>({

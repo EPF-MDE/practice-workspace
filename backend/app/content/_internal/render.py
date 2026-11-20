@@ -1,5 +1,3 @@
-"""A Competency, and what one Group's Students may be sent of it."""
-
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -34,7 +32,6 @@ class Competency:
     _steps: tuple[_RawStep, ...]
 
     def for_group(self, group: str) -> Page:
-        """The page one Group's Students see. `group` is the roster's ("OcéENS")."""
         name = GROUPS[group]
         titles = {s.id: s.title for s in self._steps}
         steps = tuple(
@@ -84,7 +81,6 @@ def _step_for(step: _RawStep, group: str, after_title: str = "") -> Step:
 
 
 def _flatten(nodes: Iterable[_Node], group: str | None, out: list[Block]) -> None:
-    """A Group's blocks, in order; `group=None` keeps the shared ones only."""
     pending: list[str] = []
 
     def flush() -> None:

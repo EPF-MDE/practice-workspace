@@ -1,10 +1,3 @@
-"""What a reading of a Student's repository returns: facts per Competency, each tied to
-a point id.
-
-A reading is plain data, stored as JSON (one file per Student on `workspace-data`) and
-rebuilt with `RepositoryReading.from_dict`.
-"""
-
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -15,16 +8,12 @@ from app.roster import GROUPS, Student
 
 COMPETENCIES = ("C1", "C2", "C3")
 
-# Points no repository can show (#451 points 4 and 5): the panel says "Not visible
-# from your Evidence Project: show it at the Eval" (C2) or "show your PostHog at the
-# Eval" (C3).
 NOT_VISIBLE = {
     "C1": (),
     "C2": ("C2.f", "C2.g"),
     "C3": ("C3.a", "C3.c", "C3.d", "C3.f"),
 }
 
-# Points the reading looks for. A point looked for with no fact is "nothing found".
 LOOKED_FOR = {
     "C1": ("C1",),
     "C2": ("C2.a", "C2.b", "C2.c", "C2.d", "C2.e"),
@@ -36,16 +25,12 @@ STUDENT = "student"
 
 @dataclass(frozen=True)
 class StudentToRead:
-    """A Student, as far as the Repository reading needs them: `evidence_project` is the
-    one the roster names, or the one they declared instead."""
-
     login: str
-    project: str  # the roster's `project`: "OcéENS" or "MATHutrice"
-    evidence_project: str  # "owner/repo"
+    project: str
+    evidence_project: str
 
     @classmethod
     def from_roster(cls, student: Student) -> StudentToRead:
-        """The Student with the Evidence Project the roster names for them."""
         return cls(student.github_login, student.project, student.evidence_project)
 
     @property
@@ -54,14 +39,10 @@ class StudentToRead:
 
     @property
     def key(self) -> tuple[str, str]:
-        """Whose reading of which Evidence Project: the repository without case, as
-        GitHub names it."""
         return self.login, self.evidence_project.lower()
 
 
 def not_read_on_gitlab(repository: str) -> str:
-    """Why a GitLab project shows nothing: the Repository reading reads GitHub only,
-    which is never a zero."""
     return (
         f"The workspace cannot read a GitLab project: nothing of `{repository}` is "
         "read here, which says nothing about the work. Show the evidence at the Eval."
@@ -70,15 +51,6 @@ def not_read_on_gitlab(repository: str) -> str:
 
 @dataclass(frozen=True)
 class Fact:
-    """One thing the repository shows.
-
-    `point`: the point id it supports ("C2.c"), or "C1" for C1's changed files, which
-    the workspace does not judge point by point. `credited_to`: "student", or the
-    upstream `course-2026*` branch whose code it is (a Fallback Branch or a Worked
-    Example). `detail`: the structured data behind `text`, for readers that word it
-    themselves.
-    """
-
     point: str
     text: str
     credited_to: str = STUDENT
@@ -90,8 +62,8 @@ class Fact:
 class CompetencyReading:
     competency: str
     facts: list[Fact]
-    nothing_found: list[str]  # points looked for, with no fact
-    not_visible: list[str]  # points no repository can show
+    nothing_found: list[str]
+    not_visible: list[str]
 
     def facts_for(self, point: str) -> list[Fact]:
         return [f for f in self.facts if f.point == point]
@@ -99,15 +71,6 @@ class CompetencyReading:
 
 @dataclass(frozen=True)
 class RepositoryReading:
-    """A reading of one Student's repository.
-
-    `empty`: no branch and no pull request changes a file beyond the course's code. The
-    reading then says where it looked (`branches_read`, `pull_requests_read`), never
-    "nothing produced". `read_at`: when the facts were computed. `checked_at`: when the
-    repository was last checked for change. `refs`: per ref, its tip SHA and what was
-    computed for it, so that a refresh recomputes only the refs that changed.
-    """
-
     student: StudentToRead
     default_branch: str
     read_at: datetime
@@ -123,7 +86,6 @@ class RepositoryReading:
         return self.competencies[competency]
 
     def reads(self, student: StudentToRead) -> bool:
-        """Whether this is a reading of that Student's Evidence Project."""
         return self.student.key == student.key
 
     def to_dict(self) -> dict[str, Any]:

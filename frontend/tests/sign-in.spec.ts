@@ -1,10 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 
-// The Demo roster (demo-course/roster.csv): one Student of each Group.
 const ADA = { id: 1001, name: "Ada Lovelace", project: "OcéENS" };
 const GRACE = { id: 1002, name: "Grace Hopper", project: "MATHutrice" };
 
-/** "Sign in with GitHub", with GitHub replaced by fake sign-in as `githubId`. */
 async function signIn(page: Page, githubId: number) {
   await page.goto("/sign-in");
   await expect(

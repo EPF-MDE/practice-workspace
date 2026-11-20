@@ -1,5 +1,3 @@
-"""What loading refuses: anything that could serve what it must not."""
-
 from __future__ import annotations
 
 import re
@@ -29,10 +27,10 @@ def _check(competency: Competency, source: str) -> None:
     if len(set(step_ids)) != len(step_ids):
         raise ContentError(f"{source}: two steps share an id")
     point_ids: list[str] = []
-    check_points: list[tuple[str, str]] = []  # (where, point id)
+    check_points: list[tuple[str, str]] = []
     if sum(s.optional for s in competency._steps) > 1:
         raise ContentError(f"{source}: one optional redraw per Competency, not more")
-    transfers: list[tuple[str, str]] = []  # (where, the point it fills)
+    transfers: list[tuple[str, str]] = []
     for index, step in enumerate(competency._steps):
         where = f"{source}, step '{step.id}'"
         directives = list(_walk(step.nodes))
@@ -156,8 +154,6 @@ def _check(competency: Competency, source: str) -> None:
             ids = [f.id for f in view.fields]
             if len(set(ids)) != len(ids):
                 raise ContentError(f"{where}: two fields share an id for {group}")
-            # #465 lets a drawing step (kind=drawing) unlock its answer block by the
-            # drawing.
             if (
                 any(isinstance(b, Answer) for b in view.blocks)
                 and not ids
@@ -206,8 +202,6 @@ def _check_waiting(
     directives: list[_Directive],
     where: str,
 ) -> None:
-    """A step waits for an earlier step that takes an answer, and withholds every field
-    it has."""
     waiting = [d for d in directives if d.name == "waiting"]
     if not step.after:
         if waiting:

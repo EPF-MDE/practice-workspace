@@ -18,7 +18,6 @@ type Props = DraftScope & {
   onRead: () => void;
 };
 
-/** The step's fields as the Student types them, kept in this browser, and the request that sends them. */
 function useAnswer({ studentId, competency, step }: Props) {
   const scope = { studentId, competency };
   const queryClient = useQueryClient();

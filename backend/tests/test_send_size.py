@@ -1,7 +1,3 @@
-"""Every send fits one GitHub comment (65,536 characters): through the API, a text
-too long is refused with a clear 422 the Student can act on, never a 503 that
-says "try again" forever. Measured on the GitHub Store, GitHub's HTTP faked."""
-
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -55,7 +51,7 @@ def a_repository_with_very_many_files() -> RepositoryReading:
 
 @pytest.fixture
 def github() -> FakeGitHub:
-    return FakeGitHub()  # refuses a comment over 65,536 characters, as GitHub does
+    return FakeGitHub()
 
 
 @pytest.fixture
@@ -130,7 +126,7 @@ def test_a_text_over_its_limit_gets_a_clear_422_and_nothing_is_stored(
 
     assert refused.status_code == 422
     detail = refused.json()["detail"]
-    assert isinstance(detail, str)  # a sentence the page shows as it is
+    assert isinstance(detail, str)
     assert what in detail and "too long" in detail
     assert github.writes == before
 
@@ -139,8 +135,6 @@ def test_a_send_within_each_limit_but_too_large_once_stored_gets_a_422_not_a_503
     ada: TestClient, github: FakeGitHub
 ) -> None:
     before = github.writes
-    # A control character takes six characters once stored (`\u0001`): within
-    # the limit, over one comment.
     body = {"text": "\x01" * 12_000, "example": "My README."}
 
     refused = ada.post(f"{C1}/close", json=body)

@@ -1,16 +1,7 @@
 // @ts-check
-// The front end's boundaries. Each folder under src/packages is a Deep Module:
-// its root files are its entry points, the only way in; everything in its
-// subfolders (by convention lib/ and tests/) is private. Adding a package, or a
-// folder inside one, needs no edit here. Then: no cycle; no import of what is
-// not there; no development dependency in shipped code.
-// The boundary rules are those of Matt Pocock's setup-ts-deep-modules skill:
-// https://github.com/mattpocock/skills/tree/main/skills/in-progress/setup-ts-deep-modules
 
-/** Where packages live: one immediate child folder per package, no nesting. */
 const R = "src/packages";
 
-/** Anything inside a package's subfolders; its root files are not matched. */
 const PACKAGE_INTERNALS = `^${R}/[^/]+/[^/]+/`;
 
 /** @type {import('dependency-cruiser').IConfiguration} */
@@ -65,14 +56,6 @@ module.exports = {
       from: { path: "^src", pathNot: "\\.(spec|test)\\.(ts|tsx)$" },
       to: { dependencyTypes: ["npm-dev"] },
     },
-
-    // Layering, off: which packages may depend on which. For example:
-    // {
-    //   name: "ui-may-not-depend-on-store",
-    //   severity: "error",
-    //   from: { path: `^${R}/ui/` },
-    //   to: { path: `^${R}/store/` },
-    // },
   ],
   options: {
     doNotFollow: { path: "node_modules" },

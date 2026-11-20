@@ -1,8 +1,3 @@
-"""The content format: what the loader refuses, so nothing it must not serve is served.
-
-Through `parse_competency`, the content module's interface.
-"""
-
 from pathlib import Path
 
 import pytest
@@ -19,16 +14,14 @@ def parse(body: str) -> Competency:
 @pytest.mark.parametrize(
     "body",
     [
-        # a typo would serve the answer as text
         "## S {#s minutes=5}\n\n::: answr\nx\n:::\n",
-        "## S {#s minutes=5}\n\n::: answer\nx\n",  # never closed
-        "## S {#s minutes=5}\n\n:::\n",  # closes nothing
-        # an answer with no field to unlock it
+        "## S {#s minutes=5}\n\n::: answer\nx\n",
+        "## S {#s minutes=5}\n\n:::\n",
         "## S {#s minutes=5}\n\n::: answer\nx\n:::\n",
-        "## S {#s minutes=5}\n\n::: oceens\nx\n:::\n",  # one Group's block only
+        "## S {#s minutes=5}\n\n::: oceens\nx\n:::\n",
         "## S {#s minutes=5}\n\nRead the Banding Anchors.\n",
-        "## S {#s}\n\nx\n",  # no timing
-        "## S {#s minutes=5}\n\n## T {#s minutes=5}\n",  # two steps, one id
+        "## S {#s}\n\nx\n",
+        "## S {#s minutes=5}\n\n## T {#s minutes=5}\n",
         "## S {#s minutes=5}\n\n::: point {#C1.a band=Great}\nx\n:::\n",
     ],
 )
@@ -80,8 +73,6 @@ def test_authoring_notes_are_stripped() -> None:
 
     assert "NOTE" not in repr(page)
 
-
-# --- Drawing steps (#465) ----------------------------------------------------
 
 SNAPSHOTS = {
     "example.json": {
@@ -175,21 +166,17 @@ def test_one_redraw_per_competency_may_be_optional() -> None:
 @pytest.mark.parametrize(
     "body",
     [
-        drawing_step(oceens_points=2) + CLOSING,  # fewer than 3 check points
-        drawing_step(oceens_points=6) + CLOSING,  # more than 5
-        drawing_step(point="C1.z")
-        + CLOSING,  # a check point beside no point of the review
-        drawing_step().replace("kind=drawing", "kind=answer")
-        + CLOSING,  # a canvas outside a drawing step
+        drawing_step(oceens_points=2) + CLOSING,
+        drawing_step(oceens_points=6) + CLOSING,
+        drawing_step(point="C1.z") + CLOSING,
+        drawing_step().replace("kind=drawing", "kind=answer") + CLOSING,
         drawing_step().replace("::: canvas\nFrom the click to the summary.\n:::\n", "")
-        + CLOSING,  # no canvas
-        drawing_step().replace("src=example.json", "src=missing.json")
-        + CLOSING,  # a drawing that isn't there
+        + CLOSING,
+        drawing_step().replace("src=example.json", "src=missing.json") + CLOSING,
         drawing_step(head="{#a minutes=0 kind=drawing optional=yes}")
         + drawing_step(head="{#b minutes=0 kind=drawing optional=yes}")
-        + CLOSING,  # two optional redraws
-        "## S {#s minutes=5 optional=yes}\n\n::: field {#f}\nx\n:::\n"
-        + CLOSING,  # optional, but not a redraw
+        + CLOSING,
+        "## S {#s minutes=5 optional=yes}\n\n::: field {#f}\nx\n:::\n" + CLOSING,
     ],
 )
 def test_the_loader_refuses_a_drawing_step(body: str) -> None:
@@ -221,8 +208,6 @@ def test_a_drawing_is_read_from_the_content_folder_and_never_outside_it(
         load_content(tmp_path)
 
 
-# --- The closing step and the Transfer (#466) --------------------------------
-
 TRANSFER = (
     "## Transfer {#transfer minutes=5 kind=transfer fills=C1.a}\n\n"
     "::: field {#project}\nThe project\n:::\n\n"
@@ -239,25 +224,20 @@ def test_a_transfer_names_the_point_whose_to_get_there_it_fills() -> None:
 @pytest.mark.parametrize(
     "body",
     [
-        TRANSFER.replace(" fills=C1.a", "") + CLOSING,  # fills no point
-        TRANSFER.replace("fills=C1.a", "fills=C1.z")
-        + CLOSING,  # fills a point the review doesn't have
-        TRANSFER.replace("{#project}", "{#where}")
-        + CLOSING,  # no project field: the Evidence Project is its default
-        "## S {#s minutes=5 kind=closng}\n\nx\n",  # a kind no step has
+        TRANSFER.replace(" fills=C1.a", "") + CLOSING,
+        TRANSFER.replace("fills=C1.a", "fills=C1.z") + CLOSING,
+        TRANSFER.replace("{#project}", "{#where}") + CLOSING,
+        "## S {#s minutes=5 kind=closng}\n\nx\n",
         CLOSING.replace(
             "::: point {#C1.a band=Basic}\nA.\n",
             "::: point {#C1.a band=Basic}\nA.\n\n"
             "::: proof\nOne.\n:::\n\n::: proof\nTwo.\n:::\n",
-        ),  # two proof sentences
+        ),
     ],
 )
 def test_the_loader_refuses_a_transfer_or_closing_step(body: str) -> None:
     with pytest.raises(ContentError):
         parse(body)
-
-
-# --- Choice fields (#470) ----------------------------------------------------
 
 
 def test_a_choice_field_offers_its_options_in_order() -> None:
@@ -275,9 +255,9 @@ def test_a_choice_field_offers_its_options_in_order() -> None:
 @pytest.mark.parametrize(
     "attrs",
     [
-        "kind=choice",  # no options to choose from
-        'kind=choice options="only"',  # one option is no choice
-        'kind=line options="a|b"',  # options on a field that cannot show them
+        "kind=choice",
+        'kind=choice options="only"',
+        'kind=line options="a|b"',
     ],
 )
 def test_the_loader_refuses_a_choice_field_without_two_options(attrs: str) -> None:
@@ -316,22 +296,13 @@ def test_a_step_that_waits_serves_its_shared_part_and_the_marker_until_then() ->
 @pytest.mark.parametrize(
     "body",
     [
-        RANK
-        + "## Fix {#fix minutes=5 after=nowhere}\n\n"
-        + GROUP_FIELDS,  # an unknown step
-        "## Fix {#fix minutes=5 after=rank}\n\n"
-        + GROUP_FIELDS
-        + "\n"
-        + RANK,  # a later step
-        RANK + "## Fix {#fix minutes=5 after=fix}\n\n" + GROUP_FIELDS,  # itself
+        RANK + "## Fix {#fix minutes=5 after=nowhere}\n\n" + GROUP_FIELDS,
+        "## Fix {#fix minutes=5 after=rank}\n\n" + GROUP_FIELDS + "\n" + RANK,
+        RANK + "## Fix {#fix minutes=5 after=fix}\n\n" + GROUP_FIELDS,
         "## Rank {#rank minutes=5}\n\nRead.\n\n## Fix {#fix minutes=5 after=rank}\n\n"
-        + GROUP_FIELDS,  # no answer
-        RANK
-        # a field it can't withhold
-        + "## Fix {#fix minutes=5 after=rank}\n\n::: field {#f}\nShared.\n:::\n",
-        RANK
-        + "## Fix {#fix minutes=5}\n\n::: waiting\nx\n:::\n\n"
-        + GROUP_FIELDS,  # a marker in a step that waits for none
+        + GROUP_FIELDS,
+        RANK + "## Fix {#fix minutes=5 after=rank}\n\n::: field {#f}\nShared.\n:::\n",
+        RANK + "## Fix {#fix minutes=5}\n\n::: waiting\nx\n:::\n\n" + GROUP_FIELDS,
     ],
 )
 def test_the_loader_refuses_a_step_that_waits(body: str) -> None:

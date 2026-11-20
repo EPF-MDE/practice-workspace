@@ -1,6 +1,3 @@
-// The token check, run as the hook and `npm run check` run it: on the paths
-// git lists, from the repository's root.
-
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

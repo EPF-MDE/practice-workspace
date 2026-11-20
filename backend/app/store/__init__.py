@@ -1,22 +1,3 @@
-"""The Store: every send a Student makes, kept with every version.
-
-Its interface speaks the domain, never GitHub: *read a Student's record*,
-*save an answer*, *save a drawing*, *save the Self-assessment*, *save the
-Evidence Plan*, *save a declaration*, *save a question*, *save an Evidence panel
-snapshot*. Each `save_*` is one send: it stores a new dated entry and never
-rewrites an earlier one, so a Student's record is the history of their sends,
-and their current state is the latest entry of each kind.
-
-Two implementations stand behind `Store`:
-
-- `InMemoryStore` (here): tests and local runs.
-- `GitHubStore` (`github.py`): one `practice` issue per Student, one comment
-  per send; a drawing's PNG and snapshot on `workspace-data` besides.
-
-The Store checks no cut-off and no content: callers decide what may be sent
-and when (the cut-off dates are the app's rules, not storage's).
-"""
-
 from __future__ import annotations
 
 import threading
@@ -75,12 +56,6 @@ def _now() -> datetime:
 
 @dataclass
 class InMemoryStore:
-    """The Store in memory: tests and local runs. Lost when the process stops.
-
-    `writes` counts the sends it took, for the write-budget test: every
-    `save_*` is one send.
-    """
-
     clock: Callable[[], datetime] = _now
     writes: int = 0
     _entries: dict[int, list[Entry]] = field(default_factory=dict)
@@ -88,7 +63,7 @@ class InMemoryStore:
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
     def open_record(self, student: Student) -> None:
-        pass  # nothing to open: a record exists from its first send
+        pass
 
     def record(self, student: Student) -> Record:
         with self._lock:
