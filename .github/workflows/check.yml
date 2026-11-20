@@ -40,9 +40,7 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
-      - run: uv sync --frozen
-        working-directory: backend
-      - run: sh scripts/check.sh backend
+      - run: npm run check -- backend
 
   frontend:
     name: frontend
