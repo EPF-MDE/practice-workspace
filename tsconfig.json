@@ -1,0 +1,22 @@
+// The Sandcastle scripts' types, checked by `npm run check`'s repository part.
+// Adapted from the Software Factories cohort's root tsconfig.json
+// (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m,
+// ai-hero-dev/cohort-005-project@4339a30), which
+// .sandcastle/agent-workflows/tsconfig.json extends. The front end keeps its
+// own, in frontend/.
+{
+  "include": [".sandcastle/**/*.ts"],
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true
+  }
+}
