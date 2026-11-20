@@ -1,5 +1,6 @@
 #!/bin/sh
 . "$(dirname "$0")/check-steps.sh"
+require_installed node_modules frontend/node_modules
 
 logs=$(mktemp -d)
 trap 'rm -rf "$logs"' EXIT

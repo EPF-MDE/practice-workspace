@@ -8,7 +8,8 @@
     "check": "sh scripts/check.sh",
     "demo": "npm --prefix frontend run build && cd backend && WORKSPACE_CONTENT_DIR=../demo-course WORKSPACE_ROSTER_FILE=../demo-course/roster.csv WORKSPACE_SIGN_IN=fake WORKSPACE_STORE=memory WORKSPACE_SESSION_SECRET=demo WORKSPACE_POSTHOG_PROJECT_TOKEN= uv run --frozen uvicorn app.main:app --port 8000",
     "format": "biome format --write . && cd backend && uv run --frozen ruff format .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "setup": "sh scripts/setup.sh"
   },
   "lint-staged": {
     "*": [

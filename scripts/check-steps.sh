@@ -15,3 +15,14 @@ backend_cycles() { uv_backend lint-imports; }
 
 frontend_types() { npm --prefix frontend run --silent typecheck; }
 frontend_boundaries() { npm --prefix frontend run --silent lint:boundaries; }
+
+require_installed() {
+  missing=""
+  for dir in "$@"; do
+    [ -d "$dir" ] || missing="$missing $dir"
+  done
+  [ -z "$missing" ] && return 0
+  echo "✖ Missing dependencies:$missing" >&2
+  echo "  Run \`npm run setup\` (once per clone and per worktree)." >&2
+  exit 1
+}
