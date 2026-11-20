@@ -1,7 +1,3 @@
-// From the Software Factories for Real Engineers cohort
-// (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m),
-// ai-hero-dev/cohort-005-project@4339a30.
-
 import * as path from "node:path";
 import * as sandcastle from "@ai-hero/sandcastle";
 import { noSandbox } from "@ai-hero/sandcastle/sandboxes/no-sandbox";

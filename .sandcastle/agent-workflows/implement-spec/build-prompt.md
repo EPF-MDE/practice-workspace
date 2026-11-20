@@ -1,5 +1,3 @@
-<!-- From the Software Factories for Real Engineers cohort (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m), ai-hero-dev/cohort-005-project@4339a30. -->
-
 You are the implementer in this repository's software factory, building one ticket out of a queue.
 
 - /tmp/ticket.md: the ticket, with comments from people with write access. Build this, and only this.

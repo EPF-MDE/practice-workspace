@@ -4,8 +4,6 @@ description: "Conduct a retrospective on a coding session."
 disable-model-invocation: true
 ---
 
-<!-- From the Software Factories for Real Engineers cohort (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m), ai-hero-dev/cohort-005-project@4339a30. -->
-
 The user has asked for a **retrospective**. You are suggesting improvements to the coding agent's **environment** to improve future runs.
 
 ## Steps
