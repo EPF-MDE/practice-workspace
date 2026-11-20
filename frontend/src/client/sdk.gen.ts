@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { healthHealthData, healthHealthResponses, rehearsalAskQuestionData, rehearsalAskQuestionErrors, rehearsalAskQuestionResponses, rehearsalCheckProjectAccessData, rehearsalCheckProjectAccessErrors, rehearsalCheckProjectAccessResponses, rehearsalCloseCompetencyData, rehearsalCloseCompetencyErrors, rehearsalCloseCompetencyResponses, rehearsalCompetencyPageData, rehearsalCompetencyPageErrors, rehearsalCompetencyPageResponses, rehearsalDeclareEvidenceProjectData, rehearsalDeclareEvidenceProjectErrors, rehearsalDeclareEvidenceProjectResponses, rehearsalDraftEvidencePlanData, rehearsalDraftEvidencePlanErrors, rehearsalDraftEvidencePlanResponses, rehearsalForkPanelViewData, rehearsalForkPanelViewErrors, rehearsalForkPanelViewResponses, rehearsalMyDrawingData, rehearsalMyDrawingErrors, rehearsalMyDrawingResponses, rehearsalRefreshForkPanelData, rehearsalRefreshForkPanelErrors, rehearsalRefreshForkPanelResponses, rehearsalSendAnswerData, rehearsalSendAnswerErrors, rehearsalSendAnswerResponses, rehearsalSendDrawingData, rehearsalSendDrawingErrors, rehearsalSendDrawingResponses, rehearsalSendEvidencePlanData, rehearsalSendEvidencePlanErrors, rehearsalSendEvidencePlanResponses, rehearsalSendSelfAssessmentData, rehearsalSendSelfAssessmentErrors, rehearsalSendSelfAssessmentResponses, rehearsalTickMissedCheckPointsData, rehearsalTickMissedCheckPointsErrors, rehearsalTickMissedCheckPointsResponses, rehearsalWithdrawEvidenceProjectData, rehearsalWithdrawEvidenceProjectErrors, rehearsalWithdrawEvidenceProjectResponses, sessionMeData, sessionMeResponses, sessionRefusalData, sessionRefusalResponses, sessionSignInPageData, sessionSignInPageResponses } from './types.gen';
+import type { healthHealthData, healthHealthResponses, rehearsalAskQuestionData, rehearsalAskQuestionErrors, rehearsalAskQuestionResponses, rehearsalCheckProjectAccessData, rehearsalCheckProjectAccessErrors, rehearsalCheckProjectAccessResponses, rehearsalCloseCompetencyData, rehearsalCloseCompetencyErrors, rehearsalCloseCompetencyResponses, rehearsalCompetencyPageData, rehearsalCompetencyPageErrors, rehearsalCompetencyPageResponses, rehearsalDeclareEvidenceProjectData, rehearsalDeclareEvidenceProjectErrors, rehearsalDeclareEvidenceProjectResponses, rehearsalDraftEvidencePlanData, rehearsalDraftEvidencePlanErrors, rehearsalDraftEvidencePlanResponses, rehearsalEvidencePanelViewData, rehearsalEvidencePanelViewErrors, rehearsalEvidencePanelViewResponses, rehearsalMyDrawingData, rehearsalMyDrawingErrors, rehearsalMyDrawingResponses, rehearsalRefreshEvidencePanelData, rehearsalRefreshEvidencePanelErrors, rehearsalRefreshEvidencePanelResponses, rehearsalSendAnswerData, rehearsalSendAnswerErrors, rehearsalSendAnswerResponses, rehearsalSendDrawingData, rehearsalSendDrawingErrors, rehearsalSendDrawingResponses, rehearsalSendEvidencePlanData, rehearsalSendEvidencePlanErrors, rehearsalSendEvidencePlanResponses, rehearsalSendSelfAssessmentData, rehearsalSendSelfAssessmentErrors, rehearsalSendSelfAssessmentResponses, rehearsalTickMissedCheckPointsData, rehearsalTickMissedCheckPointsErrors, rehearsalTickMissedCheckPointsResponses, rehearsalWithdrawEvidenceProjectData, rehearsalWithdrawEvidenceProjectErrors, rehearsalWithdrawEvidenceProjectResponses, sessionMeData, sessionMeResponses, sessionRefusalData, sessionRefusalResponses, sessionSignInPageData, sessionSignInPageResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -218,8 +218,8 @@ export class RehearsalService {
      * Close Competency
      *
      * The closing step, one send: the Evidence Plan confirmed, with one example for the
-     * Eval, the Evidence Project declared there if any, and a snapshot of the fork panel
-     * as shown.
+     * Eval, the Evidence Project declared there if any, and a snapshot of the evidence
+     * panel as shown.
      */
     public static closeCompetency<ThrowOnError extends boolean = true>(options: Options<rehearsalCloseCompetencyData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalCloseCompetencyResponses, rehearsalCloseCompetencyErrors, ThrowOnError>({
@@ -234,29 +234,29 @@ export class RehearsalService {
     }
     
     /**
-     * Fork Panel View
+     * Evidence Panel View
      *
-     * What the Reading Day would find on the Student's fork today for this Competency:
-     * facts, never a Band.
+     * What the Reading Day would find on the Student's repository today for this
+     * Competency: facts, never a Band.
      */
-    public static forkPanelView<ThrowOnError extends boolean = true>(options: Options<rehearsalForkPanelViewData, ThrowOnError>) {
-        return (options.client ?? client).get<rehearsalForkPanelViewResponses, rehearsalForkPanelViewErrors, ThrowOnError>({
+    public static evidencePanelView<ThrowOnError extends boolean = true>(options: Options<rehearsalEvidencePanelViewData, ThrowOnError>) {
+        return (options.client ?? client).get<rehearsalEvidencePanelViewResponses, rehearsalEvidencePanelViewErrors, ThrowOnError>({
             responseType: 'json',
-            url: '/api/competencies/{competency}/fork',
+            url: '/api/competencies/{competency}/evidence-panel',
             ...options
         });
     }
     
     /**
-     * Refresh Fork Panel
+     * Refresh Evidence Panel
      *
-     * Check the fork for a push since its last reading, and recompute what moved.
+     * Check the repository for a push since its last reading, and recompute what moved.
      * Stores nothing in the record.
      */
-    public static refreshForkPanel<ThrowOnError extends boolean = true>(options: Options<rehearsalRefreshForkPanelData, ThrowOnError>) {
-        return (options.client ?? client).post<rehearsalRefreshForkPanelResponses, rehearsalRefreshForkPanelErrors, ThrowOnError>({
+    public static refreshEvidencePanel<ThrowOnError extends boolean = true>(options: Options<rehearsalRefreshEvidencePanelData, ThrowOnError>) {
+        return (options.client ?? client).post<rehearsalRefreshEvidencePanelResponses, rehearsalRefreshEvidencePanelErrors, ThrowOnError>({
             responseType: 'json',
-            url: '/api/competencies/{competency}/fork/refresh',
+            url: '/api/competencies/{competency}/evidence-panel/refresh',
             ...options
         });
     }
@@ -282,8 +282,8 @@ export class RehearsalService {
     /**
      * Withdraw Evidence Project
      *
-     * Withdraw the Evidence Project of this Competency: the Reading Day reads the fork
-     * again.
+     * Withdraw the Evidence Project of this Competency: the Reading Day reads the
+     * repository again.
      */
     public static withdrawEvidenceProject<ThrowOnError extends boolean = true>(options: Options<rehearsalWithdrawEvidenceProjectData, ThrowOnError>) {
         return (options.client ?? client).delete<rehearsalWithdrawEvidenceProjectResponses, rehearsalWithdrawEvidenceProjectErrors, ThrowOnError>({

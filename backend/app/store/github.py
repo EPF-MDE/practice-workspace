@@ -2,7 +2,7 @@
 
 - At first sign-in (`open_record`), the Student's issue is opened on the
   repository, labelled `rehearsal`, its body a short header: Student, Group,
-  fork, and a hidden marker with their numeric GitHub id, by which the Store
+  repository, and a hidden marker with their numeric GitHub id, by which the Store
   finds it again after a restart. The body is never rewritten.
 - Each send is one comment: a human-readable line (a question's text quoted
   below it), then a fenced block, info string `json rehearsal`, holding one
@@ -25,7 +25,7 @@
   overwrites the same paths, so Git history keeps every version; the comment
   records the commit holding both files. Every write to the data branch is
   serialised by one in-process lock and retried when the branch moved
-  meanwhile (409): the fork reading's saves in this process take the same
+  meanwhile (409): the Repository reading's saves in this process take the same
   lock (`app.github_app.data_branch_lock`), and its batch may write there too.
 
 Reading the questions with `gh`: every question comment's block has
@@ -93,8 +93,8 @@ class GitHubStore:
         self._sleep = sleep
         self._bot_login = bot_login
         self._lock = threading.Lock()  # the issue index and the per-Student locks
-        # Every write to the data branch, one at a time: the fork reading's saves take
-        # this lock too.
+        # Every write to the data branch, one at a time: the Repository reading's saves
+        # take this lock too.
         self._data_lock = data_branch_lock(repository, data_branch)
         self._issues: dict[int, list[int]] | None = (
             None  # github id -> its issue numbers, oldest first

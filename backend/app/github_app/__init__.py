@@ -29,7 +29,7 @@ _BRANCH_LOCKS_GUARD = threading.Lock()
 def data_branch_lock(repository: str, branch: str) -> threading.Lock:
     """The one in-process lock every write to this branch takes, whoever writes.
 
-    The Store's drawings and the fork reading's saves both write `workspace-data`:
+    The Store's drawings and the Repository reading's saves both write `workspace-data`:
     sharing this lock, they never race each other in this process (one worker).
     """
     with _BRANCH_LOCKS_GUARD:

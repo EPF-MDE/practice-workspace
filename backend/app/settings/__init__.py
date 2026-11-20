@@ -62,23 +62,24 @@ class Settings(BaseSettings):
     content_dir: str = ""
     # A local roster file instead of `roster.csv` on the data branch (local runs).
     roster_file: str = ""
-    # Where the fork panel's readings come from: "github" (the fork reading, with the
-    # Student Connector, stored on `data_branch`) or "fake" (no GitHub: readings from
-    # `fork_readings_dir`, else an empty fork). "auto": fake with the fake sign-in,
-    # github otherwise.
-    fork_reading: Literal["auto", "fake", "github"] = "auto"
-    # The fake's readings, one `fork-readings/<login>.json` each; empty: the test
+    # Where the evidence panel's readings come from: "github" (the Repository reading,
+    # with the Student Connector, stored on `data_branch`) or "fake" (no GitHub:
+    # readings from `repository_readings_dir`, else an empty repository). "auto": fake
+    # with the fake sign-in, github otherwise.
+    repository_reading: Literal["auto", "fake", "github"] = "auto"
+    # The fake's readings, one `repository-readings/<login>.json` each; empty: the test
     # fixtures' folder.
-    fork_readings_dir: str = ""
+    repository_readings_dir: str = ""
 
-    # EPF-MDE CWS Student Connector: "Sign in with GitHub", read-only on forks.
+    # EPF-MDE CWS Student Connector: "Sign in with GitHub", read-only on Students'
+    # repositories.
     github_app_id: str = ""
     github_app_slug: str = ""
     github_app_client_id: str = ""
     github_app_client_secret: str = ""
     github_app_private_key_base64: str = ""
-    # The Student Connector's installation the fork reading reads with; empty: its first
-    # installation.
+    # The Student Connector's installation the Repository reading reads with; empty: its
+    # first installation.
     github_app_installation_id: str = ""
 
     # EPF-MDE CWS Store: Issues and Contents write on this repository alone.

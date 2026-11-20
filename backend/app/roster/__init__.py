@@ -1,7 +1,7 @@
-"""The roster: who may sign in, and their Group, Project and fork.
+"""The roster: who may sign in, and their Group, Project and default repository.
 
 `roster.csv` on the `workspace-data` branch, one row per Student:
-`github_login,github_id,name,group,project,fork`. A Student is found by the
+`github_login,github_id,name,group,project,repository`. A Student is found by the
 numeric `github_id`, never by login: a renamed account still gets in, and
 whoever takes over a freed login does not.
 """
@@ -30,7 +30,8 @@ class Group:
     directive: (
         str  # the content's block holding what only this Group receives: `::: oceens`
     )
-    upstream: str  # its Project's repository, the one every fork comes from
+    # its Project's repository, the one each Student's default repository comes from
+    upstream: str
 
 
 GROUPS: dict[str, Group] = {
@@ -49,7 +50,7 @@ class Student:
     name: str
     group: str  # "OcéENS" or "MATHutrice"
     project: str  # the Group's Project, same values as `group`
-    fork: str  # "owner/repo"
+    repository: str  # "owner/repo"
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -75,7 +76,7 @@ class RosterError(ValueError):
     """A roster the app refuses to read."""
 
 
-COLUMNS = ("github_login", "github_id", "name", "group", "project", "fork")
+COLUMNS = ("github_login", "github_id", "name", "group", "project", "repository")
 
 
 def parse_roster(text: str) -> Roster:
@@ -105,7 +106,7 @@ def parse_roster(text: str) -> Roster:
                 name=row["name"].strip(),
                 group=row["group"].strip(),
                 project=row["project"].strip(),
-                fork=row["fork"].strip(),
+                repository=row["repository"].strip(),
             )
         )
     return Roster(students)

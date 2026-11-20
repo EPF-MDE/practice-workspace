@@ -225,9 +225,9 @@ export type Declaration = {
      */
     host: 'github' | 'gitlab';
     /**
-     * Is Fork
+     * Is Default Repository
      */
-    is_fork: boolean;
+    is_default_repository: boolean;
     /**
      * Declared At
      */
@@ -342,6 +342,86 @@ export type DrawingStored = {
      * Unlocked
      */
     unlocked: Array<string>;
+};
+
+/**
+ * EvidencePanel
+ */
+export type EvidencePanel = {
+    /**
+     * Competency
+     */
+    competency: string;
+    /**
+     * Repository
+     */
+    repository: string;
+    /**
+     * Available
+     */
+    available: boolean;
+    /**
+     * Unavailable
+     */
+    unavailable: string | null;
+    /**
+     * Read At
+     */
+    read_at: string | null;
+    /**
+     * Checked At
+     */
+    checked_at: string | null;
+    /**
+     * Default Branch
+     */
+    default_branch: string | null;
+    /**
+     * Branches Read
+     */
+    branches_read: number;
+    /**
+     * Pull Requests Read
+     */
+    pull_requests_read: number;
+    /**
+     * Empty
+     */
+    empty: boolean;
+    /**
+     * Empty Text
+     */
+    empty_text: string | null;
+    /**
+     * Facts
+     */
+    facts: Array<PanelFact>;
+    /**
+     * Nothing Found
+     */
+    nothing_found: Array<string>;
+    /**
+     * Nothing Found Text
+     */
+    nothing_found_text: string | null;
+    /**
+     * Not Visible
+     */
+    not_visible: Array<NotVisible>;
+    /**
+     * Not Judged
+     */
+    not_judged: string | null;
+    /**
+     * Greyed
+     */
+    greyed: boolean;
+    /**
+     * Greyed Text
+     */
+    greyed_text: string | null;
+    declaration: Declaration | null;
+    help: DeclarationHelp;
 };
 
 /**
@@ -469,86 +549,6 @@ export type FieldBlock = {
 };
 
 /**
- * ForkPanel
- */
-export type ForkPanel = {
-    /**
-     * Competency
-     */
-    competency: string;
-    /**
-     * Fork
-     */
-    fork: string;
-    /**
-     * Available
-     */
-    available: boolean;
-    /**
-     * Unavailable
-     */
-    unavailable: string | null;
-    /**
-     * Read At
-     */
-    read_at: string | null;
-    /**
-     * Checked At
-     */
-    checked_at: string | null;
-    /**
-     * Default Branch
-     */
-    default_branch: string | null;
-    /**
-     * Branches Read
-     */
-    branches_read: number;
-    /**
-     * Pull Requests Read
-     */
-    pull_requests_read: number;
-    /**
-     * Empty
-     */
-    empty: boolean;
-    /**
-     * Empty Text
-     */
-    empty_text: string | null;
-    /**
-     * Facts
-     */
-    facts: Array<PanelFact>;
-    /**
-     * Nothing Found
-     */
-    nothing_found: Array<string>;
-    /**
-     * Nothing Found Text
-     */
-    nothing_found_text: string | null;
-    /**
-     * Not Visible
-     */
-    not_visible: Array<NotVisible>;
-    /**
-     * Not Judged
-     */
-    not_judged: string | null;
-    /**
-     * Greyed
-     */
-    greyed: boolean;
-    /**
-     * Greyed Text
-     */
-    greyed_text: string | null;
-    declaration: Declaration | null;
-    help: DeclarationHelp;
-};
-
-/**
  * HTTPValidationError
  */
 export type HTTPValidationError = {
@@ -609,9 +609,9 @@ export type Me = {
      */
     project: string;
     /**
-     * Fork
+     * Repository
      */
-    fork: string;
+    repository: string;
 };
 
 /**
@@ -1427,7 +1427,7 @@ export type rehearsalCloseCompetencyResponses = {
 
 export type rehearsalCloseCompetencyResponse = rehearsalCloseCompetencyResponses[keyof rehearsalCloseCompetencyResponses];
 
-export type rehearsalForkPanelViewData = {
+export type rehearsalEvidencePanelViewData = {
     body?: never;
     path: {
         /**
@@ -1436,28 +1436,28 @@ export type rehearsalForkPanelViewData = {
         competency: string;
     };
     query?: never;
-    url: '/api/competencies/{competency}/fork';
+    url: '/api/competencies/{competency}/evidence-panel';
 };
 
-export type rehearsalForkPanelViewErrors = {
+export type rehearsalEvidencePanelViewErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalForkPanelViewError = rehearsalForkPanelViewErrors[keyof rehearsalForkPanelViewErrors];
+export type rehearsalEvidencePanelViewError = rehearsalEvidencePanelViewErrors[keyof rehearsalEvidencePanelViewErrors];
 
-export type rehearsalForkPanelViewResponses = {
+export type rehearsalEvidencePanelViewResponses = {
     /**
      * Successful Response
      */
-    200: ForkPanel;
+    200: EvidencePanel;
 };
 
-export type rehearsalForkPanelViewResponse = rehearsalForkPanelViewResponses[keyof rehearsalForkPanelViewResponses];
+export type rehearsalEvidencePanelViewResponse = rehearsalEvidencePanelViewResponses[keyof rehearsalEvidencePanelViewResponses];
 
-export type rehearsalRefreshForkPanelData = {
+export type rehearsalRefreshEvidencePanelData = {
     body?: never;
     path: {
         /**
@@ -1466,26 +1466,26 @@ export type rehearsalRefreshForkPanelData = {
         competency: string;
     };
     query?: never;
-    url: '/api/competencies/{competency}/fork/refresh';
+    url: '/api/competencies/{competency}/evidence-panel/refresh';
 };
 
-export type rehearsalRefreshForkPanelErrors = {
+export type rehearsalRefreshEvidencePanelErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalRefreshForkPanelError = rehearsalRefreshForkPanelErrors[keyof rehearsalRefreshForkPanelErrors];
+export type rehearsalRefreshEvidencePanelError = rehearsalRefreshEvidencePanelErrors[keyof rehearsalRefreshEvidencePanelErrors];
 
-export type rehearsalRefreshForkPanelResponses = {
+export type rehearsalRefreshEvidencePanelResponses = {
     /**
      * Successful Response
      */
-    200: ForkPanel;
+    200: EvidencePanel;
 };
 
-export type rehearsalRefreshForkPanelResponse = rehearsalRefreshForkPanelResponses[keyof rehearsalRefreshForkPanelResponses];
+export type rehearsalRefreshEvidencePanelResponse = rehearsalRefreshEvidencePanelResponses[keyof rehearsalRefreshEvidencePanelResponses];
 
 export type rehearsalCheckProjectAccessData = {
     body: ProjectIn;
@@ -1542,7 +1542,7 @@ export type rehearsalWithdrawEvidenceProjectResponses = {
     /**
      * Successful Response
      */
-    200: ForkPanel;
+    200: EvidencePanel;
 };
 
 export type rehearsalWithdrawEvidenceProjectResponse = rehearsalWithdrawEvidenceProjectResponses[keyof rehearsalWithdrawEvidenceProjectResponses];
@@ -1572,7 +1572,7 @@ export type rehearsalDeclareEvidenceProjectResponses = {
     /**
      * Successful Response
      */
-    200: ForkPanel;
+    200: EvidencePanel;
 };
 
 export type rehearsalDeclareEvidenceProjectResponse = rehearsalDeclareEvidenceProjectResponses[keyof rehearsalDeclareEvidenceProjectResponses];

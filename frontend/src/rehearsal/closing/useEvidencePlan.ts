@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { type CompetencyPage, RehearsalService } from "@/client";
-import { forkKey } from "../fork/ForkPanel";
+import { evidencePanelKey } from "../evidence/EvidencePanel";
 import {
   closingDrafts,
   type DraftScope,
@@ -146,7 +146,9 @@ export function useSendPlan({
     onSuccess: () => {
       plan.edit(null);
       if (declaring) draftEvidence(null);
-      void queryClient.invalidateQueries({ queryKey: forkKey(competency) });
+      void queryClient.invalidateQueries({
+        queryKey: evidencePanelKey(competency),
+      });
       return queryClient.invalidateQueries({
         queryKey: ["competency", competency],
       });

@@ -1,6 +1,6 @@
 """Evidence Project declarations through the HTTP API: declared per Competency
 with a note, told who reads it, its access checked (never its contents), the
-fork facts greyed, changed or withdrawn until the Reading Day (#468)."""
+repository facts greyed, changed or withdrawn until the Reading Day (#468)."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from conftest import ADA, MakeClient, sign_in
 from fake_github import FakeGitHub
 from fastapi.testclient import TestClient
 
-from app.fork_panel import FakeAccessCheck, OfflineForkReading
+from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
 from app.settings import Settings
 from app.store import GitHubStore, InMemoryStore, Store
 
@@ -38,7 +38,9 @@ def ada(
         update={"github_app_slug": "cws-student-connector"}
     )
     client = make_client(
-        settings=settings, fork_reading=OfflineForkReading(), access_check=access
+        settings=settings,
+        repository_reading=OfflineRepositoryReading(),
+        access_check=access,
     )
     sign_in(client, ADA)
     return client
@@ -47,17 +49,17 @@ def ada(
 def test_the_panel_tells_the_student_who_reads_a_declared_project_and_what_cannot_be_read(  # noqa: E501
     ada: TestClient,
 ) -> None:
-    help = ada.get(f"{C2}/fork").json()["help"]
+    help = ada.get(f"{C2}/evidence-panel").json()["help"]
 
     assert help["notice"].startswith(
         "The Instructor and an AI tool (Mistral, which may train on what it reads)"
     )
-    assert "declare your fork instead" in help["notice"]
+    assert "declare your repository instead" in help["notice"]
     assert "behind a login" in help["password_example"]
     assert "in the repository itself" in help["documentation_advice"]
 
 
-def test_a_readable_github_project_is_declared_and_greys_that_competencys_fork_facts(
+def test_a_readable_github_project_is_declared_and_greys_that_competencys_repository_facts(  # noqa: E501
     ada: TestClient, store: InMemoryStore
 ) -> None:
     before = store.writes
@@ -71,11 +73,11 @@ def test_a_readable_github_project_is_declared_and_greys_that_competencys_fork_f
     assert panel["greyed"] is True
     assert (
         panel["greyed_text"]
-        == "The Reading Day reads `ada/bakery` for C2, not your fork"
+        == "The Reading Day reads `ada/bakery` for C2, not your repository"
     )
-    assert ada.get(f"{C2}/fork").json()["greyed"] is True
+    assert ada.get(f"{C2}/evidence-panel").json()["greyed"] is True
     assert (
-        ada.get("/api/competencies/C1/fork").json()["greyed"] is False
+        ada.get("/api/competencies/C1/evidence-panel").json()["greyed"] is False
     )  # per Competency
 
 
@@ -107,7 +109,10 @@ def test_access_is_checked_again_on_each_view_so_a_grant_shows_without_declaring
     )
     access.rule = lambda repo: True  # the Student installed the App meanwhile
 
-    assert ada.get(f"{C2}/fork").json()["declaration"]["access"]["status"] == "readable"
+    assert (
+        ada.get(f"{C2}/evidence-panel").json()["declaration"]["access"]["status"]
+        == "readable"
+    )
 
 
 def test_when_access_cannot_be_checked_it_reads_not_readable_yet_and_says_why(
@@ -153,13 +158,13 @@ def test_checking_access_before_declaring_stores_nothing(
     assert access.checked == ["ada/bakery"]
 
 
-def test_declaring_the_fork_itself_keeps_its_facts(ada: TestClient) -> None:
+def test_declaring_the_repository_itself_keeps_its_facts(ada: TestClient) -> None:
     panel = ada.post(
         f"{C2}/declaration",
         json={"url": "https://github.com/ada-oceens/OceENS", "note": "all"},
     ).json()
 
-    assert panel["declaration"]["is_fork"] is True
+    assert panel["declaration"]["is_default_repository"] is True
     assert panel["greyed"] is False
     assert panel["declaration"]["access"]["status"] == "readable"
 
@@ -181,7 +186,7 @@ def test_a_declaration_needs_a_github_or_gitlab_repository_and_a_note(
     assert store.writes == before
 
 
-def test_a_declaration_can_be_changed_then_withdrawn_and_the_fork_is_read_again(
+def test_a_declaration_can_be_changed_then_withdrawn_and_the_repository_is_read_again(
     ada: TestClient, store: InMemoryStore
 ) -> None:
     ada.post(f"{C2}/declaration", json=BAKERY)
@@ -196,7 +201,7 @@ def test_a_declaration_can_be_changed_then_withdrawn_and_the_fork_is_read_again(
     assert withdrawn.status_code == 200
     assert withdrawn.json()["declaration"] is None
     assert withdrawn.json()["greyed"] is False
-    assert ada.get(f"{C2}/fork").json()["declaration"] is None
+    assert ada.get(f"{C2}/evidence-panel").json()["declaration"] is None
     assert ada.delete(f"{C2}/declaration").status_code == 409
 
 
@@ -208,7 +213,7 @@ def test_a_declaration_changes_until_the_reading_day_and_no_later(
             settings=test_settings.model_copy(
                 update={"closes_at": past, "reading_day_at": reading_day}
             ),
-            fork_reading=OfflineForkReading(),
+            repository_reading=OfflineRepositoryReading(),
             access_check=FakeAccessCheck(),
         )
         sign_in(c, ADA)
@@ -257,9 +262,9 @@ def counted(request: pytest.FixtureRequest, make_client: MakeClient) -> Counted:
         github = FakeGitHub()
         store = GitHubStore(github.client(), github.repository)
         writes = lambda: github.writes  # noqa: E731
-    forks = OfflineForkReading()
+    repositories = OfflineRepositoryReading()
     client = make_client(
-        store=store, fork_reading=forks, access_check=FakeAccessCheck()
+        store=store, repository_reading=repositories, access_check=FakeAccessCheck()
     )
     sign_in(client, ADA)
     return client, store, writes
@@ -274,7 +279,7 @@ def test_the_closing_step_stores_the_panel_and_the_declaration_in_its_one_send(
         json={"levels": {"C1.a": {"level": "understand", "link": None}}},
     )
     before = writes()
-    shown = client.get(f"{C1}/fork").json()
+    shown = client.get(f"{C1}/evidence-panel").json()
 
     closed = client.post(
         f"{C1}/close",
@@ -283,11 +288,11 @@ def test_the_closing_step_stores_the_panel_and_the_declaration_in_its_one_send(
 
     assert closed.status_code == 200
     assert writes() == before + 1
-    panel = client.get(f"{C1}/fork").json()
+    panel = client.get(f"{C1}/evidence-panel").json()
     assert panel["declaration"]["repository"] == "ada/bakery"
     assert (
         panel["greyed_text"]
-        == "The Reading Day reads `ada/bakery` for C1, not your fork"
+        == "The Reading Day reads `ada/bakery` for C1, not your repository"
     )
     assert client.get(C1).json()["evidence_project"] == "https://github.com/ada/bakery"
     assert panel["declaration"]["note"] == BAKERY["note"]
@@ -310,7 +315,7 @@ def test_closing_without_a_declaration_still_stores_the_panel(counted: Counted) 
     )  # the Self-assessment, then the closing step's one send
     assert client.get(C1).json()["evidence_plan"]["confirmed"] is True
     assert client.get(C1).json()["evidence_project"] is None
-    assert client.get(f"{C1}/fork").json()["declaration"] is None
+    assert client.get(f"{C1}/evidence-panel").json()["declaration"] is None
 
 
 def test_a_declaration_after_the_closing_step_is_its_own_send_and_wins(
@@ -323,7 +328,7 @@ def test_a_declaration_after_the_closing_step_is_its_own_send_and_wins(
     client.delete(f"{C1}/declaration")
 
     assert writes() == before + 1
-    assert client.get(f"{C1}/fork").json()["declaration"] is None
+    assert client.get(f"{C1}/evidence-panel").json()["declaration"] is None
     assert client.get(C1).json()["evidence_project"] is None
 
 

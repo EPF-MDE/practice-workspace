@@ -69,7 +69,7 @@ SENDS: dict[Kind, Callable[[Store, Student], Entry]] = {
             "text": "Redo the gate\n\nC1.b, été",
             "example": "my README",
             "confirmed": True,
-            # the closing step's one send: the declaration made there, the fork
+            # the closing step's one send: the declaration made there, the repository
             # panel as shown
             "declaration": {
                 "url": "https://github.com/ada/bakery",

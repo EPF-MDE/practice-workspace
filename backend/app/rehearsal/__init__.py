@@ -15,7 +15,7 @@ send: drafts stay in the browser.
 """
 
 # Importing the files of routes adds them to `router`, in this order.
-from ._internal import answers, closing, fork_panel  # noqa: F401
+from ._internal import answers, closing, evidence_panel  # noqa: F401
 from ._internal.router import router
 
 __all__ = ["router"]

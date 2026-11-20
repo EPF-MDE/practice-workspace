@@ -4,7 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 // The browser tests run on the real app and the Demo course: the back end
 // serves the React build (run `npm run build` first), with fake sign-in, the
-// Demo course's roster, the in-memory Store and the fake fork reading. No
+// Demo course's roster, the in-memory Store and the fake Repository reading. No
 // GitHub, no PostHog.
 //
 // Each run starts its own server on a free port and never reuses one it did
@@ -45,8 +45,8 @@ export default defineConfig({
       WORKSPACE_ROSTER_FILE: resolve(demoCourse, "roster.csv"),
       WORKSPACE_SIGN_IN: "fake",
       WORKSPACE_STORE: "memory",
-      WORKSPACE_FORK_READING: "fake",
-      WORKSPACE_FORK_READINGS_DIR: resolve(backend, "tests/fixtures"),
+      WORKSPACE_REPOSITORY_READING: "fake",
+      WORKSPACE_REPOSITORY_READINGS_DIR: resolve(backend, "tests/fixtures"),
       WORKSPACE_PUBLIC_URL: baseURL,
       WORKSPACE_SESSION_SECRET: "playwright",
       WORKSPACE_CLOSES_AT: "2099-01-01T00:00:00+01:00",

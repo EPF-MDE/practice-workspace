@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { StepOut } from "@/client";
 import { cn } from "@/lib/utils";
-import { ForkPanelView, openQuestion } from "./fork/ForkPanel";
+import { EvidencePanelView, openQuestion } from "./evidence/EvidencePanel";
 
 /** The session's 2 hours: three Competencies, 40 minutes each. */
 const SESSION = ["C1", "C2", "C3"];
@@ -174,7 +174,7 @@ export function Sidebar({
       className="flex flex-col gap-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto"
     >
       <PathSection {...path} />
-      <ForkPanelView
+      <EvidencePanelView
         competency={competency}
         onMyWorkMissing={() => currentStep && openQuestion(currentStep)}
       />

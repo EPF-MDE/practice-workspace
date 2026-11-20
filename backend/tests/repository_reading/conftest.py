@@ -1,0 +1,51 @@
+from datetime import UTC, datetime
+from pathlib import Path
+
+import pytest
+
+from app.repository_reading import InMemoryReadings, RepositoryReader, StudentRepository
+from app.repository_reading.recorded import RecordedGitHub
+
+FIXTURES = Path(__file__).parent / "fixtures"
+NOW = datetime(2026, 12, 11, 9, 0, tzinfo=UTC)
+
+# Fictional recordings, shaped on repositories recorded on 19 November 2026: their
+# logins, branches, pull requests, commits and code are invented; their shapes, dates
+# and counts are kept. By the shape of #451 each one shows.
+REPOSITORIES = {
+    "empty-repository": StudentRepository(
+        "dorothy-math", "MATHutrice", "dorothy-math/MATHutrice"
+    ),
+    "work-off-default": StudentRepository(
+        "rosalind-oceens", "OcéENS", "rosalind-oceens/OceENS"
+    ),
+    "deleted-pr-branch": StudentRepository(
+        "barbara-oceens", "OcéENS", "barbara-oceens/OceENS"
+    ),
+    "placeholder-email": StudentRepository(
+        "frances-oceens", "OcéENS", "frances-oceens/OceENS"
+    ),
+    "claude-author": StudentRepository("joan-oceens", "OcéENS", "joan-oceens/OceENS"),
+    "fallback-default": StudentRepository(
+        "radia-oceens", "OcéENS", "radia-oceens/OceENS"
+    ),
+    "both-environments": StudentRepository(
+        "emmy-math", "MATHutrice", "emmy-math/MATHutrice"
+    ),
+}
+
+
+class Recorded:
+    def __init__(self, name: str) -> None:
+        self.student = REPOSITORIES[name]
+        self.github = RecordedGitHub.load(FIXTURES / f"{name}.json.gz")
+        self.readings = InMemoryReadings()
+        self.reader = RepositoryReader(self.github, self.readings, now=lambda: NOW)
+
+    def compares(self) -> list[str]:
+        return [p for p in self.github.requests if "/compare/" in p]
+
+
+@pytest.fixture
+def recorded() -> type[Recorded]:
+    return Recorded

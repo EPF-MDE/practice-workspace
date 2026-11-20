@@ -23,23 +23,23 @@ from starlette.middleware.sessions import SessionMiddleware
 from app import auth, observability, rehearsal
 from app.auth import FakeIdentity, GitHubIdentity, Identity
 from app.content import load_content
-from app.fork_panel import (
+from app.evidence_panel import (
     AccessCheck,
     AppAccessCheck,
     FakeAccessCheck,
-    ForkSource,
-    LazyForkSource,
-    OfflineForkReading,
+    LazyReadingSource,
+    OfflineRepositoryReading,
+    ReadingSource,
 )
-from app.fork_reading import (
+from app.github_app import installation_client, read_file
+from app.repository_reading import (
     DirectoryReadings,
-    ForkReader,
     GitHubWorkspaceData,
     HttpGitHub,
+    RepositoryReader,
     WorkspaceDataReadings,
     installation_token,
 )
-from app.github_app import installation_client, read_file
 from app.roster import RefreshingRoster, RosterSource, StaticRoster
 from app.settings import Settings, get_settings
 from app.store import GitHubStore, InMemoryStore, SendTooLarge, Store, StoreUnavailable
@@ -51,8 +51,9 @@ BACKEND = Path(__file__).resolve().parents[1]
 STATIC_CANDIDATES = (BACKEND / "static", BACKEND.parent / "frontend" / "dist")
 # The commit the artefact was built from, written by the build; "unknown" locally.
 REVISION_FILE = BACKEND / "REVISION"
-# The fake fork reading's readings, for local runs and Playwright (not in the artefact).
-FAKE_FORK_READINGS = BACKEND / "tests" / "fixtures"
+# The fake Repository reading's readings, for local runs and Playwright (not in the
+# artefact).
+FAKE_REPOSITORY_READINGS = BACKEND / "tests" / "fixtures"
 # What a Student reads when GitHub, behind the Store, fails (503).
 STORE_UNAVAILABLE = (
     "GitHub, where the workspace stores your work, did not answer. "
@@ -141,26 +142,26 @@ def default_store(settings: Settings) -> Store:
     )
 
 
-def _fake_fork_reading(settings: Settings) -> bool:
-    if settings.fork_reading == "auto":
+def _fake_repository_reading(settings: Settings) -> bool:
+    if settings.repository_reading == "auto":
         return settings.sign_in == "fake"
-    return settings.fork_reading == "fake"
+    return settings.repository_reading == "fake"
 
 
-def default_fork_reading(settings: Settings) -> ForkSource:
-    if _fake_fork_reading(settings):
+def default_repository_reading(settings: Settings) -> ReadingSource:
+    if _fake_repository_reading(settings):
         folder = (
-            Path(settings.fork_readings_dir)
-            if settings.fork_readings_dir
-            else FAKE_FORK_READINGS
+            Path(settings.repository_readings_dir)
+            if settings.repository_readings_dir
+            else FAKE_REPOSITORY_READINGS
         )
-        return OfflineForkReading(
+        return OfflineRepositoryReading(
             DirectoryReadings(folder) if folder.is_dir() else None
         )
 
-    def build() -> ForkSource:
+    def build() -> ReadingSource:
         # Raises until the Student Connector has an installation: the panel then says
-        # the fork could not be read now, and the next view tries again.
+        # the repository could not be read now, and the next view tries again.
         token = installation_token(
             settings.github_app_id,
             settings.github_app_private_key_base64,
@@ -174,13 +175,13 @@ def default_fork_reading(settings: Settings) -> ForkSource:
         data = GitHubWorkspaceData(
             settings.repository, store_token, branch=settings.data_branch
         )
-        return ForkReader(HttpGitHub(token), WorkspaceDataReadings(data))
+        return RepositoryReader(HttpGitHub(token), WorkspaceDataReadings(data))
 
-    return LazyForkSource(build)
+    return LazyReadingSource(build)
 
 
 def default_access_check(settings: Settings) -> AccessCheck:
-    if _fake_fork_reading(settings):
+    if _fake_repository_reading(settings):
         return FakeAccessCheck()
     return AppAccessCheck(
         settings.github_app_id, settings.github_app_private_key_base64
@@ -192,7 +193,7 @@ def create_app(
     roster: RosterSource | None = None,
     identity: Identity | None = None,
     store: Store | None = None,
-    fork_reading: ForkSource | None = None,
+    repository_reading: ReadingSource | None = None,
     access_check: AccessCheck | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
@@ -234,8 +235,10 @@ def create_app(
     app.state.roster = roster or default_roster(settings)
     app.state.identity = identity or default_identity(settings)
     app.state.store = store if store is not None else default_store(settings)
-    app.state.fork_reading = (
-        fork_reading if fork_reading is not None else default_fork_reading(settings)
+    app.state.repository_reading = (
+        repository_reading
+        if repository_reading is not None
+        else default_repository_reading(settings)
     )
     app.state.access_check = (
         access_check if access_check is not None else default_access_check(settings)

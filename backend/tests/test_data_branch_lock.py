@@ -1,5 +1,6 @@
 """One in-process lock for every write to a data branch: the Store's drawings and the
-fork reading's saves take the same one (#460: "serialised by an in-process lock")."""
+Repository reading's saves take the same one (#460: "serialised by an in-process
+lock")."""
 
 import threading
 import time
@@ -7,8 +8,8 @@ import time
 import httpx
 from fake_github import FakeGitHub
 
-from app.fork_reading import GitHubWorkspaceData
 from app.github_app import data_branch_lock
+from app.repository_reading import GitHubWorkspaceData
 from app.roster import Student
 from app.store import GitHubStore
 
@@ -28,15 +29,15 @@ def test_every_writer_of_one_branch_gets_the_same_lock_and_other_branches_their_
     ) is not data_branch_lock("EPF-MDE/complex-web-services", "other")
 
 
-def test_a_drawing_and_a_fork_reading_write_one_at_a_time() -> None:
-    """Without one shared lock, the fork reading's commit lands between a
+def test_a_drawing_and_a_repository_reading_write_one_at_a_time() -> None:
+    """Without one shared lock, the Repository reading's commit lands between a
     drawing's two files."""
     github = FakeGitHub()
     log: list[str] = []
 
     def handle(request: httpx.Request) -> httpx.Response:
         path = request.url.path
-        if "/git/" in path:  # the fork reading's Git Data API calls
+        if "/git/" in path:  # the Repository reading's Git Data API calls
             log.append("reading")
             time.sleep(0.02)
             if request.method == "GET" and "/git/ref/" in path:
@@ -65,7 +66,9 @@ def test_a_drawing_and_a_fork_reading_write_one_at_a_time() -> None:
     drawing.start()
     while "drawing" not in log:
         time.sleep(0.001)
-    data.write({"fork-readings/ada.json": b"{}"}, "data: read the fork of ada")
+    data.write(
+        {"repository-readings/ada.json": b"{}"}, "data: read the repository of ada"
+    )
     drawing.join()
 
     assert log[:2] == [

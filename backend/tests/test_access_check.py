@@ -15,7 +15,7 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from app.fork_panel import AppAccessCheck
+from app.evidence_panel import AppAccessCheck
 
 
 @pytest.fixture(scope="module")

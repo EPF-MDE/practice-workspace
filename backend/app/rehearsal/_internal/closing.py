@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi import Depends, HTTPException, Request
 
-from app import closing, fork_panel
+from app import closing, evidence_panel
 from app.auth import current_student
 from app.roster import Student
 from app.settings import Settings
@@ -128,8 +128,8 @@ def close_competency(
     student: Student = Depends(current_student),
 ) -> EvidencePlanVersion:
     """The closing step, one send: the Evidence Plan confirmed, with one example for the
-    Eval, the Evidence Project declared there if any, and a snapshot of the fork panel
-    as shown."""
+    Eval, the Evidence Project declared there if any, and a snapshot of the evidence
+    panel as shown."""
     page = _page(request, competency, student)
     if not sent.example.strip():
         raise HTTPException(422, "Write one example you will show at the Eval")
@@ -164,5 +164,5 @@ def close_competency(
         _declaration_out(current, request, student),
         refresh=False,
     )
-    plan["evidence_panel_snapshot"] = fork_panel.snapshot(panel)
+    plan["evidence_panel_snapshot"] = evidence_panel.snapshot(panel)
     return _plan_version(store.save_evidence_plan(student, competency, plan))

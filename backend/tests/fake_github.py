@@ -66,7 +66,8 @@ class FakeGitHub:
             self._add_comment(number, body, {"login": login, "type": type})
 
     def commit_by_hand(self, branch: str, path: str, data: bytes) -> None:
-        """Another writer (the fork reading's batch, a person) commits on the branch."""
+        """Another writer (the Repository reading's batch, a person) commits on the
+        branch."""
         with self._lock:
             self._commit(branch, path, data, "by hand")
 

@@ -12,15 +12,20 @@ from conftest import ADA, MakeClient, sign_in
 from fake_github import FakeGitHub
 from fastapi.testclient import TestClient
 
-from app.fork_panel import FakeAccessCheck, OfflineForkReading
-from app.fork_reading import CompetencyReading, Fact, ForkReading, StudentFork
+from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
+from app.repository_reading import (
+    CompetencyReading,
+    Fact,
+    RepositoryReading,
+    StudentRepository,
+)
 from app.store import GitHubStore
 
 C1 = "/api/competencies/C1"
 READ_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 
 
-def a_fork_with_very_many_files() -> ForkReading:
+def a_repository_with_very_many_files() -> RepositoryReading:
     files = [
         {"path": f"src/module_{i:05}/a_long_file_name.py", "additions": i}
         for i in range(3000)
@@ -32,8 +37,8 @@ def a_fork_with_very_many_files() -> ForkReading:
         link="https://github.com/ada-oceens/OceENS/compare/a...b",
         detail={"branch": "feature/cache", "files": files},
     )
-    return ForkReading(
-        student=StudentFork("ada-oceens", "OcéENS", "ada-oceens/OceENS"),
+    return RepositoryReading(
+        student=StudentRepository("ada-oceens", "OcéENS", "ada-oceens/OceENS"),
         default_branch="main",
         read_at=READ_AT,
         checked_at=READ_AT,
@@ -55,11 +60,11 @@ def github() -> FakeGitHub:
 
 @pytest.fixture
 def ada(make_client: MakeClient, github: FakeGitHub) -> TestClient:
-    forks = OfflineForkReading()
-    forks.put(a_fork_with_very_many_files())
+    repositories = OfflineRepositoryReading()
+    repositories.put(a_repository_with_very_many_files())
     client = make_client(
         store=GitHubStore(github.client(), github.repository),
-        fork_reading=forks,
+        repository_reading=repositories,
         access_check=FakeAccessCheck(),
     )
     sign_in(client, ADA)
@@ -70,7 +75,7 @@ def ada(make_client: MakeClient, github: FakeGitHub) -> TestClient:
     return client
 
 
-def test_the_longest_closing_send_with_a_fork_of_very_many_files_fits_one_comment(
+def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_comment(
     ada: TestClient, github: FakeGitHub
 ) -> None:
     before = github.writes

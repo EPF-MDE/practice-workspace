@@ -198,7 +198,7 @@ class Me(BaseModel):
     name: str
     group: str
     project: str
-    fork: str
+    repository: str
 
 
 router = APIRouter()

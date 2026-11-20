@@ -1,6 +1,6 @@
 import type { CompetencyPage, PointBlock, StepOut } from "@/client";
-import { EvidenceProject } from "../fork/EvidenceProject";
-import { ForkPanelView, openQuestion } from "../fork/ForkPanel";
+import { EvidenceProject } from "../evidence/EvidenceProject";
+import { EvidencePanelView, openQuestion } from "../evidence/EvidencePanel";
 import { type DraftScope } from "../progress";
 import { ExampleField, PlanEditor, PlanSendBar } from "./EvidencePlanForm";
 import { SelfAssessmentForm } from "./SelfAssessmentForm";
@@ -59,9 +59,9 @@ export function ClosingStep({ studentId, competency, step, page }: Props) {
         sendLevels={sendLevels}
       />
       <PlanEditor plan={plan} over={over} />
-      <ForkPanelView
+      <EvidencePanelView
         competency={competency}
-        title="Your fork, before you choose your Evidence Project"
+        title="Your repository, before you choose your Evidence Project"
         onMyWorkMissing={() => openQuestion(step.id)}
       />
       <EvidenceProject
