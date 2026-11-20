@@ -24,3 +24,19 @@ An idea has one name, the one in [GLOSSARY.md](./GLOSSARY.md), on the screen,
 in the API, in the Store's entry kinds, in the code and in the tests. A word
 on the glossary's _Avoid_ list is a finding. A new idea gets its glossary
 entry in the same change that names it.
+
+## A Deep Module: a small interface, a lot behind it
+
+Each subpackage of `app` is a Deep Module. Its `__init__.py` is its
+interface: the names listed in its `__all__` are everything a caller needs to
+read. A public submodule, one without a leading `_`, adds to that interface,
+so keep them few. Everything else lives under `_internal/`, where the module's
+files import each other freely. `npm run check` refuses any import past the
+interface, a star re-export and a cycle between modules. It cannot tell
+whether the module is deep. These are findings:
+
+- a name in the interface that only one caller needs, or that shows how the
+  module works rather than what it does;
+- a public function that only passes its arguments on to `_internal/`, where a
+  re-export would do;
+- two modules a caller must always use together to do one thing.
