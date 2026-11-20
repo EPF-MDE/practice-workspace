@@ -35,6 +35,17 @@ code keeps
 its lines
 \`\`\`
 
+    indented code
+    keeps its lines
+
+A line ends on a deliberate break,\\
+and one on two spaces,  
+as Markdown allows.
+
+A | table
+--|------
+without | leading pipes
+
 ::: field {#sentence kind=line}
 A directive's text.
 :::
@@ -59,6 +70,15 @@ describe("check-markdown-wraps", () => {
     );
 
     expect(result.stderr).toContain("doc.md:2: on after a line break.");
+    expect(result.status).toBe(1);
+  });
+
+  it("refuses a hard-wrapped paragraph after code naming its fence", () => {
+    const result = checkMarkdown(
+      "```\nnaming ``` inside\n```\nA paragraph that goes\non after a line break.\n"
+    );
+
+    expect(result.stderr).toContain("doc.md:5: on after a line break.");
     expect(result.status).toBe(1);
   });
 
