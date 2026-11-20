@@ -23,8 +23,8 @@ name: Agent — Implement A Spec
 #
 #     A ticket closes when its pull request merges, not when it opens, so a
 #     ticket is built on its dependencies' merged code. When every ticket left
-#     waits on an unmerged pull request, the chain stops; a manual dispatch
-#     after the merge starts it again.
+#     waits on an unmerged pull request, the chain stops; the first cron tick
+#     after the merge starts it again, within fifteen minutes.
 #
 # THE SHAPE, AS A PICTURE
 #
@@ -109,9 +109,10 @@ on:
   #      • GitHub disables scheduled workflows in a repository with no commits
   #        for sixty days, and emails the owner. A quiet repo stops on its own.
   #
-  #    Off until the chain has earned it (#503, story 49): #512 switches it on.
-  # schedule:
-  #   - cron: "*/15 * * * *"
+  #    A tick with no spec labelled `agent:implement-spec`, or with nothing to
+  #    build, ends in `survey` and starts no agent.
+  schedule:
+    - cron: "*/15 * * * *"
 
   # 3. The button, and the chain. `workflow_dispatch` is how a human starts it
   #    without labelling anything — and it is how the `chain` job at the bottom
@@ -267,9 +268,9 @@ jobs:
               echo "mode=drained" >> "$GITHUB_OUTPUT"
             elif [ "$waiting" != "[]" ]; then
               # Every buildable ticket waits on a pull request the Instructor
-              # has not merged yet. The chain stops here; a manual dispatch
+              # has not merged yet. The chain stops here; the first cron tick
               # after the merge picks the queue up again.
-              echo "::notice::Spec #$spec waits for the pull requests of ticket(s) $waiting to merge. Run this workflow again once they have."
+              echo "::notice::Spec #$spec waits for the pull requests of ticket(s) $waiting to merge. The next cron tick after the merge picks it up again."
               echo "mode=waiting" >> "$GITHUB_OUTPUT"
             else
               # Open tickets exist but every one is blocked. That is a cycle
@@ -730,17 +731,17 @@ jobs:
   #
   # This is the loop. Four lines of `gh` at the end of a run, starting the same
   # workflow again — which surveys the queue afresh, finds the next frontier
-  # ticket, and builds that one. Nothing schedules the queue and nothing holds
-  # it in memory. Each run ends by asking for the next.
+  # ticket, and builds that one. No run holds the queue in memory. Each run
+  # ends by asking for the next; the cron only restarts a chain that stopped.
   #
   # It runs after either loop: after `decompose`, to start building what was
   # just written; after `implement`, to take the next ticket.
   #
   # It stops when `survey` reports `waiting`, `drained` or `no-spec` — that is,
-  # when a run looks at the queue and finds nothing to do. After `waiting`, a
-  # manual dispatch once the pull request merges starts it again. The chain has no counter and no
-  # limit, so an empty queue is genuinely the only brake on it. That is worth
-  # sitting with before you point this at your own repository.
+  # when a run looks at the queue and finds nothing to do. After `waiting`, the
+  # cron starts it again within fifteen minutes of the merge. The chain has no
+  # counter and no limit, so an empty queue is genuinely the only brake on it.
+  # That is worth sitting with before you point this at your own repository.
   #
   # It does not re-dispatch after a failed decompose: with no queue written,
   # the next run would decompose again, and again. A spec the decomposer could
