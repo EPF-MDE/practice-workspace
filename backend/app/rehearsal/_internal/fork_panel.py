@@ -10,18 +10,18 @@ from app.fork_panel import ForkPanel, NotAProject
 from app.roster import Student
 from app.settings import Settings
 
-from ._evidence import (
+from .evidence import (
     _competency,
     _declaration_out,
     _declaration_payload,
     _panel,
 )
-from ._models import (
+from .models import (
     DeclarationIn,
     ProjectIn,
 )
-from ._router import router
-from ._steps import (
+from .router import router
+from .steps import (
     _refuse_after_the_reading_day,
     _store,
 )

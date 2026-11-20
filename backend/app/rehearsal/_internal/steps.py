@@ -26,7 +26,7 @@ from app.roster import Student
 from app.settings import PARIS, Settings
 from app.store import Entry, Kind, Record, Store
 
-from ._models import (
+from .models import (
     AnswerBlock,
     CanvasBlock,
     CheckPointOut,

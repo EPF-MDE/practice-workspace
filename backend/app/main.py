@@ -51,10 +51,6 @@ BACKEND = Path(__file__).resolve().parents[1]
 STATIC_CANDIDATES = (BACKEND / "static", BACKEND.parent / "frontend" / "dist")
 # The commit the artefact was built from, written by the build; "unknown" locally.
 REVISION_FILE = BACKEND / "REVISION"
-# The content files: copied here by the artefact build, or a `content/` folder
-# beside the back end. This repository has neither: without WORKSPACE_CONTENT_DIR,
-# the app refuses to start.
-CONTENT_CANDIDATES = (BACKEND / "content", BACKEND.parent / "content")
 # The fake fork reading's readings, for local runs and Playwright (not in the artefact).
 FAKE_FORK_READINGS = BACKEND / "tests" / "fixtures"
 # What a Student reads when GitHub, behind the Store, fails (503).
@@ -110,12 +106,11 @@ def default_identity(settings: Settings) -> Identity:
 
 
 def default_content_dir(settings: Settings) -> Path:
-    if settings.content_dir:
-        return Path(settings.content_dir)
-    found = next((path for path in CONTENT_CANDIDATES if path.is_dir()), None)
-    if found is None:
+    """The Course folder, only ever from WORKSPACE_CONTENT_DIR: the engine
+    holds no course of its own."""
+    if not settings.content_dir:
         raise ConfigurationError("No content folder: set WORKSPACE_CONTENT_DIR")
-    return found
+    return Path(settings.content_dir)
 
 
 def default_store(settings: Settings) -> Store:

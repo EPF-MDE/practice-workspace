@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     pass
-from ._rules import (
+from .rules import (
     FALLBACK_CHAIN,
     IDENTITY,
     LOCKFILES,
     POSTHOG,
     _date,
 )
-from ._state import _ReadingState
+from .state import _ReadingState
 
 
 class _Analysis(_ReadingState):

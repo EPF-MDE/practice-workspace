@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
-from .reading import (
+from ..reading import (
     COMPETENCIES,
     Fact,
     ForkReading,
@@ -15,7 +15,7 @@ from .reading import (
 )
 
 if TYPE_CHECKING:
-    from .reader import ForkReader
+    from ..reader import ForkReader
 
 
 class _ReadingState:

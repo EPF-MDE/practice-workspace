@@ -2,7 +2,12 @@ import type { CheckPointOut, CompetencyPage, PointBlock } from "@/client";
 import { Button } from "@/components/ui/button";
 import { Html } from "../Html";
 import { errorMessage } from "../progress";
-import { LEVELS, type Levels, type useSendLevels } from "./useSelfAssessment";
+import {
+  DONE,
+  LEVELS,
+  type Levels,
+  type useSendLevels,
+} from "./useSelfAssessment";
 
 type Point = PointBlock & { type: "point" };
 
@@ -33,7 +38,7 @@ function LevelChoices({ point, levels, closed, over }: PointProps) {
               over ||
               (closed &&
                 before !== undefined &&
-                level.id !== "done" &&
+                level.id !== DONE &&
                 level.id !== before)
             }
             onChange={() => levels.rate(point.id, { level: level.id })}
@@ -119,7 +124,7 @@ function PointFieldset(props: PointProps & { checks: CheckPointOut[] }) {
       </legend>
       <Html html={point.statement_html} />
       <LevelChoices {...props} />
-      {mine?.level === "done" && (
+      {mine?.level === DONE && (
         <DoneLink
           point={point}
           link={mine.link}

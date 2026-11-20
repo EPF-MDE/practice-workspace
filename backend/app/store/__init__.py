@@ -26,7 +26,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.roster import Student
-from app.store._model import (
+from app.store._internal.model import (
     KINDS,
     MAX_SEND_CHARS,
     DrawingFiles,

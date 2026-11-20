@@ -3,8 +3,8 @@ import type { StepOut } from "@/client";
 
 /**
  * What the browser keeps until the Student sends it: drafts, steps read, the
- * time the Competency was opened. Nothing here reaches the Store (no autosave),
- *, and a reload loses nothing.
+ * time the Competency was opened. Nothing here reaches the Store (no
+ * autosave), and a reload loses nothing.
  */
 
 /** Whose drafts they are, and on which Competency's page. */

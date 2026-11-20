@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from markdown_it import MarkdownIt
 
-from ._model import (
+from .model import (
     GROUPS,
     Answer,
     Block,
@@ -23,7 +23,7 @@ from ._model import (
     Waiting,
     _options,
 )
-from ._tree import _Directive, _Node, _RawStep
+from .tree import _Directive, _Node, _RawStep
 
 
 @dataclass(frozen=True)

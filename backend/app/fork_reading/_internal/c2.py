@@ -5,20 +5,20 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
-from .reading import (
+from ..reading import (
     STUDENT,
     Fact,
 )
 
 if TYPE_CHECKING:
     pass
-from ._rules import (
+from .rules import (
     CLEAN_BENCH,
     FALLBACK_CHAIN,
     RUNS_PAGES,
     _date,
 )
-from ._state import _ReadingState
+from .state import _ReadingState
 
 
 class _C2Facts(_ReadingState):

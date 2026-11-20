@@ -4,18 +4,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from .reading import (
+from ..reading import (
     Fact,
 )
 
 if TYPE_CHECKING:
     pass
-from ._rules import (
+from .rules import (
     FIX_PR,
     POSTHOG_FALLBACK,
     _date,
 )
-from ._state import _ReadingState
+from .state import _ReadingState
 
 
 class _C3Facts(_ReadingState):

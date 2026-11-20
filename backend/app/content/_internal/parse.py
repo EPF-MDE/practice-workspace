@@ -6,13 +6,13 @@ import re
 from collections.abc import Callable
 from typing import Any, cast
 
-from ._check import _check
-from ._model import (
+from .check import _check
+from .model import (
     DIRECTIVES,
     ContentError,
 )
-from ._render import Competency
-from ._tree import _Directive, _Node, _RawStep, _walk
+from .render import Competency
+from .tree import _Directive, _Node, _RawStep, _walk
 
 # --- Parsing -----------------------------------------------------------------
 

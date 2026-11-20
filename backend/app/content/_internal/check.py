@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from ._model import (
+from .model import (
     BANDS,
     CHECK_POINTS,
     DRAWING_DIRECTIVES,
@@ -20,8 +20,8 @@ from ._model import (
     ReferenceDrawing,
     _options,
 )
-from ._render import Competency, _step_for
-from ._tree import _Directive, _RawStep, _walk
+from .render import Competency, _step_for
+from .tree import _Directive, _RawStep, _walk
 
 
 def _check(competency: Competency, source: str) -> None:

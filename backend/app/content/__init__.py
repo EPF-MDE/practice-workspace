@@ -60,7 +60,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from ._model import (
+from ._internal.model import (
     Answer,
     Block,
     Canvas,
@@ -75,8 +75,8 @@ from ._model import (
     Step,
     Waiting,
 )
-from ._parse import parse_competency
-from ._render import Competency
+from ._internal.parse import parse_competency
+from ._internal.render import Competency
 
 __all__ = [
     "Answer",

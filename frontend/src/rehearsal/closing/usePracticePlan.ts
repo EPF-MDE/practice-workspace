@@ -8,7 +8,7 @@ import {
   type EvidenceDraft,
   evidenceDrafts,
 } from "../progress";
-import type { Levels } from "./useSelfAssessment";
+import { DONE, type Levels } from "./useSelfAssessment";
 
 /**
  * The Practice Plan as it stands: drafted from the levels in this browser
@@ -21,7 +21,7 @@ export function usePlan(
 ) {
   const { competency } = scope;
   const forDraft = Object.fromEntries(
-    Object.entries(rated).filter(([, v]) => v.level !== "done")
+    Object.entries(rated).filter(([, v]) => v.level !== DONE)
   );
   const draft = useQuery({
     queryKey: ["competency", competency, "draft", forDraft],

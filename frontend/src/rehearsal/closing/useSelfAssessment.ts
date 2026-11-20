@@ -7,11 +7,14 @@ import {
 } from "@/client";
 import { closingDrafts, type DraftScope, type LevelDraft } from "../progress";
 
+/** The level that asks for a link to what the Student has done. */
+export const DONE = "done";
+
 export const LEVELS = [
   { id: "not-yet", label: "Not yet" },
   { id: "understand", label: "I understand" },
   { id: "redo", label: "I can redo" },
-  { id: "done", label: "I have done it" },
+  { id: DONE, label: "I have done it" },
 ];
 const LINK = /^https:\/\/(github\.com|gitlab\.com)\/[\w.-]+\/[\w.-]+(\/\S*)?$/;
 
@@ -56,7 +59,7 @@ function ratedLevels(levels: Record<string, LevelDraft>) {
       .filter(([, v]) => v.level)
       .map(([p, v]) => [
         p,
-        { level: v.level, link: v.level === "done" ? v.link.trim() : null },
+        { level: v.level, link: v.level === DONE ? v.link.trim() : null },
       ])
   );
 }
@@ -91,7 +94,7 @@ export function useLevels(scope: DraftScope, page: CompetencyPage) {
       ) ||
       Object.values(ticks(scope.studentId, page)).some((t) => t.local));
   const missingLink = Object.entries(rated).find(
-    ([, v]) => v.level === "done" && !LINK.test(v.link ?? "")
+    ([, v]) => v.level === DONE && !LINK.test(v.link ?? "")
   );
   return { levels, rate, sent, rated, changed, missingLink };
 }

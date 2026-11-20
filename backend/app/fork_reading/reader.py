@@ -21,8 +21,8 @@ from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import quote
 
-from ._one_reading import _Reading
-from ._rules import (
+from ._internal.one_reading import _Reading
+from ._internal.rules import (
     COURSE_PREFIX,
     UPSTREAM_TTL,
     _ref_shas,

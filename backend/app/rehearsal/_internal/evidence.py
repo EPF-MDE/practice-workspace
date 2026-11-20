@@ -14,7 +14,7 @@ from app.fork_reading import COMPETENCIES, StudentFork
 from app.roster import Student
 from app.settings import Settings
 
-from ._models import (
+from .models import (
     MAX_NOTE_CHARS,
     MAX_URL_CHARS,
     DeclarationIn,

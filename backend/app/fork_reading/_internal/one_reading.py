@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .github import GitHubError
-from .reading import (
+from ..github import GitHubError
+from ..reading import (
     COMPETENCIES,
     LOOKED_FOR,
     NOT_VISIBLE,
@@ -15,11 +15,11 @@ from .reading import (
 
 if TYPE_CHECKING:
     pass
-from ._analysis import _Analysis
-from ._c1 import _C1Facts
-from ._c2 import _C2Facts
-from ._c3 import _C3Facts
-from ._rules import (
+from .analysis import _Analysis
+from .c1 import _C1Facts
+from .c2 import _C2Facts
+from .c3 import _C3Facts
+from .rules import (
     _ref_shas,
 )
 

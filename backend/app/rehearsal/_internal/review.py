@@ -14,7 +14,7 @@ from app.content import (
 )
 from app.store import Entry, Kind, Record
 
-from ._models import (
+from .models import (
     MAX_URL_CHARS,
     PointLevel,
     PointLevelNow,

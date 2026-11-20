@@ -45,7 +45,7 @@ import httpx
 
 from app.github_app import data_branch_lock
 from app.roster import Student
-from app.store._comments import (
+from app.store._internal.comments import (
     _MARKER_RE,
     _entry,
     _header,
@@ -53,7 +53,7 @@ from app.store._comments import (
     _time,
     comment_body,
 )
-from app.store._model import (
+from app.store._internal.model import (
     GITHUB_COMMENT_LIMIT,
     DrawingFiles,
     Entry,

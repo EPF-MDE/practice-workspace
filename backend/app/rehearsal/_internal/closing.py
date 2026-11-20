@@ -12,13 +12,13 @@ from app.roster import Student
 from app.settings import Settings
 from app.store import Kind
 
-from ._evidence import (
+from .evidence import (
     _changed,
     _declaration_out,
     _declaration_payload,
     _panel,
 )
-from ._models import (
+from .models import (
     MAX_EXAMPLE_CHARS,
     MAX_PLAN_CHARS,
     ClosingIn,
@@ -30,15 +30,15 @@ from ._models import (
     Stored,
     _at_most,
 )
-from ._review import (
+from .review import (
     _draft,
     _drafted,
     _levels,
     _plan_version,
     _ticks,
 )
-from ._router import router
-from ._steps import (
+from .router import router
+from .steps import (
     _now,
     _page,
     _phase,
