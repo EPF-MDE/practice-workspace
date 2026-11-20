@@ -1,7 +1,3 @@
-// From the Software Factories for Real Engineers cohort
-// (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m),
-// ai-hero-dev/cohort-005-project@4339a30.
-
 import { z } from "zod/v4";
 
 // The plan the explore run hands back. The apply job in agent-explore.yml
