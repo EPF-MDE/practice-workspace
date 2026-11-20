@@ -8,6 +8,8 @@ set -e
 
 parts="repository backend frontend"
 
+. "$(dirname "$0")/check-steps.sh"
+
 step() { printf '\n▶ %s\n' "$1"; }
 
 repository() {
@@ -20,27 +22,26 @@ repository() {
   npx oxlint -c .oxlintrc.json --ignore-pattern "frontend/**"
 }
 
-backend() (
-  cd backend
+backend() {
   step "Back end: format and lint"
-  uv run --frozen ruff format --check .
-  uv run --frozen ruff check .
+  uv_backend ruff format --check .
+  uv_backend ruff check .
   step "Back end: types"
-  uv run --frozen mypy
+  backend_types
   step "Back end: boundaries"
-  uv run --frozen tach check
-  uv run --frozen python scripts/check_cycles.py
+  backend_boundaries
+  backend_cycles
   step "Back end: tests"
-  uv run --frozen pytest
-)
+  uv_backend pytest
+}
 
 frontend() {
   step "Front end: lint"
   npx oxlint -c .oxlintrc.json frontend
   step "Front end: types"
-  npm --prefix frontend run --silent typecheck
+  frontend_types
   step "Front end: boundaries"
-  npm --prefix frontend run --silent lint:boundaries
+  frontend_boundaries
 }
 
 [ $# -gt 0 ] || set -- $parts

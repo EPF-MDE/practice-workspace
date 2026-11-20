@@ -7,7 +7,6 @@
   "scripts": {
     "check": "sh scripts/check.sh",
     "format": "biome format --write . && prettier --write \"**/*.md\" && cd backend && uv run --frozen ruff format .",
-    "lint:oxlint": "oxlint -c .oxlintrc.json",
     "prepare": "husky"
   },
   "lint-staged": {
