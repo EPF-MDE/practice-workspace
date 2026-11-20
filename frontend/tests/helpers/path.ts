@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { drawChain } from "./draw";
+import { drawChain, shapesOfChain } from "./draw";
 
 export type Group = "OcéENS" | "MATHutrice";
 
@@ -107,7 +107,7 @@ export async function redraw(
 
   const canvas = section.getByRole("figure", { name: "Your drawing" });
   await drawChain(page, canvas.locator(".tl-canvas"), labels);
-  await expect(canvas.locator(".tl-shape")).toHaveCount(labels.length * 2 - 1);
+  await expect(canvas.locator(".tl-shape")).toHaveCount(shapesOfChain(labels));
   await section.getByRole("button", { name: "Send my drawing" }).click();
 
   await expect(section.getByTestId("drawing-sent")).toContainText("Version 1");
