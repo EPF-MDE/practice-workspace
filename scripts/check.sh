@@ -8,6 +8,7 @@ parts="repository backend frontend"
 step() { printf '\n▶ %s\n' "$1"; }
 
 repository() {
+  require_installed node_modules
   step "Repository: file size (every tracked file)"
   git ls-files -z | xargs -0 node scripts/check-file-tokens.js
   step "Repository: secrets (POSTHOG_API_KEY on the agent's step only)"
@@ -40,6 +41,7 @@ backend() {
 }
 
 frontend() {
+  require_installed node_modules frontend/node_modules
   step "Front end: lint"
   npx oxlint -c .oxlintrc.json frontend
   step "Front end: types"
