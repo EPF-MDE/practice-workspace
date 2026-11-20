@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ..reading import (
     Fact,
 )
-
-if TYPE_CHECKING:
-    pass
 from .rules import (
     FIX_PR,
     POSTHOG_FALLBACK,
@@ -59,7 +56,7 @@ class _C3Facts(_ReadingState):
             ):
                 continue
             c = (
-                self.r.compare(self.s.evidence_project, sha, latest["sha"])
+                self.github.compare(self.s.evidence_project, sha, latest["sha"])
                 if sha != latest["sha"]
                 else {"behind_by": 0}
             )

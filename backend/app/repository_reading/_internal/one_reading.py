@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel
 
 from ..github import GitHubError
@@ -12,9 +10,6 @@ from ..reading import (
     CompetencyReading,
     RepositoryReading,
 )
-
-if TYPE_CHECKING:
-    pass
 from .analysis import _Analysis
 from .c1 import _C1Facts
 from .c2 import _C2Facts
@@ -35,8 +30,8 @@ class _Repository(BaseModel):
 
 class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
     def run(self) -> RepositoryReading:
-        s, r = self.s, self.r
-        repo = r.github.get(f"repos/{s.evidence_project}")
+        s = self.s
+        repo = self.github.get(f"repos/{s.evidence_project}")
         if repo.status != 200:
             raise GitHubError(f"GET repos/{s.evidence_project}: {repo.status}")
         answer = _Repository.model_validate(repo.body)
@@ -45,7 +40,7 @@ class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
             answer.source is not None
             and answer.source.full_name.lower() == s.upstream.lower()
         )
-        branch_list, pull_list = r._list_refs(s)
+        branch_list, pull_list = self.github.list_refs(s)
         branches_by_name, pulls_by_number = _ref_shas(branch_list, pull_list)
         self.ref_names = {}
         for b in branch_list:
@@ -54,7 +49,7 @@ class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
             self.ref_names.setdefault(p["head"]["sha"], []).append(
                 f"pull request #{p['number']}"
             )
-        self.upstream = r.upstream_branches(s.upstream)
+        self.upstream = self.github.upstream_branches(s.upstream)
         reusable = {}
         if self.previous and self.previous.upstream_shas == self.upstream:
             reusable = self.previous.refs.get("analyses", {})
@@ -81,7 +76,7 @@ class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
         self._c3b(default_sha)
         self._c3e(pull_list, deployments)
 
-        now = r.now()
+        now = self.now()
         return RepositoryReading(
             student=s,
             default_branch=self.default,
