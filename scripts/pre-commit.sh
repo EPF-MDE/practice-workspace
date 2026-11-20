@@ -1,0 +1,35 @@
+#!/bin/sh
+# The fast part of `npm run check`, every job in parallel, in a few seconds.
+# Tests stay in `npm run check`. The shape is the Software Factories cohort's
+# (https://github.com/ai-hero-dev/cohort-005-project, scripts/pre-commit.sh),
+# with the back end's jobs added beside the front end's.
+# lint-staged runs with --no-stash: its checks never write, and stashing would
+# change the working tree under the checks running beside it.
+
+logs=$(mktemp -d)
+trap 'rm -rf "$logs"' EXIT
+
+run() {
+  name=$1
+  shift
+  ("$@" >"$logs/$name.log" 2>&1 || touch "$logs/$name.failed") &
+}
+
+run lint-staged npx lint-staged --no-stash --no-hide-partially-staged
+run backend-types sh -c 'cd backend && uv run --frozen mypy'
+run backend-boundaries sh -c 'cd backend && uv run --frozen tach check'
+run backend-cycles sh -c 'cd backend && uv run --frozen python scripts/check_cycles.py'
+run frontend-types npm --prefix frontend run --silent typecheck
+run frontend-boundaries npm --prefix frontend run --silent lint:boundaries
+wait
+
+status=0
+for failed in "$logs"/*.failed; do
+  [ -e "$failed" ] || continue
+  name=$(basename "$failed" .failed)
+  echo "✖ $name failed:"
+  cat "$logs/$name.log"
+  echo
+  status=1
+done
+exit $status

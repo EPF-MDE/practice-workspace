@@ -1,0 +1,15 @@
+.DS_Store
+.env
+node_modules/
+.claude/settings.local.json
+.claude/worktrees/
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Screenshots and DOM readouts from the browser loop, local to one machine.
+/screenshots/

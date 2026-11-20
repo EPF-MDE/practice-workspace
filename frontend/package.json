@@ -1,0 +1,13 @@
+{
+  "name": "practice-workspace-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsbuildinfo",
+    "lint:boundaries": "depcruise src --cache node_modules/.cache/dependency-cruiser --cache-strategy content"
+  },
+  "devDependencies": {
+    "dependency-cruiser": "^18.8.0",
+    "typescript": "^6.0.3"
+  }
+}

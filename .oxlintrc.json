@@ -1,0 +1,69 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "jsx-a11y", "import"],
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [".agents/**", ".claude/**"],
+  "rules": {
+    "react/set-state-in-effect": "off",
+    "react/refs": "off",
+    "jsx-a11y/control-has-associated-label": "off",
+
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-inferrable-types": "error",
+    "typescript/consistent-type-definitions": ["error", "type"],
+    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "no-var": "error",
+    "prefer-const": "error",
+    "no-console": ["error", { "allow": ["error"] }],
+    "no-throw-literal": "error",
+    "no-useless-catch": "error",
+    "prefer-arrow-callback": "error",
+    "max-lines": [
+      "error",
+      { "max": 500, "skipBlankLines": true, "skipComments": true }
+    ],
+    "max-lines-per-function": [
+      "error",
+      { "max": 50, "skipBlankLines": true, "skipComments": true }
+    ],
+    "max-params": ["error", 3],
+    "max-depth": ["error", 3],
+    "id-denylist": [
+      "error",
+      "req",
+      "res",
+      "e",
+      "err",
+      "ctx",
+      "btn",
+      "msg",
+      "val"
+    ],
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "error",
+    "react/jsx-key": "error",
+    "react/no-array-index-key": "error",
+    "react/jsx-no-target-blank": "error",
+    "react/no-danger": "error",
+    "jsx-a11y/alt-text": "error",
+    "jsx-a11y/label-has-associated-control": "error",
+    "jsx-a11y/tabindex-no-positive": "error",
+    "jsx-a11y/no-static-element-interactions": "error",
+    "jsx-a11y/click-events-have-key-events": "error",
+    "jsx-a11y/no-autofocus": ["error", { "ignoreNonDOM": true }],
+    "import/no-default-export": "error"
+  },
+  "overrides": [
+    {
+      "files": ["*.config.*", "**/*.config.*", "**/.dependency-cruiser.cjs"],
+      "rules": { "import/no-default-export": "off" }
+    },
+    {
+      "files": ["scripts/**"],
+      "rules": { "no-console": "off" }
+    }
+  ]
+}

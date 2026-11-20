@@ -1,0 +1,22 @@
+# Every subpackage of `app` is a Deep Module, reached from outside only through
+# names not starting with "_". Adding a module requires no edit here.
+# `scripts/check_cycles.py` rejects import cycles between modules, read from
+# the real imports.
+
+source_roots = ["."]
+
+# tach's default exclude list contains "**/tests"; restated without it, so the
+# tests reach modules through their public surface like any other consumer.
+exclude = ["**/*__pycache__", "**/*egg-info", "**/docs", "**/venv", "**/.venv", "static", "scripts"]
+
+forbid_circular_dependencies = true
+root_module = "allow"
+
+[[modules]]
+path = "app.*"
+
+[[modules]]
+path = "<root>"
+
+[[interfaces]]
+expose = ["[^_][^.]*(\\.[^_][^.]*)*"]
