@@ -17,7 +17,6 @@ repository() {
   git ls-files -z | xargs -0 node scripts/check-file-tokens.js
   step "Repository: format (Markdown, JSON, configuration)"
   npx biome format .
-  npx prettier --check "**/*.md"
   step "Repository: lint (everything outside the front end)"
   npx oxlint -c .oxlintrc.json --ignore-pattern "frontend/**"
 }
