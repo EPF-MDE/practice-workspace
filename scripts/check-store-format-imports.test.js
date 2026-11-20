@@ -1,22 +1,10 @@
-import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { checkOn } from "./repository-with.js";
 
 const script = join(import.meta.dirname, "check-store-format-imports.py");
 
-const checkTests = (files) => {
-  const root = mkdtempSync(join(tmpdir(), "check-store-format-imports-"));
-  for (const [file, contents] of Object.entries(files)) {
-    mkdirSync(join(root, dirname(file)), { recursive: true });
-    writeFileSync(join(root, file), contents);
-  }
-  return spawnSync("python3", [script, ...Object.keys(files)], {
-    cwd: root,
-    encoding: "utf8",
-  });
-};
+const checkTests = (files) => checkOn("python3", script, files);
 
 describe("check-store-format-imports", () => {
   it("passes a test importing the Store itself", () => {

@@ -1,22 +1,10 @@
-import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { checkOn } from "./repository-with.js";
 
 const script = join(import.meta.dirname, "check-retired-names.js");
 
-const checkFiles = (files) => {
-  const root = mkdtempSync(join(tmpdir(), "check-retired-names-"));
-  for (const [file, contents] of Object.entries(files)) {
-    mkdirSync(join(root, dirname(file)), { recursive: true });
-    writeFileSync(join(root, file), contents);
-  }
-  return spawnSync("node", [script, ...Object.keys(files)], {
-    cwd: root,
-    encoding: "utf8",
-  });
-};
+const checkFiles = (files) => checkOn("node", script, files);
 
 describe("check-retired-names", () => {
   it("passes the glossary's names, and the glossary's Avoid list", () => {

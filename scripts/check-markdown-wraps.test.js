@@ -1,16 +1,11 @@
-import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { checkOn } from "./repository-with.js";
 
 const script = join(import.meta.dirname, "check-markdown-wraps.js");
 
-const checkMarkdown = (contents) => {
-  const root = mkdtempSync(join(tmpdir(), "check-markdown-wraps-"));
-  writeFileSync(join(root, "doc.md"), contents);
-  return spawnSync("node", [script, "doc.md"], { cwd: root, encoding: "utf8" });
-};
+const checkMarkdown = (contents) =>
+  checkOn("node", script, { "doc.md": contents });
 
 const CLEAN = `---
 title: front matter

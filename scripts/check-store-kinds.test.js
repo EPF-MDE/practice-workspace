@@ -1,8 +1,6 @@
-import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { checkOn } from "./repository-with.js";
 
 const script = join(import.meta.dirname, "check-store-kinds.py");
 
@@ -26,18 +24,11 @@ class Record:
     def all(self, kind: Kind) -> list[Entry]: ...
 `;
 
-const checkCode = (files) => {
-  const root = mkdtempSync(join(tmpdir(), "check-store-kinds-"));
-  const all = { "backend/app/store/_internal/model.py": KIND_ENUM, ...files };
-  for (const [file, contents] of Object.entries(all)) {
-    mkdirSync(join(root, dirname(file)), { recursive: true });
-    writeFileSync(join(root, file), contents);
-  }
-  return spawnSync("python3", [script, ...Object.keys(all)], {
-    cwd: root,
-    encoding: "utf8",
+const checkCode = (files) =>
+  checkOn("python3", script, {
+    "backend/app/store/_internal/model.py": KIND_ENUM,
+    ...files,
   });
-};
 
 describe("check-store-kinds passes", () => {
   it("passes a kind named through its enum, and the same word for a Step", () => {
