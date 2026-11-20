@@ -34,7 +34,7 @@ SESSION_STATE = "oauth_state"
 SESSION_REFUSED = "refused_login"
 
 NOTICE = (
-    "What you send here (your answers, drawings, Self-assessment, Practice Plan "
+    "What you send here (your answers, drawings, Self-assessment, Evidence Plan "
     "and questions) is stored on GitHub, in the United States, in a private "
     "repository only the Instructor reads, and it is deleted after the verdict."
 )

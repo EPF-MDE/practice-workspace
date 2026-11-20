@@ -2,14 +2,14 @@ import type { CompetencyPage, PointBlock, StepOut } from "@/client";
 import { EvidenceProject } from "../fork/EvidenceProject";
 import { ForkPanelView, openQuestion } from "../fork/ForkPanel";
 import { type DraftScope } from "../progress";
-import { ExampleField, PlanEditor, PlanSendBar } from "./PracticePlanForm";
+import { ExampleField, PlanEditor, PlanSendBar } from "./EvidencePlanForm";
 import { SelfAssessmentForm } from "./SelfAssessmentForm";
 import {
   useEvidence,
   useExample,
   usePlan,
   useSendPlan,
-} from "./usePracticePlan";
+} from "./useEvidencePlan";
 import { hints, useLevels, useSendLevels } from "./useSelfAssessment";
 
 type Props = DraftScope & {
@@ -34,7 +34,7 @@ function useClosing({ page, ...scope }: DraftScope & { page: CompetencyPage }) {
 }
 
 /**
- * The closing step: a level per point, the Practice Plan drafted as the
+ * The closing step: a level per point, the Evidence Plan drafted as the
  * Student rates, their own text winning once edited, and one send that
  * confirms it with an example for the Eval.
  */
@@ -80,7 +80,7 @@ export function ClosingStep({ studentId, competency, step, page }: Props) {
       />
       {over && (
         <output className="block rounded-md border p-3 text-sm">
-          The Reading Day has passed: your Self-assessment and Practice Plan no
+          The Reading Day has passed: your Self-assessment and Evidence Plan no
           longer change.
         </output>
       )}

@@ -1,4 +1,4 @@
-"""The closing step's routes: Self-assessment, Practice Plan, example for the Eval."""
+"""The closing step's routes: Self-assessment, Evidence Plan, example for the Eval."""
 
 from __future__ import annotations
 
@@ -23,9 +23,9 @@ from .models import (
     MAX_PLAN_CHARS,
     ClosingIn,
     Draft,
+    EvidencePlanIn,
+    EvidencePlanVersion,
     LevelsIn,
-    PracticePlanIn,
-    PracticePlanVersion,
     SelfAssessmentIn,
     Stored,
     _at_most,
@@ -78,43 +78,43 @@ def send_self_assessment(
     return Stored(version=entry.version, sent_at=entry.at)
 
 
-@router.post("/api/competencies/{competency}/practice-plan/draft", tags=["rehearsal"])
-def draft_practice_plan(
+@router.post("/api/competencies/{competency}/evidence-plan/draft", tags=["rehearsal"])
+def draft_evidence_plan(
     competency: str,
     sent: LevelsIn,
     request: Request,
     student: Student = Depends(current_student),
 ) -> Draft:
-    """The Practice Plan drafted from levels not sent yet, as the Student rates. Stores
+    """The Evidence Plan drafted from levels not sent yet, as the Student rates. Stores
     nothing."""
     page = _page(request, competency, student)
     levels = _levels(page, sent.levels) if sent.levels else {}
     return Draft(text=_draft(page, _store(request).record(student), levels))
 
 
-@router.post("/api/competencies/{competency}/practice-plan", tags=["rehearsal"])
-def send_practice_plan(
+@router.post("/api/competencies/{competency}/evidence-plan", tags=["rehearsal"])
+def send_evidence_plan(
     competency: str,
-    sent: PracticePlanIn,
+    sent: EvidencePlanIn,
     request: Request,
     student: Student = Depends(current_student),
-) -> PracticePlanVersion:
-    """Store the Student's own Practice Plan text, a new dated version; it wins over the
+) -> EvidencePlanVersion:
+    """Store the Student's own Evidence Plan text, a new dated version; it wins over the
     draft. The example for the Eval and the confirmation carry over from the closing
     step."""
     page = _page(request, competency, student)
-    _at_most(sent.text, MAX_PLAN_CHARS, "Your Practice Plan")
-    _refuse_after_the_reading_day(request.app.state.settings, "your Practice Plan")
+    _at_most(sent.text, MAX_PLAN_CHARS, "Your Evidence Plan")
+    _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Plan")
     store = _store(request)
     record = store.record(student)
-    latest = record.latest(Kind.PRACTICE_PLAN, competency)
+    latest = record.latest(Kind.EVIDENCE_PLAN, competency)
     carried = {
         k: latest.payload[k]
         for k in ("example", "confirmed")
         if latest and k in latest.payload
     }
     drafted = _drafted(page, record, sent.text, sent.drafted)
-    entry = store.save_practice_plan(
+    entry = store.save_evidence_plan(
         student, competency, {"text": sent.text} | drafted | carried
     )
     return _plan_version(entry)
@@ -126,26 +126,26 @@ def close_competency(
     sent: ClosingIn,
     request: Request,
     student: Student = Depends(current_student),
-) -> PracticePlanVersion:
-    """The closing step, one send: the Practice Plan confirmed, with one example for the
+) -> EvidencePlanVersion:
+    """The closing step, one send: the Evidence Plan confirmed, with one example for the
     Eval, the Evidence Project declared there if any, and a snapshot of the fork panel
     as shown."""
     page = _page(request, competency, student)
     if not sent.example.strip():
         raise HTTPException(422, "Write one example you will show at the Eval")
-    _at_most(sent.text, MAX_PLAN_CHARS, "Your Practice Plan")
+    _at_most(sent.text, MAX_PLAN_CHARS, "Your Evidence Plan")
     _at_most(sent.example, MAX_EXAMPLE_CHARS, "Your example for the Eval")
     declaration = (
         _declaration_payload(request, student, sent.declaration)
         if sent.declaration
         else None
     )
-    _refuse_after_the_reading_day(request.app.state.settings, "your Practice Plan")
+    _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Plan")
     store = _store(request)
     record = store.record(student)
     if record.latest(Kind.SELF_ASSESSMENT, competency) is None:
         raise HTTPException(
-            409, "Send your Self-assessment first: the Practice Plan is drafted from it"
+            409, "Send your Self-assessment first: the Evidence Plan is drafted from it"
         )
     plan: dict[str, Any] = {
         "text": sent.text,
@@ -164,5 +164,5 @@ def close_competency(
         _declaration_out(current, request, student),
         refresh=False,
     )
-    plan["fork_snapshot"] = fork_panel.snapshot(panel)
-    return _plan_version(store.save_practice_plan(student, competency, plan))
+    plan["evidence_panel_snapshot"] = fork_panel.snapshot(panel)
+    return _plan_version(store.save_evidence_plan(student, competency, plan))

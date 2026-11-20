@@ -11,7 +11,7 @@ import {
 import { DONE, type Levels } from "./useSelfAssessment";
 
 /**
- * The Practice Plan as it stands: drafted from the levels in this browser
+ * The Evidence Plan as it stands: drafted from the levels in this browser
  * (nothing is stored), until the Student's own text wins once they edit it.
  */
 export function usePlan(
@@ -27,18 +27,18 @@ export function usePlan(
     queryKey: ["competency", competency, "draft", forDraft],
     queryFn: async () =>
       (
-        await RehearsalService.draftPracticePlan({
+        await RehearsalService.draftEvidencePlan({
           path: { competency },
           body: { levels: forDraft },
         })
       ).data,
     placeholderData: (previous) => previous,
   });
-  const draftText = draft.data?.text ?? page.practice_plan_draft;
+  const draftText = draft.data?.text ?? page.evidence_plan_draft;
   const [own, setOwn] = useState<string | null>(() =>
     closingDrafts.getPlan(scope)
   );
-  const stored = page.practice_plan;
+  const stored = page.evidence_plan;
   // Untouched, the plan stays a draft, even once confirmed: only an edit makes it the Student's text.
   const ownStored = stored && !stored.drafted ? stored.text : null;
   const edit = (text: string | null) => {
@@ -99,7 +99,7 @@ async function sendPlan({
       await RehearsalService.closeCompetency({ path: { competency }, body })
     ).data;
   return (
-    await RehearsalService.sendPracticePlan({
+    await RehearsalService.sendEvidencePlan({
       path: { competency },
       body: { text: body.text, drafted: body.drafted },
     })

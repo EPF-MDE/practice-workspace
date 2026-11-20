@@ -18,7 +18,7 @@ import {
 // C1's whole Path on the Demo course (demo-course/c1.md), one Student of each
 // Group: a question, a draft kept across a reload, each Locked answer and the
 // Reference Drawing only after the Student's own, the optional redraw never
-// waited for, the Transfer filling its point, and a Practice Plan the Student
+// waited for, the Transfer filling its point, and an Evidence Plan the Student
 // edits and confirms. The roster's Students 1011 and 1012 are this file's
 // alone: the in-memory Store keeps their sends while the server runs.
 

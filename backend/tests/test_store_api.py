@@ -50,8 +50,8 @@ def test_a_full_competency_path_makes_at_most_10_writes_and_none_before_a_send(
     # the redraw sent (not the optional one: 2 files and a comment), two
     # questions asked; then the closing step: the Self-assessment, carrying the
     # missed check points the browser kept, rated and drafted as the Student
-    # goes; then one send confirming the Practice Plan with an example for the
-    # Eval (#468 adds the fork snapshot to that same send).
+    # goes; then one send confirming the Evidence Plan with an example for the
+    # Eval (#468 adds the evidence panel snapshot to that same send).
     missed: dict[str, list[str]] = {}
     for step in page["steps"]:
         fields = [b["id"] for b in step["blocks"] if b["type"] == "field"]
@@ -77,7 +77,7 @@ def test_a_full_competency_path_makes_at_most_10_writes_and_none_before_a_send(
     for point in points:
         rated[point] = {"level": "redo", "link": None}
         draft = client.post(
-            f"{PAGE}/practice-plan/draft", json={"levels": rated}
+            f"{PAGE}/evidence-plan/draft", json={"levels": rated}
         ).json()["text"]
     assert client.post(
         f"{PAGE}/self-assessment", json={"levels": rated, "missed_check_points": missed}

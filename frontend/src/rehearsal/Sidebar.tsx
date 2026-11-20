@@ -106,20 +106,20 @@ function PathSection({ competency, steps, finished, greyed }: PathProps) {
 
 function PlanSection({
   competency,
-  practicePlan,
+  evidencePlan,
 }: {
   competency: string;
-  practicePlan: string;
+  evidencePlan: string;
 }) {
   return (
     <section className="rounded-lg border p-4 text-sm">
-      <h2 className="font-semibold">Your Practice Plan</h2>
-      {practicePlan ? (
+      <h2 className="font-semibold">Your Evidence Plan</h2>
+      {evidencePlan ? (
         <p
           data-testid="sidebar-plan"
           className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap"
         >
-          {practicePlan}
+          {evidencePlan}
         </p>
       ) : (
         <p className="mt-2 text-muted-foreground">
@@ -159,12 +159,12 @@ function TimeSection({
 
 export function Sidebar({
   startedAt,
-  practicePlan,
+  evidencePlan,
   currentStep,
   ...path
 }: PathProps & {
   startedAt: number;
-  practicePlan: string;
+  evidencePlan: string;
   currentStep: string | undefined;
 }) {
   const { competency } = path;
@@ -178,7 +178,7 @@ export function Sidebar({
         competency={competency}
         onMyWorkMissing={() => currentStep && openQuestion(currentStep)}
       />
-      <PlanSection competency={competency} practicePlan={practicePlan} />
+      <PlanSection competency={competency} evidencePlan={evidencePlan} />
       <TimeSection competency={competency} startedAt={startedAt} />
     </aside>
   );

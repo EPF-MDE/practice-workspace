@@ -150,7 +150,7 @@ class SelfAssessment(BaseModel):
     history: list[SelfAssessmentVersion]  # every version, oldest first
 
 
-class PracticePlanVersion(BaseModel):
+class EvidencePlanVersion(BaseModel):
     text: str  # the text sent: the Student's own, or the draft they confirmed untouched
     # the untouched draft: not yet the Student's text, so the page keeps drafting from
     # the levels
@@ -161,8 +161,8 @@ class PracticePlanVersion(BaseModel):
     sent_at: datetime
 
 
-class PracticePlan(PracticePlanVersion):
-    history: list[PracticePlanVersion]
+class EvidencePlan(EvidencePlanVersion):
+    history: list[EvidencePlanVersion]
 
 
 class CompetencyPage(BaseModel):
@@ -175,10 +175,10 @@ class CompetencyPage(BaseModel):
     reading_day_at: datetime
     reading_day_passed: bool  # after it, nothing changes
     self_assessment: SelfAssessment | None
-    practice_plan: (
-        PracticePlan | None
+    evidence_plan: (
+        EvidencePlan | None
     )  # the Student's text: once sent, it wins over the draft
-    practice_plan_draft: (
+    evidence_plan_draft: (
         str  # drafted from the levels stored, the Transfer, the Evidence Project
     )
     evidence_project: (
@@ -202,11 +202,11 @@ class QuestionIn(BaseModel):
 
 
 # The longest text each field takes. With them, the largest send (the closing step:
-# plan, example, declaration and a fork snapshot of at most 40,000 characters) fits one
-# GitHub comment; a send the Store still finds too large (escapes counted) gets a 422
-# too, from app.main.
+# plan, example, declaration and an evidence panel snapshot of at most 40,000
+# characters) fits one GitHub comment; a send the Store still finds too large
+# (escapes counted) gets a 422 too, from app.main.
 MAX_FIELD_CHARS = 4_000  # one field of an answer
-MAX_PLAN_CHARS = 12_000  # the Practice Plan: a full draft is about 7,000
+MAX_PLAN_CHARS = 12_000  # the Evidence Plan: a full draft is about 7,000
 MAX_EXAMPLE_CHARS = 2_000  # the example for the Eval
 MAX_NOTE_CHARS = 2_000  # what to read in an Evidence Project
 MAX_URL_CHARS = 500  # an Evidence Project's URL, a "done" link
@@ -272,7 +272,7 @@ class Draft(BaseModel):
     text: str
 
 
-class PracticePlanIn(BaseModel):
+class EvidencePlanIn(BaseModel):
     text: str  # at most MAX_PLAN_CHARS
     drafted: bool = (
         False  # the text is the draft, untouched: only an edit makes it the Student's
@@ -289,7 +289,7 @@ class ProjectIn(BaseModel):
 
 
 class ClosingIn(BaseModel):
-    text: str  # the Practice Plan as confirmed, at most MAX_PLAN_CHARS
+    text: str  # the Evidence Plan as confirmed, at most MAX_PLAN_CHARS
     example: str  # one example for the Eval, at most MAX_EXAMPLE_CHARS
     drafted: bool = (
         False  # the text is the draft, untouched: only an edit makes it the Student's

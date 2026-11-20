@@ -83,7 +83,7 @@ def test_the_longest_closing_send_with_a_fork_of_very_many_files_fits_one_commen
 
     assert closed.status_code == 200
     assert github.writes == before + 1
-    assert ada.get(C1).json()["practice_plan"]["text"] == "p" * 12_000
+    assert ada.get(C1).json()["evidence_plan"]["text"] == "p" * 12_000
 
 
 @pytest.mark.parametrize(
@@ -94,8 +94,8 @@ def test_the_longest_closing_send_with_a_fork_of_very_many_files_fits_one_commen
             {"fields": {"sentence": "x" * 4_001}},
             "sentence",
         ),
-        (f"{C1}/practice-plan", {"text": "x" * 12_001}, "Practice Plan"),
-        (f"{C1}/close", {"text": "x" * 12_001, "example": "e"}, "Practice Plan"),
+        (f"{C1}/evidence-plan", {"text": "x" * 12_001}, "Evidence Plan"),
+        (f"{C1}/close", {"text": "x" * 12_001, "example": "e"}, "Evidence Plan"),
         (f"{C1}/close", {"text": "p", "example": "x" * 2_001}, "example"),
         (
             f"{C1}/declaration",

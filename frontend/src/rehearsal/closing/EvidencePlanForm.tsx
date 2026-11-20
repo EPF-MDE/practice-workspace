@@ -1,20 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "../progress";
-import type { Plan, useExample, useSendPlan } from "./usePracticePlan";
+import type { Plan, useExample, useSendPlan } from "./useEvidencePlan";
 
-/** The Practice Plan's text: drafted from the levels until the Student edits it. */
+/** The Evidence Plan's text: drafted from the levels until the Student edits it. */
 export function PlanEditor({ plan, over }: { plan: Plan; over: boolean }) {
   return (
     <>
-      <h3 className="text-xl font-semibold">Your Practice Plan</h3>
+      <h3 className="text-xl font-semibold">Your Evidence Plan</h3>
       <p className="text-sm text-muted-foreground">
         {plan.isDraft
           ? "It drafts itself as you rate. Rewrite, move, remove or add lines as you like: once you edit it, your text wins."
           : "Your own text. Removing a line leaves your levels as they are."}
       </p>
       <textarea
-        aria-label="Your Practice Plan"
+        aria-label="Your Evidence Plan"
         rows={14}
         className={cn(
           "rounded-md border p-2 font-mono text-sm",
@@ -65,7 +65,7 @@ export function ExampleField({
 }
 
 function sendLabel(confirming: boolean, isDraft: boolean) {
-  if (confirming) return "Confirm my Practice Plan";
+  if (confirming) return "Confirm my Evidence Plan";
   return isDraft ? "Send the updated draft" : "Send my edited plan";
 }
 

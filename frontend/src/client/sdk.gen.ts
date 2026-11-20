@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { healthHealthData, healthHealthResponses, rehearsalAskQuestionData, rehearsalAskQuestionErrors, rehearsalAskQuestionResponses, rehearsalCheckProjectAccessData, rehearsalCheckProjectAccessErrors, rehearsalCheckProjectAccessResponses, rehearsalCloseCompetencyData, rehearsalCloseCompetencyErrors, rehearsalCloseCompetencyResponses, rehearsalCompetencyPageData, rehearsalCompetencyPageErrors, rehearsalCompetencyPageResponses, rehearsalDeclareEvidenceProjectData, rehearsalDeclareEvidenceProjectErrors, rehearsalDeclareEvidenceProjectResponses, rehearsalDraftPracticePlanData, rehearsalDraftPracticePlanErrors, rehearsalDraftPracticePlanResponses, rehearsalForkPanelViewData, rehearsalForkPanelViewErrors, rehearsalForkPanelViewResponses, rehearsalMyDrawingData, rehearsalMyDrawingErrors, rehearsalMyDrawingResponses, rehearsalRefreshForkPanelData, rehearsalRefreshForkPanelErrors, rehearsalRefreshForkPanelResponses, rehearsalSendAnswerData, rehearsalSendAnswerErrors, rehearsalSendAnswerResponses, rehearsalSendDrawingData, rehearsalSendDrawingErrors, rehearsalSendDrawingResponses, rehearsalSendPracticePlanData, rehearsalSendPracticePlanErrors, rehearsalSendPracticePlanResponses, rehearsalSendSelfAssessmentData, rehearsalSendSelfAssessmentErrors, rehearsalSendSelfAssessmentResponses, rehearsalTickMissedCheckPointsData, rehearsalTickMissedCheckPointsErrors, rehearsalTickMissedCheckPointsResponses, rehearsalWithdrawEvidenceProjectData, rehearsalWithdrawEvidenceProjectErrors, rehearsalWithdrawEvidenceProjectResponses, sessionMeData, sessionMeResponses, sessionRefusalData, sessionRefusalResponses, sessionSignInPageData, sessionSignInPageResponses } from './types.gen';
+import type { healthHealthData, healthHealthResponses, rehearsalAskQuestionData, rehearsalAskQuestionErrors, rehearsalAskQuestionResponses, rehearsalCheckProjectAccessData, rehearsalCheckProjectAccessErrors, rehearsalCheckProjectAccessResponses, rehearsalCloseCompetencyData, rehearsalCloseCompetencyErrors, rehearsalCloseCompetencyResponses, rehearsalCompetencyPageData, rehearsalCompetencyPageErrors, rehearsalCompetencyPageResponses, rehearsalDeclareEvidenceProjectData, rehearsalDeclareEvidenceProjectErrors, rehearsalDeclareEvidenceProjectResponses, rehearsalDraftEvidencePlanData, rehearsalDraftEvidencePlanErrors, rehearsalDraftEvidencePlanResponses, rehearsalForkPanelViewData, rehearsalForkPanelViewErrors, rehearsalForkPanelViewResponses, rehearsalMyDrawingData, rehearsalMyDrawingErrors, rehearsalMyDrawingResponses, rehearsalRefreshForkPanelData, rehearsalRefreshForkPanelErrors, rehearsalRefreshForkPanelResponses, rehearsalSendAnswerData, rehearsalSendAnswerErrors, rehearsalSendAnswerResponses, rehearsalSendDrawingData, rehearsalSendDrawingErrors, rehearsalSendDrawingResponses, rehearsalSendEvidencePlanData, rehearsalSendEvidencePlanErrors, rehearsalSendEvidencePlanResponses, rehearsalSendSelfAssessmentData, rehearsalSendSelfAssessmentErrors, rehearsalSendSelfAssessmentResponses, rehearsalTickMissedCheckPointsData, rehearsalTickMissedCheckPointsErrors, rehearsalTickMissedCheckPointsResponses, rehearsalWithdrawEvidenceProjectData, rehearsalWithdrawEvidenceProjectErrors, rehearsalWithdrawEvidenceProjectResponses, sessionMeData, sessionMeResponses, sessionRefusalData, sessionRefusalResponses, sessionSignInPageData, sessionSignInPageResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -63,7 +63,8 @@ export class RehearsalService {
     /**
      * Competency Page
      *
-     * A Competency's long page for the Student's Group, each answer locked until their own is sent.
+     * A Competency's long page for the Student's Group, each answer locked until their
+     * own is sent.
      */
     public static competencyPage<ThrowOnError extends boolean = true>(options: Options<rehearsalCompetencyPageData, ThrowOnError>) {
         return (options.client ?? client).get<rehearsalCompetencyPageResponses, rehearsalCompetencyPageErrors, ThrowOnError>({
@@ -76,7 +77,8 @@ export class RehearsalService {
     /**
      * Send Answer
      *
-     * Store the Student's answer to a step (a new version each time) and release its answer blocks.
+     * Store the Student's answer to a step (a new version each time) and release its
+     * answer blocks.
      */
     public static sendAnswer<ThrowOnError extends boolean = true>(options: Options<rehearsalSendAnswerData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalSendAnswerResponses, rehearsalSendAnswerErrors, ThrowOnError>({
@@ -110,7 +112,8 @@ export class RehearsalService {
     /**
      * My Drawing
      *
-     * The Student's latest drawing for a step, to draw on again in a browser that has no copy.
+     * The Student's latest drawing for a step, to draw on again in a browser that has
+     * no copy.
      */
     public static myDrawing<ThrowOnError extends boolean = true>(options: Options<rehearsalMyDrawingData, ThrowOnError>) {
         return (options.client ?? client).get<rehearsalMyDrawingResponses, rehearsalMyDrawingErrors, ThrowOnError>({
@@ -123,8 +126,8 @@ export class RehearsalService {
     /**
      * Send Drawing
      *
-     * Store the Student's drawing (its PNG and tldraw snapshot, a new version each time)
-     * and release the Reference Drawing with its check points.
+     * Store the Student's drawing (its PNG and tldraw snapshot, a new version each
+     * time) and release the Reference Drawing with its check points.
      */
     public static sendDrawing<ThrowOnError extends boolean = true>(options: Options<rehearsalSendDrawingData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalSendDrawingResponses, rehearsalSendDrawingErrors, ThrowOnError>({
@@ -141,7 +144,8 @@ export class RehearsalService {
     /**
      * Tick Missed Check Points
      *
-     * Store which of the Reference Drawing's check points the Student's drawing missed.
+     * Store which of the Reference Drawing's check points the Student's drawing
+     * missed.
      */
     public static tickMissedCheckPoints<ThrowOnError extends boolean = true>(options: Options<rehearsalTickMissedCheckPointsData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalTickMissedCheckPointsResponses, rehearsalTickMissedCheckPointsErrors, ThrowOnError>({
@@ -158,8 +162,8 @@ export class RehearsalService {
     /**
      * Send Self Assessment
      *
-     * Store the Self-assessment: one level per point rated, a link for "I have done it",
-     * and the missed check points this browser kept since the drawing was sent.
+     * Store the Self-assessment: one level per point rated, a link for "I have done
+     * it", and the missed check points this browser kept since the drawing was sent.
      */
     public static sendSelfAssessment<ThrowOnError extends boolean = true>(options: Options<rehearsalSendSelfAssessmentData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalSendSelfAssessmentResponses, rehearsalSendSelfAssessmentErrors, ThrowOnError>({
@@ -174,14 +178,15 @@ export class RehearsalService {
     }
     
     /**
-     * Draft Practice Plan
+     * Draft Evidence Plan
      *
-     * The Practice Plan drafted from levels not sent yet, as the Student rates. Stores nothing.
+     * The Evidence Plan drafted from levels not sent yet, as the Student rates. Stores
+     * nothing.
      */
-    public static draftPracticePlan<ThrowOnError extends boolean = true>(options: Options<rehearsalDraftPracticePlanData, ThrowOnError>) {
-        return (options.client ?? client).post<rehearsalDraftPracticePlanResponses, rehearsalDraftPracticePlanErrors, ThrowOnError>({
+    public static draftEvidencePlan<ThrowOnError extends boolean = true>(options: Options<rehearsalDraftEvidencePlanData, ThrowOnError>) {
+        return (options.client ?? client).post<rehearsalDraftEvidencePlanResponses, rehearsalDraftEvidencePlanErrors, ThrowOnError>({
             responseType: 'json',
-            url: '/api/competencies/{competency}/practice-plan/draft',
+            url: '/api/competencies/{competency}/evidence-plan/draft',
             ...options,
             headers: {
                 'Content-Type': 'application/json',
@@ -191,15 +196,16 @@ export class RehearsalService {
     }
     
     /**
-     * Send Practice Plan
+     * Send Evidence Plan
      *
-     * Store the Student's own Practice Plan text, a new dated version; it wins over the draft.
-     * The example for the Eval and the confirmation carry over from the closing step.
+     * Store the Student's own Evidence Plan text, a new dated version; it wins over the
+     * draft. The example for the Eval and the confirmation carry over from the closing
+     * step.
      */
-    public static sendPracticePlan<ThrowOnError extends boolean = true>(options: Options<rehearsalSendPracticePlanData, ThrowOnError>) {
-        return (options.client ?? client).post<rehearsalSendPracticePlanResponses, rehearsalSendPracticePlanErrors, ThrowOnError>({
+    public static sendEvidencePlan<ThrowOnError extends boolean = true>(options: Options<rehearsalSendEvidencePlanData, ThrowOnError>) {
+        return (options.client ?? client).post<rehearsalSendEvidencePlanResponses, rehearsalSendEvidencePlanErrors, ThrowOnError>({
             responseType: 'json',
-            url: '/api/competencies/{competency}/practice-plan',
+            url: '/api/competencies/{competency}/evidence-plan',
             ...options,
             headers: {
                 'Content-Type': 'application/json',
@@ -211,8 +217,9 @@ export class RehearsalService {
     /**
      * Close Competency
      *
-     * The closing step, one send: the Practice Plan confirmed, with one example for the Eval,
-     * the Evidence Project declared there if any, and a snapshot of the fork panel as shown.
+     * The closing step, one send: the Evidence Plan confirmed, with one example for the
+     * Eval, the Evidence Project declared there if any, and a snapshot of the fork panel
+     * as shown.
      */
     public static closeCompetency<ThrowOnError extends boolean = true>(options: Options<rehearsalCloseCompetencyData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalCloseCompetencyResponses, rehearsalCloseCompetencyErrors, ThrowOnError>({
@@ -229,7 +236,8 @@ export class RehearsalService {
     /**
      * Fork Panel View
      *
-     * What the Reading Day would find on the Student's fork today for this Competency: facts, never a Band.
+     * What the Reading Day would find on the Student's fork today for this Competency:
+     * facts, never a Band.
      */
     public static forkPanelView<ThrowOnError extends boolean = true>(options: Options<rehearsalForkPanelViewData, ThrowOnError>) {
         return (options.client ?? client).get<rehearsalForkPanelViewResponses, rehearsalForkPanelViewErrors, ThrowOnError>({
@@ -242,7 +250,8 @@ export class RehearsalService {
     /**
      * Refresh Fork Panel
      *
-     * Check the fork for a push since its last reading, and recompute what moved. Stores nothing in the record.
+     * Check the fork for a push since its last reading, and recompute what moved.
+     * Stores nothing in the record.
      */
     public static refreshForkPanel<ThrowOnError extends boolean = true>(options: Options<rehearsalRefreshForkPanelData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalRefreshForkPanelResponses, rehearsalRefreshForkPanelErrors, ThrowOnError>({
@@ -255,7 +264,8 @@ export class RehearsalService {
     /**
      * Check Project Access
      *
-     * Whether the Reading Day could read this project, before declaring it. Stores nothing.
+     * Whether the Reading Day could read this project, before declaring it. Stores
+     * nothing.
      */
     public static checkProjectAccess<ThrowOnError extends boolean = true>(options: Options<rehearsalCheckProjectAccessData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalCheckProjectAccessResponses, rehearsalCheckProjectAccessErrors, ThrowOnError>({
@@ -272,7 +282,8 @@ export class RehearsalService {
     /**
      * Withdraw Evidence Project
      *
-     * Withdraw the Evidence Project of this Competency: the Reading Day reads the fork again.
+     * Withdraw the Evidence Project of this Competency: the Reading Day reads the fork
+     * again.
      */
     public static withdrawEvidenceProject<ThrowOnError extends boolean = true>(options: Options<rehearsalWithdrawEvidenceProjectData, ThrowOnError>) {
         return (options.client ?? client).delete<rehearsalWithdrawEvidenceProjectResponses, rehearsalWithdrawEvidenceProjectErrors, ThrowOnError>({
@@ -285,7 +296,8 @@ export class RehearsalService {
     /**
      * Declare Evidence Project
      *
-     * Declare (or change) the Evidence Project of this Competency, until the Reading Day.
+     * Declare (or change) the Evidence Project of this Competency, until the Reading
+     * Day.
      */
     public static declareEvidenceProject<ThrowOnError extends boolean = true>(options: Options<rehearsalDeclareEvidenceProjectData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalDeclareEvidenceProjectResponses, rehearsalDeclareEvidenceProjectErrors, ThrowOnError>({

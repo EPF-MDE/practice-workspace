@@ -1,4 +1,4 @@
-"""The Practice Plan through the HTTP API: drafted from the levels, filled by
+"""The Evidence Plan through the HTTP API: drafted from the levels, filled by
 the Transfer, then the Student's own text, which wins, every version dated;
 confirmed by the closing step with one example for the Eval.
 
@@ -19,8 +19,8 @@ from app.store import InMemoryStore
 
 PAGE = "/api/competencies/C1"
 SELF = f"{PAGE}/self-assessment"
-DRAFT = f"{PAGE}/practice-plan/draft"
-PLAN = f"{PAGE}/practice-plan"
+DRAFT = f"{PAGE}/evidence-plan/draft"
+PLAN = f"{PAGE}/evidence-plan"
 CLOSE = f"{PAGE}/close"
 LINK = "https://github.com/ada/notes/pull/4"
 
@@ -88,13 +88,13 @@ def test_drafting_stores_nothing(ada: TestClient, store: InMemoryStore) -> None:
 
 
 def test_the_page_drafts_the_plan_from_the_levels_sent(ada: TestClient) -> None:
-    assert ada.get(PAGE).json()["practice_plan_draft"] == ""
+    assert ada.get(PAGE).json()["evidence_plan_draft"] == ""
 
     ada.post(SELF, json=levels(a="redo"))
 
     page = ada.get(PAGE).json()
-    assert "WHY-REDO" in page["practice_plan_draft"]
-    assert page["practice_plan"] is None
+    assert "WHY-REDO" in page["evidence_plan_draft"]
+    assert page["evidence_plan"] is None
 
 
 def test_the_transfer_fills_its_points_to_get_there(ada: TestClient) -> None:
@@ -143,7 +143,7 @@ def test_the_students_text_wins_over_the_draft_and_every_version_is_dated(
     second = ada.post(PLAN, json={"text": "Only C1.b, my way.\nAnd a line of my own."})
 
     assert first.status_code == second.status_code == 200
-    plan = ada.get(PAGE).json()["practice_plan"]
+    plan = ada.get(PAGE).json()["evidence_plan"]
     assert plan["text"] == "Only C1.b, my way.\nAnd a line of my own."
     assert [(v["version"], v["sent_at"]) for v in plan["history"]] == [
         (1, first.json()["sent_at"]),
@@ -176,7 +176,7 @@ def test_the_closing_step_confirms_the_plan_with_one_example_for_the_eval_in_one
 
     assert closed.status_code == 200
     assert store.writes == before + 1
-    plan = ada.get(PAGE).json()["practice_plan"]
+    plan = ada.get(PAGE).json()["evidence_plan"]
     assert (plan["text"], plan["example"], plan["confirmed"]) == (
         "My plan.",
         "The README of ada/bakery, line 3.",
@@ -200,7 +200,7 @@ def test_an_edit_after_the_closing_step_keeps_the_example_and_the_confirmation(
 
     ada.post(PLAN, json={"text": "My plan, adjusted."})
 
-    plan = ada.get(PAGE).json()["practice_plan"]
+    plan = ada.get(PAGE).json()["evidence_plan"]
     assert (plan["text"], plan["example"], plan["confirmed"], plan["version"]) == (
         "My plan, adjusted.",
         "The README.",
@@ -249,7 +249,7 @@ def test_confirming_the_untouched_draft_keeps_it_a_draft_that_follows_later_leve
     ada: TestClient,
 ) -> None:
     ada.post(SELF, json=levels(a="understand"))
-    draft = ada.get(PAGE).json()["practice_plan_draft"]
+    draft = ada.get(PAGE).json()["evidence_plan_draft"]
 
     closed = ada.post(
         CLOSE, json={"text": draft, "example": "The README.", "drafted": True}
@@ -260,17 +260,17 @@ def test_confirming_the_untouched_draft_keeps_it_a_draft_that_follows_later_leve
     ada.post(SELF, json=levels(a="understand", b="redo"))
     page = ada.get(PAGE).json()
     assert (
-        page["practice_plan"]["drafted"] is True
+        page["evidence_plan"]["drafted"] is True
     )  # not the Student's text: the page offers the new draft
     assert (
-        page["practice_plan_draft"] != draft and "C1.b" in page["practice_plan_draft"]
+        page["evidence_plan_draft"] != draft and "C1.b" in page["evidence_plan_draft"]
     )
-    assert page["practice_plan"]["confirmed"] is True
+    assert page["evidence_plan"]["confirmed"] is True
 
 
 def test_a_text_equal_to_the_draft_is_a_draft_even_unflagged(ada: TestClient) -> None:
     ada.post(SELF, json=levels(a="understand"))
-    draft = ada.get(PAGE).json()["practice_plan_draft"]
+    draft = ada.get(PAGE).json()["evidence_plan_draft"]
 
     closed = ada.post(CLOSE, json={"text": draft, "example": "The README."})
 
@@ -279,14 +279,14 @@ def test_a_text_equal_to_the_draft_is_a_draft_even_unflagged(ada: TestClient) ->
 
 def test_only_an_edit_makes_the_plan_the_students_text(ada: TestClient) -> None:
     ada.post(SELF, json=levels(a="understand"))
-    draft = ada.get(PAGE).json()["practice_plan_draft"]
+    draft = ada.get(PAGE).json()["evidence_plan_draft"]
     ada.post(CLOSE, json={"text": draft, "example": "The README.", "drafted": True})
 
     edited = ada.post(PLAN, json={"text": draft + "\nAnd a line of my own."})
 
     assert edited.json()["drafted"] is False
     ada.post(SELF, json=levels(a="understand", b="redo"))
-    plan = ada.get(PAGE).json()["practice_plan"]
+    plan = ada.get(PAGE).json()["evidence_plan"]
     assert (plan["drafted"], plan["text"], plan["confirmed"]) == (
         False,
         draft + "\nAnd a line of my own.",

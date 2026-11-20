@@ -59,15 +59,17 @@ def _line(
             return (
                 f"**Self-assessment** of {competency} {v}: {levels or 'no point rated'}"
             )
-        case Kind.PRACTICE_PLAN:
+        case Kind.EVIDENCE_PLAN:
             confirmed = (
                 ", confirmed at the closing step" if payload.get("confirmed") else ""
             )
             confirmed += ", the draft untouched" if payload.get("drafted") else ""
-            # The closing step's one send also carries the fork panel shown and any
+            # The closing step's one send also carries the evidence panel shown and any
             # declaration made there.
             snapshot = (
-                ", with the fork panel as shown" if "fork_snapshot" in payload else ""
+                ", with the evidence panel as shown"
+                if "evidence_panel_snapshot" in payload
+                else ""
             )
             declared = payload.get("declaration")
             evidence = (
@@ -76,13 +78,13 @@ def _line(
                 else ""
             )
             return (
-                f"**Practice Plan** for {competency} {v}{confirmed}{snapshot}{evidence}"
+                f"**Evidence Plan** for {competency} {v}{confirmed}{snapshot}{evidence}"
             )
         case Kind.DECLARATION:
             what = "withdrawn" if not payload else "declared"
             return f"**Evidence Project** {what} for {competency} {v}"
-        case Kind.FORK_SNAPSHOT:
-            return f"**Fork panel** as seen at {competency}'s closing step {v}"
+        case Kind.EVIDENCE_PANEL_SNAPSHOT:
+            return f"**Evidence panel** as seen at {competency}'s closing step {v}"
     raise ValueError(kind)
 
 

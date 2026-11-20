@@ -365,10 +365,10 @@ class GitHubStore:
             student, Kind.SELF_ASSESSMENT, competency, None, dict(levels)
         )
 
-    def save_practice_plan(
+    def save_evidence_plan(
         self, student: Student, competency: str, plan: dict[str, Any]
     ) -> Entry:
-        return self._append(student, Kind.PRACTICE_PLAN, competency, None, dict(plan))
+        return self._append(student, Kind.EVIDENCE_PLAN, competency, None, dict(plan))
 
     def save_declaration(
         self, student: Student, competency: str, declaration: dict[str, Any]
@@ -382,9 +382,9 @@ class GitHubStore:
     ) -> Entry:
         return self._append(student, Kind.QUESTION, competency, step, {"text": text})
 
-    def save_fork_snapshot(
+    def save_evidence_panel_snapshot(
         self, student: Student, competency: str, snapshot: dict[str, Any]
     ) -> Entry:
         return self._append(
-            student, Kind.FORK_SNAPSHOT, competency, None, dict(snapshot)
+            student, Kind.EVIDENCE_PANEL_SNAPSHOT, competency, None, dict(snapshot)
         )

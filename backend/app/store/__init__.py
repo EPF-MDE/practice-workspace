@@ -2,7 +2,7 @@
 
 Its interface speaks the domain, never GitHub: *read a Student's record*,
 *save an answer*, *save a drawing*, *save the Self-assessment*, *save the
-Practice Plan*, *save a declaration*, *save a question*, *save a fork
+Evidence Plan*, *save a declaration*, *save a question*, *save an evidence panel
 snapshot*. Each `save_*` is one send: it stores a new dated entry and never
 rewrites an earlier one, so a Student's record is the history of their sends,
 and their current state is the latest entry of each kind.
@@ -150,10 +150,10 @@ class InMemoryStore:
             student, Kind.SELF_ASSESSMENT, competency, None, dict(levels)
         )
 
-    def save_practice_plan(
+    def save_evidence_plan(
         self, student: Student, competency: str, plan: dict[str, Any]
     ) -> Entry:
-        return self._append(student, Kind.PRACTICE_PLAN, competency, None, dict(plan))
+        return self._append(student, Kind.EVIDENCE_PLAN, competency, None, dict(plan))
 
     def save_declaration(
         self, student: Student, competency: str, declaration: dict[str, Any]
@@ -167,9 +167,9 @@ class InMemoryStore:
     ) -> Entry:
         return self._append(student, Kind.QUESTION, competency, step, {"text": text})
 
-    def save_fork_snapshot(
+    def save_evidence_panel_snapshot(
         self, student: Student, competency: str, snapshot: dict[str, Any]
     ) -> Entry:
         return self._append(
-            student, Kind.FORK_SNAPSHOT, competency, None, dict(snapshot)
+            student, Kind.EVIDENCE_PANEL_SNAPSHOT, competency, None, dict(snapshot)
         )

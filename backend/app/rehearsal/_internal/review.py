@@ -1,4 +1,4 @@
-"""The closing step's parts: Self-assessment, Practice Plan, example for the Eval."""
+"""The closing step's parts: Self-assessment, Evidence Plan, example for the Eval."""
 
 from __future__ import annotations
 
@@ -16,16 +16,16 @@ from app.store import Entry, Kind, Record
 
 from .models import (
     MAX_URL_CHARS,
+    EvidencePlan,
+    EvidencePlanVersion,
     PointLevel,
     PointLevelNow,
-    PracticePlan,
-    PracticePlanVersion,
     SelfAssessment,
     SelfAssessmentVersion,
     _at_most,
 )
 
-# --- The closing step: Self-assessment, Practice Plan, example for the Eval --
+# --- The closing step: Self-assessment, Evidence Plan, example for the Eval --
 
 
 def _points(page: Page) -> list[Point]:
@@ -63,8 +63,8 @@ def _self_assessment(record: Record, competency: str) -> SelfAssessment | None:
     )
 
 
-def _plan_version(entry: Entry) -> PracticePlanVersion:
-    return PracticePlanVersion(
+def _plan_version(entry: Entry) -> EvidencePlanVersion:
+    return EvidencePlanVersion(
         text=entry.payload["text"],
         drafted=entry.payload.get("drafted", False),
         example=entry.payload.get("example"),
@@ -74,11 +74,11 @@ def _plan_version(entry: Entry) -> PracticePlanVersion:
     )
 
 
-def _practice_plan(record: Record, competency: str) -> PracticePlan | None:
-    history = record.history(Kind.PRACTICE_PLAN, competency)
+def _evidence_plan(record: Record, competency: str) -> EvidencePlan | None:
+    history = record.history(Kind.EVIDENCE_PLAN, competency)
     if not history:
         return None
-    return PracticePlan(
+    return EvidencePlan(
         **_plan_version(history[-1]).model_dump(),
         history=[_plan_version(e) for e in history],
     )

@@ -7,7 +7,8 @@ export type ClientOptions = {
 /**
  * Access
  *
- * Whether the Reading Day can read a declared project: access only, never its contents.
+ * Whether the Reading Day can read a declared project: access only, never its
+ * contents.
  */
 export type Access = {
     /**
@@ -188,11 +189,11 @@ export type CompetencyPage = {
      */
     reading_day_passed: boolean;
     self_assessment: SelfAssessment | null;
-    practice_plan: PracticePlan | null;
+    evidence_plan: EvidencePlan | null;
     /**
-     * Practice Plan Draft
+     * Evidence Plan Draft
      */
-    practice_plan_draft: string;
+    evidence_plan_draft: string;
     /**
      * Evidence Project
      */
@@ -341,6 +342,84 @@ export type DrawingStored = {
      * Unlocked
      */
     unlocked: Array<string>;
+};
+
+/**
+ * EvidencePlan
+ */
+export type EvidencePlan = {
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Drafted
+     */
+    drafted: boolean;
+    /**
+     * Example
+     */
+    example: string | null;
+    /**
+     * Confirmed
+     */
+    confirmed: boolean;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Sent At
+     */
+    sent_at: string;
+    /**
+     * History
+     */
+    history: Array<EvidencePlanVersion>;
+};
+
+/**
+ * EvidencePlanIn
+ */
+export type EvidencePlanIn = {
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Drafted
+     */
+    drafted?: boolean;
+};
+
+/**
+ * EvidencePlanVersion
+ */
+export type EvidencePlanVersion = {
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Drafted
+     */
+    drafted: boolean;
+    /**
+     * Example
+     */
+    example: string | null;
+    /**
+     * Confirmed
+     */
+    confirmed: boolean;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Sent At
+     */
+    sent_at: string;
 };
 
 /**
@@ -663,84 +742,6 @@ export type PointLevelNow = {
      * Since
      */
     since: string;
-};
-
-/**
- * PracticePlan
- */
-export type PracticePlan = {
-    /**
-     * Text
-     */
-    text: string;
-    /**
-     * Drafted
-     */
-    drafted: boolean;
-    /**
-     * Example
-     */
-    example: string | null;
-    /**
-     * Confirmed
-     */
-    confirmed: boolean;
-    /**
-     * Version
-     */
-    version: number;
-    /**
-     * Sent At
-     */
-    sent_at: string;
-    /**
-     * History
-     */
-    history: Array<PracticePlanVersion>;
-};
-
-/**
- * PracticePlanIn
- */
-export type PracticePlanIn = {
-    /**
-     * Text
-     */
-    text: string;
-    /**
-     * Drafted
-     */
-    drafted?: boolean;
-};
-
-/**
- * PracticePlanVersion
- */
-export type PracticePlanVersion = {
-    /**
-     * Text
-     */
-    text: string;
-    /**
-     * Drafted
-     */
-    drafted: boolean;
-    /**
-     * Example
-     */
-    example: string | null;
-    /**
-     * Confirmed
-     */
-    confirmed: boolean;
-    /**
-     * Version
-     */
-    version: number;
-    /**
-     * Sent At
-     */
-    sent_at: string;
 };
 
 /**
@@ -1336,7 +1337,7 @@ export type rehearsalSendSelfAssessmentResponses = {
 
 export type rehearsalSendSelfAssessmentResponse = rehearsalSendSelfAssessmentResponses[keyof rehearsalSendSelfAssessmentResponses];
 
-export type rehearsalDraftPracticePlanData = {
+export type rehearsalDraftEvidencePlanData = {
     body: LevelsIn;
     path: {
         /**
@@ -1345,29 +1346,29 @@ export type rehearsalDraftPracticePlanData = {
         competency: string;
     };
     query?: never;
-    url: '/api/competencies/{competency}/practice-plan/draft';
+    url: '/api/competencies/{competency}/evidence-plan/draft';
 };
 
-export type rehearsalDraftPracticePlanErrors = {
+export type rehearsalDraftEvidencePlanErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalDraftPracticePlanError = rehearsalDraftPracticePlanErrors[keyof rehearsalDraftPracticePlanErrors];
+export type rehearsalDraftEvidencePlanError = rehearsalDraftEvidencePlanErrors[keyof rehearsalDraftEvidencePlanErrors];
 
-export type rehearsalDraftPracticePlanResponses = {
+export type rehearsalDraftEvidencePlanResponses = {
     /**
      * Successful Response
      */
     200: Draft;
 };
 
-export type rehearsalDraftPracticePlanResponse = rehearsalDraftPracticePlanResponses[keyof rehearsalDraftPracticePlanResponses];
+export type rehearsalDraftEvidencePlanResponse = rehearsalDraftEvidencePlanResponses[keyof rehearsalDraftEvidencePlanResponses];
 
-export type rehearsalSendPracticePlanData = {
-    body: PracticePlanIn;
+export type rehearsalSendEvidencePlanData = {
+    body: EvidencePlanIn;
     path: {
         /**
          * Competency
@@ -1375,26 +1376,26 @@ export type rehearsalSendPracticePlanData = {
         competency: string;
     };
     query?: never;
-    url: '/api/competencies/{competency}/practice-plan';
+    url: '/api/competencies/{competency}/evidence-plan';
 };
 
-export type rehearsalSendPracticePlanErrors = {
+export type rehearsalSendEvidencePlanErrors = {
     /**
      * Validation Error
      */
     422: HTTPValidationError;
 };
 
-export type rehearsalSendPracticePlanError = rehearsalSendPracticePlanErrors[keyof rehearsalSendPracticePlanErrors];
+export type rehearsalSendEvidencePlanError = rehearsalSendEvidencePlanErrors[keyof rehearsalSendEvidencePlanErrors];
 
-export type rehearsalSendPracticePlanResponses = {
+export type rehearsalSendEvidencePlanResponses = {
     /**
      * Successful Response
      */
-    200: PracticePlanVersion;
+    200: EvidencePlanVersion;
 };
 
-export type rehearsalSendPracticePlanResponse = rehearsalSendPracticePlanResponses[keyof rehearsalSendPracticePlanResponses];
+export type rehearsalSendEvidencePlanResponse = rehearsalSendEvidencePlanResponses[keyof rehearsalSendEvidencePlanResponses];
 
 export type rehearsalCloseCompetencyData = {
     body: ClosingIn;
@@ -1421,7 +1422,7 @@ export type rehearsalCloseCompetencyResponses = {
     /**
      * Successful Response
      */
-    200: PracticePlanVersion;
+    200: EvidencePlanVersion;
 };
 
 export type rehearsalCloseCompetencyResponse = rehearsalCloseCompetencyResponses[keyof rehearsalCloseCompetencyResponses];

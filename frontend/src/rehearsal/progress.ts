@@ -67,7 +67,7 @@ export const closingDrafts = {
     read<Record<string, LevelDraft>>(key(scope, "levels"), {}),
   setLevels: (scope: DraftScope, levels: Record<string, LevelDraft>) =>
     write(key(scope, "levels"), levels),
-  /** The Student's own Practice Plan text, once they edit it: from then on it wins over the draft. */
+  /** The Student's own Evidence Plan text, once they edit it: from then on it wins over the draft. */
   getPlan: (scope: DraftScope) => read<string | null>(key(scope, "plan"), null),
   setPlan: (scope: DraftScope, text: string | null) =>
     text === null

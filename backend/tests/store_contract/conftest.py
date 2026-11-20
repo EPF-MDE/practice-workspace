@@ -62,7 +62,7 @@ SENDS: dict[Kind, Callable[[Store, Student], Entry]] = {
             "missed_check_points": {"redraw": ["queue"]},
         },
     ),
-    Kind.PRACTICE_PLAN: lambda s, who: s.save_practice_plan(
+    Kind.EVIDENCE_PLAN: lambda s, who: s.save_evidence_plan(
         who,
         "C1",
         {
@@ -76,7 +76,7 @@ SENDS: dict[Kind, Callable[[Store, Student], Entry]] = {
                 "note": "été",
                 "access": "readable",
             },
-            "fork_snapshot": {
+            "evidence_panel_snapshot": {
                 "competency": "C1",
                 "facts": [{"point": "C1", "files": []}],
                 "files_dropped": True,
@@ -89,7 +89,7 @@ SENDS: dict[Kind, Callable[[Store, Student], Entry]] = {
     Kind.QUESTION: lambda s, who: s.save_question(
         who, "C1", "read-the-chain", "Why 10?\nAnd why ``` here?"
     ),
-    Kind.FORK_SNAPSHOT: lambda s, who: s.save_fork_snapshot(
+    Kind.EVIDENCE_PANEL_SNAPSHOT: lambda s, who: s.save_evidence_panel_snapshot(
         who, "C2", {"empty": False, "facts": [{"point": "C2.c"}]}
     ),
 }

@@ -65,17 +65,17 @@ def test_every_kind_reads_back_as_sent(store: Store, kind: Kind) -> None:
 def test_a_send_too_large_for_one_github_comment_is_refused_and_stores_nothing(
     store: Store,
 ) -> None:
-    store.save_practice_plan(ADA, "C1", {"text": "kept"})
+    store.save_evidence_plan(ADA, "C1", {"text": "kept"})
 
     with pytest.raises(SendTooLarge):
-        store.save_practice_plan(ADA, "C1", {"text": "x" * MAX_SEND_CHARS})
+        store.save_evidence_plan(ADA, "C1", {"text": "x" * MAX_SEND_CHARS})
     # JSON escaping counts: a newline is stored as two characters
     with pytest.raises(SendTooLarge):
-        store.save_practice_plan(ADA, "C1", {"text": "\n" * (MAX_SEND_CHARS // 2 + 1)})
+        store.save_evidence_plan(ADA, "C1", {"text": "\n" * (MAX_SEND_CHARS // 2 + 1)})
 
     assert [e.payload["text"] for e in store.record(ADA).entries] == ["kept"]
     assert (
-        store.save_practice_plan(
+        store.save_evidence_plan(
             ADA, "C1", {"text": "y" * (MAX_SEND_CHARS - 100)}
         ).version
         == 2
@@ -89,7 +89,7 @@ def test_the_largest_send_accepted_fits_one_github_comment(github: FakeGitHub) -
     store.save_question(
         ADA, "C1", "read-the-chain", text
     )  # its line quotes the text once more
-    store.save_practice_plan(
+    store.save_evidence_plan(
         ADA, "C1", {"text": "y" * (MAX_SEND_CHARS - 100), "confirmed": True}
     )
 
@@ -125,7 +125,7 @@ def test_the_declaration_now_is_the_latest_sent_alone_or_with_the_closing_step(
     store.save_declaration(
         ADA, "C2", {"url": "https://github.com/ada/a", "note": "first"}
     )
-    store.save_practice_plan(
+    store.save_evidence_plan(
         ADA,
         "C2",
         {"text": "p", "declaration": {"url": "https://github.com/ada/b", "note": "n"}},
@@ -138,7 +138,7 @@ def test_the_declaration_now_is_the_latest_sent_alone_or_with_the_closing_step(
     assert declaration is not None
     payload, at = declaration
     assert payload["url"] == "https://github.com/ada/b"
-    plan = store.record(ADA).latest(Kind.PRACTICE_PLAN, "C2")
+    plan = store.record(ADA).latest(Kind.EVIDENCE_PLAN, "C2")
     assert plan is not None
     assert at == plan.at
 

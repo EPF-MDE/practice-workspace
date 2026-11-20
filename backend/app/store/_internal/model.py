@@ -25,18 +25,17 @@ class Kind(StrEnum):
     # "missed_check_points"?: {drawing: [id]}}
     SELF_ASSESSMENT = "self-assessment"
     # key: None. payload: {"text", "example"?, "confirmed"?, "drafted"?}; the closing
-    # step's one send also carries "fork_snapshot" and, when declared there,
-    # "declaration"
-    PRACTICE_PLAN = "practice-plan"
+    # step's one send also carries "evidence_panel_snapshot" and, when declared
+    # there, "declaration"
+    EVIDENCE_PLAN = "evidence-plan"
     DECLARATION = (
         "declaration"  # key: None. payload: {"url", "note", ...}, or {} when withdrawn
     )
     # key: the step id. payload: {"text": ...}. Every question counts, not only the
     # latest.
     QUESTION = "question"
-    FORK_SNAPSHOT = (
-        "fork-snapshot"  # key: None. payload: the fork panel as the Student saw it
-    )
+    # key: None. payload: the evidence panel as the Student saw it
+    EVIDENCE_PANEL_SNAPSHOT = "evidence-panel-snapshot"
 
 
 KINDS: tuple[Kind, ...] = tuple(Kind)
@@ -127,7 +126,7 @@ class Record:
 
     def declaration(self, competency: str) -> tuple[dict[str, Any], datetime] | None:
         """The Evidence Project declared now, and when: sent alone, or with the closing
-        step's Practice Plan. None if never declared, or withdrawn since (an empty
+        step's Evidence Plan. None if never declared, or withdrawn since (an empty
         declaration)."""
         found: tuple[dict[str, Any], datetime] | None = None
         for entry in self.entries:
@@ -135,7 +134,7 @@ class Record:
                 continue
             if entry.kind == Kind.DECLARATION:
                 found = (entry.payload, entry.at) if entry.payload else None
-            elif entry.kind == Kind.PRACTICE_PLAN and "declaration" in entry.payload:
+            elif entry.kind == Kind.EVIDENCE_PLAN and "declaration" in entry.payload:
                 found = (entry.payload["declaration"], entry.at)
         return found
 
@@ -236,10 +235,10 @@ class Store(Protocol):
         its link."""
         ...
 
-    def save_practice_plan(
+    def save_evidence_plan(
         self, student: Student, competency: str, plan: dict[str, Any]
     ) -> Entry:
-        """Save the Practice Plan as it stands (the Student's text wins once edited)."""
+        """Save the Evidence Plan as it stands (the Student's text wins once edited)."""
         ...
 
     def save_declaration(
@@ -254,8 +253,9 @@ class Store(Protocol):
         """Save a question asked at a step."""
         ...
 
-    def save_fork_snapshot(
+    def save_evidence_panel_snapshot(
         self, student: Student, competency: str, snapshot: dict[str, Any]
     ) -> Entry:
-        """Save the fork panel as the Student saw it at a Competency's closing step."""
+        """Save the evidence panel as the Student saw it at a Competency's closing
+        step."""
         ...

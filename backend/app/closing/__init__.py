@@ -1,4 +1,4 @@
-"""A Competency's closing step: the Self-assessment's rules and the Practice Plan's
+"""A Competency's closing step: the Self-assessment's rules and the Evidence Plan's
 draft.
 
 The rules come from #425 as #460 restates them:
@@ -10,7 +10,7 @@ The rules come from #425 as #460 restates them:
   four), and a level already given only moves up to *I have done it*, with a
   link; every other level stays as it was. After the Reading Day nothing
   changes.
-- The Practice Plan is drafted from the levels (shape C): one block per point
+- The Evidence Plan is drafted from the levels (shape C): one block per point
   rated and not done, with its id, statement and level, the proof to show at
   the Eval, how to get there at that level, and where. A Transfer fills its
   point's "To get there". Once the Student sends their own text, it wins: the
@@ -151,7 +151,7 @@ def since(
     return start
 
 
-# --- The Practice Plan's draft -------------------------------------------------
+# --- The Evidence Plan's draft -------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -186,7 +186,7 @@ def draft(
     transfer: Transfer | None = None,
     evidence_project: str | None = None,
 ) -> str:
-    """The Practice Plan drafted from the levels: one block per point rated and not
+    """The Evidence Plan drafted from the levels: one block per point rated and not
     done."""
     blocks = []
     for point in points:

@@ -37,8 +37,8 @@ from .models import (
 )
 from .review import (
     _draft,
+    _evidence_plan,
     _evidence_project,
-    _practice_plan,
     _self_assessment,
 )
 from .router import router
@@ -78,8 +78,8 @@ def competency_page(
         reading_day_at=settings.reading_day_at,
         reading_day_passed=_phase(settings) == "over",
         self_assessment=_self_assessment(record, page.competency),
-        practice_plan=_practice_plan(record, page.competency),
-        practice_plan_draft=_draft(
+        evidence_plan=_evidence_plan(record, page.competency),
+        evidence_plan_draft=_draft(
             page, record, assessment.payload["levels"] if assessment else {}
         ),
         evidence_project=_evidence_project(record, page.competency),

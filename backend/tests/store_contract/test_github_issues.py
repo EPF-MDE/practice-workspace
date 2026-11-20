@@ -58,7 +58,7 @@ def test_a_record_survives_a_restart_rebuilt_from_the_comments(
     first = before.save_answer(ADA, "C1", "guided-calculation", {"sentence": "first"})
     before.save_answer(ADA, "C1", "guided-calculation", {"sentence": "second"})
     before.save_question(ADA, "C1", "read-the-chain", "Why?")
-    SENDS[Kind.PRACTICE_PLAN](before, ADA)
+    SENDS[Kind.EVIDENCE_PLAN](before, ADA)
 
     after = github_store(github)
 
@@ -116,6 +116,28 @@ def test_a_send_comment_is_a_line_to_read_then_a_block_to_parse(
         '"payload": {"text": "Why 10\\nseconds?"}}\n'
         "```\n"
     )
+
+
+def test_an_evidence_plan_comment_names_it_and_stores_its_kind(
+    github: FakeGitHub,
+) -> None:
+    store = github_store(github)
+    SENDS[Kind.EVIDENCE_PLAN](store, ADA)
+    SENDS[Kind.EVIDENCE_PANEL_SNAPSHOT](store, ADA)
+
+    plan, snapshot = (c["body"] for c in github.comments[401])
+
+    assert plan.startswith(
+        "**Evidence Plan** for C1 (version 1), confirmed at the closing step, "
+        "with the evidence panel as shown; "
+        "**Evidence Project** declared: https://github.com/ada/bakery\n\n"
+    )
+    assert '{"kind": "evidence-plan", "competency": "C1", "version": 1' in plan
+    assert '"evidence_panel_snapshot": {"competency": "C1"' in plan
+    assert snapshot.startswith(
+        "**Evidence panel** as seen at C2's closing step (version 1)\n\n"
+    )
+    assert '{"kind": "evidence-panel-snapshot", "competency": "C2"' in snapshot
 
 
 def test_a_send_before_sign_in_opened_the_issue_opens_it(github: FakeGitHub) -> None:

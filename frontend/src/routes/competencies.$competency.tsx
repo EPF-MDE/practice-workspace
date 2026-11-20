@@ -25,7 +25,7 @@ export const Route = createFileRoute("/competencies/$competency")({
 function progressOf(page: PageData, read: string[]) {
   const { steps } = page;
   const finished = finishedSteps(steps, read);
-  if (page.practice_plan?.confirmed)
+  if (page.evidence_plan?.confirmed)
     for (const step of steps)
       if (step.kind === "closing") finished.add(step.id);
   const current = (
@@ -76,7 +76,7 @@ function CompetencyView({
         finished={finished}
         greyed={greyed}
         startedAt={started}
-        practicePlan={page.practice_plan?.text ?? page.practice_plan_draft}
+        evidencePlan={page.evidence_plan?.text ?? page.evidence_plan_draft}
         currentStep={current}
       />
       <main className="flex min-w-0 flex-col gap-8">

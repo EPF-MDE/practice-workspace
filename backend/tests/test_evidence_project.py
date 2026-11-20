@@ -294,7 +294,7 @@ def test_the_closing_step_stores_the_panel_and_the_declaration_in_its_one_send(
     assert (
         panel["read_at"] == shown["read_at"]
     )  # the panel stored is the one shown: no new reading
-    plan = client.get(C1).json()["practice_plan"]
+    plan = client.get(C1).json()["evidence_plan"]
     assert (plan["confirmed"], plan["version"]) == (True, 1)
 
 
@@ -308,7 +308,7 @@ def test_closing_without_a_declaration_still_stores_the_panel(counted: Counted) 
     assert (
         writes() == before + 2
     )  # the Self-assessment, then the closing step's one send
-    assert client.get(C1).json()["practice_plan"]["confirmed"] is True
+    assert client.get(C1).json()["evidence_plan"]["confirmed"] is True
     assert client.get(C1).json()["evidence_project"] is None
     assert client.get(f"{C1}/fork").json()["declaration"] is None
 

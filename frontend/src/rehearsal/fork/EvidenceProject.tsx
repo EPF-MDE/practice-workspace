@@ -222,7 +222,7 @@ function DraftActions({
       )}
       {ridesWithClose && filled && (
         <span className="text-sm text-muted-foreground">
-          It is declared with your Practice Plan when you confirm it, below.
+          It is declared with your Evidence Plan when you confirm it, below.
         </span>
       )}
     </div>
@@ -231,7 +231,7 @@ function DraftActions({
 
 /**
  * The Evidence Project of one Competency, in its closing step. Declared there
- * before the Practice Plan is confirmed, it rides with that one send; after,
+ * before the Evidence Plan is confirmed, it rides with that one send; after,
  * a change or a withdrawal is its own send, until the Reading Day.
  */
 export function EvidenceProject(props: Props) {
