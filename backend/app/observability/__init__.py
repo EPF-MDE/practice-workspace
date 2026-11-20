@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
 from typing import Any
@@ -38,7 +38,7 @@ class _Wiring:
     client: posthog.Posthog
     logger_provider: LoggerProvider
     handler: LoggingHandler
-    loggers: Iterable[logging.Logger]
+    loggers: tuple[logging.Logger, ...]
 
 
 class Signals:
@@ -100,11 +100,11 @@ def start(service_name: str, token: str, host: str, environment: str) -> Signals
         )
     )
     handler = LoggingHandler(logger_provider=logger_provider)
-    loggers = [logging.getLogger()] + [
+    loggers = (logging.getLogger(),) + tuple(
         logger
         for logger in map(logging.getLogger, SERVICE_LOGGERS)
         if not logger.propagate
-    ]
+    )
     for logger in loggers:
         logger.addHandler(handler)
     return Signals(_Wiring(client, logger_provider, handler, loggers))
