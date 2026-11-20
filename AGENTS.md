@@ -19,9 +19,10 @@ Demo course is the only course here.
 
 - `backend/`: one Python package, `app`, run with `uv`. Each subpackage of
   `app` is a Deep Module, reached from outside only through names not starting
-  with `_`; `tach` and `scripts/check_cycles.py` enforce it.
-- `frontend/`: the React front end, built and served by the back end. Its
-  boundaries are checked by dependency-cruiser.
+  with `_`; `tach` enforces it, and import-linter forbids cycles between them.
+- `frontend/`: the React front end, built and served by the back end. Each
+  folder under `src/packages` is a Deep Module, reached from outside only
+  through its root files; dependency-cruiser enforces it.
 
 ## Verification
 

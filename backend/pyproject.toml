@@ -12,6 +12,7 @@ dev = [
     "tach~=0.35.0",
     "ruff>=0.15",
     "mypy>=1.19",
+    "import-linter~=2.17",
 ]
 
 [tool.uv]
@@ -29,6 +30,20 @@ target-version = "py313"
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]
 
 [tool.mypy]
-files = ["app", "tests", "scripts"]
+files = ["app", "tests"]
 python_version = "3.13"
 strict = true
+
+# Rejects import cycles between the modules of `app`, read from the real
+# imports. Tach's `forbid_circular_dependencies` only sees the dependencies
+# declared in tach.toml, and tach.toml declares none. depth = 0 checks only
+# the modules themselves: inside a module, its files import each other freely.
+[tool.importlinter]
+root_packages = ["app"]
+
+[[tool.importlinter.contracts]]
+id = "no-cycles"
+name = "No import cycles between the modules of app"
+type = "acyclic_siblings"
+ancestors = ["app"]
+depth = 0
