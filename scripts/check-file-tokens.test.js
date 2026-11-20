@@ -23,7 +23,7 @@ const checkIn = (files, paths) => {
 };
 
 describe("check-file-tokens", () => {
-  it("passes a symlink to a directory, as git lists .claude/skills", () => {
+  it("passes a symlink to a directory, as git lists .agents/skills", () => {
     const result = checkIn({ "small.md": "A line.\n" }, [
       "small.md",
       "linked-skills",

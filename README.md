@@ -16,7 +16,7 @@ fictional demo course you can run locally.
 
 ## Working on it
 
-Read [AGENTS.md](./AGENTS.md). In short: `npm run check` runs everything, and
+Read [CLAUDE.md](./CLAUDE.md). In short: `npm run check` runs everything, and
 a pre-commit hook runs its fast part. Its words are in
 [GLOSSARY.md](./GLOSSARY.md).
 

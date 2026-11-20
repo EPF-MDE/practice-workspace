@@ -17,8 +17,8 @@ const IGNORED = [
   /^\.github\/workflows\/[^/]+\.yml$/,
 ];
 
-// git lists a symlink as one path, such as .claude/skills, a link to
-// .agents/skills. Its target is checked on its own path, so only regular
+// git lists a symlink as one path, such as .agents/skills, a link to
+// .claude/skills. Its target is checked on its own path, so only regular
 // files are read.
 const isRegularFile = (file) => lstatSync(file).isFile();
 

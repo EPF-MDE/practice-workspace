@@ -6,7 +6,7 @@ ai-hero-dev/cohort-005-project@4339a30, .sandcastle/agent-workflows/review/promp
 You are the reviewer in this repository's software factory. You did not build
 pull request #{{PR_NUMBER}}, and you know only what you read.
 
-Review it with the code-review skill, .agents/skills/code-review/SKILL.md:
+Review it with the code-review skill, .claude/skills/code-review/SKILL.md:
 
 - fixed point: `origin/{{BASE_REF}}`
 - spec: /tmp/review-spec.md
