@@ -206,7 +206,7 @@ function CanvasAndSend({
   initial,
 }: CanvasProps & { initial: Snapshot | null }) {
   const editor = useRef<Editor | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const [editorReady, setEditorReady] = useState(false);
   const [kept, setKept] = useState(true);
   const sending = useSendDrawing(competency, step, editor);
   return (
@@ -218,7 +218,7 @@ function CanvasAndSend({
           readOnly={closed}
           onEditor={(ready) => {
             editor.current = ready;
-            setMounted(true);
+            setEditorReady(true);
           }}
           onChange={(snapshot) =>
             setKept(
@@ -229,7 +229,7 @@ function CanvasAndSend({
       </Frame>
       <DrawingSendBar
         step={step}
-        disabled={closed || !mounted}
+        disabled={closed || !editorReady}
         kept={kept}
         sending={sending}
       />
