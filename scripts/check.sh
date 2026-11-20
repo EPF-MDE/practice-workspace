@@ -15,10 +15,16 @@ step() { printf '\n▶ %s\n' "$1"; }
 repository() {
   step "Repository: file size (every tracked file)"
   git ls-files -z | xargs -0 node scripts/check-file-tokens.js
+  step "Repository: secrets (POSTHOG_API_KEY on the agent's step only)"
+  node scripts/check-agent-secrets.js .github/workflows/*.yml
   step "Repository: format (Markdown, JSON, configuration)"
   npx biome format .
   step "Repository: lint (everything outside the front end)"
   npx oxlint -c .oxlintrc.json --ignore-pattern "frontend/**"
+  step "Repository: types (the Sandcastle scripts in .sandcastle/)"
+  sandcastle_types
+  step "Repository: tests (the Sandcastle scripts and scripts/)"
+  npx vitest run .sandcastle/ scripts/
 }
 
 backend() {
