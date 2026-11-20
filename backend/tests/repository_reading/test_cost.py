@@ -119,7 +119,9 @@ class LargestShape:
         self.requests.append(path)
         route = path.split("?")[0]
         if route == f"repos/{self.repository}":
-            return Response(200, {"default_branch": "b0"})
+            return Response(
+                200, {"default_branch": "b0", "source": {"full_name": "EPF-MDE/OceENS"}}
+            )
         if route == f"repos/{self.repository}/branches":
             return Response(200, self.branches)
         if route == f"repos/{self.repository}/pulls":

@@ -237,5 +237,8 @@ def _trim_body(route: str, body: Any) -> Any:
             return [_pick(e, "name", "path", "type") for e in body]
         return _pick(body, "name", "path", "type", "content", "encoding")
     if re.match(r"repos/[^/]+/[^/]+$", route):
-        return _pick(body, "full_name", "default_branch", "html_url")
+        return {
+            **_pick(body, "full_name", "default_branch", "html_url"),
+            "source": _pick(body.get("source"), "full_name"),
+        }
     return body

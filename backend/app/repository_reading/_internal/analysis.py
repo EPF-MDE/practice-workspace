@@ -1,11 +1,12 @@
-"""One ref of a repository, against every upstream `course-2026*` branch; or, when it
-shares no history with them (a repository that is not a fork of the Group's upstream),
-on its own."""
+"""One ref of a repository, against every upstream `course-2026*` branch; or, for a
+repository GitHub does not link to the Group's upstream, on its own."""
 
 from __future__ import annotations
 
 import math
 from typing import Any
+
+from pydantic import BaseModel
 
 from .rules import (
     FALLBACK_CHAIN,
@@ -15,6 +16,25 @@ from .rules import (
     _date,
 )
 from .state import _ReadingState
+
+UNREADABLE: dict[str, Any] = {"files": [], "closest": None, "unreadable": True}
+
+
+class _TreeEntry(BaseModel):
+    path: str
+    type: str
+
+
+class _Tree(BaseModel):
+    tree: list[_TreeEntry]
+
+
+class _Committer(BaseModel):
+    date: str
+
+
+class _Commit(BaseModel):
+    committer: _Committer
 
 
 class _Analysis(_ReadingState):
@@ -30,7 +50,9 @@ class _Analysis(_ReadingState):
             if c is not None:
                 comparisons[name] = c
         if not comparisons:
-            return self._own_history(sha)
+            # A repository GitHub links to the upstream shares its history: one that
+            # cannot be compared with it is unreadable, never read on its own.
+            return UNREADABLE if self.linked_to_upstream else self._own_history(sha)
         merge_bases = {
             n: (c.get("merge_base_commit") or {}).get("sha")
             for n, c in comparisons.items()
@@ -97,18 +119,19 @@ class _Analysis(_ReadingState):
         tree = self.r.github.get(f"repos/{repo}/git/trees/{sha}?recursive=1")
         commit = self.r.github.get(f"repos/{repo}/git/commits/{sha}")
         if tree.status != 200 or commit.status != 200:
-            return {"files": [], "closest": None}
+            return UNREADABLE
         paths = sorted(
-            e["path"]
-            for e in tree.body.get("tree", [])
-            if e.get("type") == "blob" and e["path"].rsplit("/", 1)[-1] not in LOCKFILES
+            e.path
+            for e in _Tree.model_validate(tree.body).tree
+            if e.type == "blob" and e.path.rsplit("/", 1)[-1] not in LOCKFILES
         )
+        committed = _Commit.model_validate(commit.body).committer.date
         return {
             "closest": None,
             "own_history": True,
             "files": [{"path": path} for path in paths],
             "lines_added": None,
-            "last_change": _date((commit.body.get("committer") or {}).get("date")),
+            "last_change": _date(committed),
             "link": f"https://github.com/{repo}/tree/{sha}",
             "posthog_identity": False,
             "posthog_files": [],

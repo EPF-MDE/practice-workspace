@@ -288,7 +288,7 @@ def test_the_closing_step_stores_the_panel_and_the_declaration_in_its_one_send(
 
 def test_closing_without_a_declaration_still_stores_the_panel(counted: Counted) -> None:
     client, store, writes = counted
-
+    shown = client.get(f"{C1}/evidence-panel").json()
     before = writes()
 
     assert _rate_and_close(client).status_code == 200
@@ -298,6 +298,8 @@ def test_closing_without_a_declaration_still_stores_the_panel(counted: Counted) 
     )  # the Self-assessment, then the closing step's one send
     assert client.get(C1).json()["evidence_plan"]["confirmed"] is True
     assert client.get(C1).json()["evidence_project"] is None
+    # the panel stored is the one shown: the closing step reads nothing again
+    assert client.get(f"{C1}/evidence-panel").json()["read_at"] == shown["read_at"]
     assert client.get(f"{C1}/evidence-panel").json()["declaration"] is None
 
 

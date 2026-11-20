@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
+
 from ..github import GitHubError
 from ..reading import (
     COMPETENCIES,
@@ -24,6 +26,18 @@ from .rules import (
 )
 
 
+class _Source(BaseModel):
+    full_name: str
+
+
+class _Repository(BaseModel):
+    """What the reading needs of GitHub's answer for the repository: `source` is the
+    repository GitHub links it to, absent if none."""
+
+    default_branch: str
+    source: _Source | None = None
+
+
 class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
     """One full reading of one repository."""
 
@@ -32,7 +46,12 @@ class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
         repo = r.github.get(f"repos/{s.evidence_project}")
         if repo.status != 200:
             raise GitHubError(f"GET repos/{s.evidence_project}: {repo.status}")
-        self.default = repo.body["default_branch"]
+        answer = _Repository.model_validate(repo.body)
+        self.default = answer.default_branch
+        self.linked_to_upstream = (
+            answer.source is not None
+            and answer.source.full_name.lower() == s.upstream.lower()
+        )
         branch_list, pull_list = r._list_refs(s)
         branches_by_name, pulls_by_number = _ref_shas(branch_list, pull_list)
         self.ref_names = {}

@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 import httpx
+from pydantic import BaseModel
 
 from app.github_app import API, HEADERS, InstallationAuth, private_key_from_base64
 
@@ -78,6 +79,10 @@ def static_token(token: str) -> TokenFor:
     return lambda repository: token
 
 
+class _Installation(BaseModel):
+    id: int
+
+
 def repository_tokens(
     app_id: str, private_key_base64: str, installation_id: str = ""
 ) -> TokenFor:
@@ -98,7 +103,8 @@ def repository_tokens(
         )
         if found.status_code != 200:
             return None
-        return InstallationAuth(app_id, pem, str(found.json()["id"])).token
+        installation = _Installation.model_validate(found.json())
+        return InstallationAuth(app_id, pem, str(installation.id)).token
 
     def token(repository: str) -> str:
         key = repository.lower()

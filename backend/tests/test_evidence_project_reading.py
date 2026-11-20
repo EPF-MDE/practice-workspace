@@ -135,23 +135,31 @@ def test_a_project_the_app_cannot_read_is_said_as_such_never_a_zero(
     assert repositories.asked == []  # neither it nor the roster's is read instead
 
 
-# --- The Repository reading itself, on repositories that are not forks ---------
+# --- The Repository reading itself, on repositories not linked to the upstream ---
 
 UPSTREAM_BRANCHES = "repos/EPF-MDE/OceENS/branches?per_page=100"
 
 
 class OwnRepositories:
     """GitHub, for repositories that share no history with the Group's upstream: each
-    has one branch, `main`, holding `files`. Anything else answers 404."""
+    has one branch, `main`, holding `files`. Anything else answers 404, so no upstream
+    branch can be compared with them. Those in `linked` GitHub links to the upstream."""
 
-    def __init__(self, files: dict[str, list[str]]) -> None:
+    def __init__(
+        self, files: dict[str, list[str]], linked: tuple[str, ...] = ()
+    ) -> None:
         self.answers: dict[str, Any] = {
             UPSTREAM_BRANCHES: [{"name": "course-2026", "commit": {"sha": "up"}}]
         }
         for repository, paths in files.items():
             sha = f"{repository}-tip"
             self.answers |= {
-                f"repos/{repository}": {"default_branch": "main"},
+                f"repos/{repository}": {
+                    "default_branch": "main",
+                    "source": {"full_name": "EPF-MDE/OceENS"}
+                    if repository in linked
+                    else None,
+                },
                 f"repos/{repository}/branches?per_page=100": [
                     {"name": "main", "commit": {"sha": sha}}
                 ],
@@ -170,7 +178,7 @@ class OwnRepositories:
         return Response(404, {"message": "Not Found"})
 
 
-def test_a_repository_that_is_not_a_fork_is_read_and_a_change_reads_the_new_one(
+def test_a_repository_of_its_own_history_is_read_and_a_change_reads_the_new_one(
     make_client: MakeClient,
 ) -> None:
     github = OwnRepositories(
@@ -200,3 +208,20 @@ def test_a_repository_that_is_not_a_fork_is_read_and_a_change_reads_the_new_one(
 
     assert mill["evidence_project"] == "ada/mill"
     assert [f["path"] for f in mill["facts"][0]["files"]] == ["README.md"]
+
+
+def test_a_repository_linked_to_the_upstream_it_cannot_be_compared_with_shows_no_files(
+    make_client: MakeClient,
+) -> None:
+    github = OwnRepositories(
+        {"ada/OceENS": ["README.md", "src/app.py"]}, ("ada/OceENS",)
+    )
+    client = make_client(
+        repository_reading=RepositoryReader(github, InMemoryReadings()),
+        access_check=FakeAccessCheck(),
+    )
+    sign_in(client, ADA)
+
+    declare(client, "https://github.com/ada/OceENS")
+
+    assert panel(client, "C1")["facts"] == []

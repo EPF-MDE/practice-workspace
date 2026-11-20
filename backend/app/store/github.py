@@ -42,6 +42,7 @@ from collections.abc import Callable
 from typing import Any
 
 import httpx
+from pydantic import BaseModel
 
 from app.github_app import data_branch_lock, installation_client
 from app.roster import Student
@@ -72,6 +73,16 @@ from app.store._internal.model import (
 STORE_BOT = "epf-mde-cws-store[bot]"
 PER_PAGE = 100
 DATA_RETRIES = 5  # attempts at one file write while the data branch keeps moving
+
+
+class _OnIssue(BaseModel):
+    """The issue a comment of the repository's listing is on."""
+
+    issue_url: str
+
+    @property
+    def number(self) -> int:
+        return int(self.issue_url.rsplit("/", 1)[-1])
 
 
 class GitHubStore:
@@ -235,7 +246,7 @@ class GitHubStore:
         comments = self._all_pages(f"/repos/{self._repository}/issues/comments", {})
         found: dict[int, list[Entry]] = {}
         for comment in comments:
-            number = int(str(comment.get("issue_url", "")).rsplit("/", 1)[-1] or 0)
+            number = _OnIssue.model_validate(comment).number
             entry = _entry(comment, self._bot_login)
             if entry is not None and number in owners:
                 found.setdefault(owners[number], []).append(entry)

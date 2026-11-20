@@ -22,6 +22,7 @@ class _ReadingState:
     """One full reading of one repository: its state, shared by the rules."""
 
     default: str
+    linked_to_upstream: bool  # GitHub links the repository to the Group's upstream
     ref_names: dict[str, list[str]]
     upstream: dict[str, str]
     analyses: dict[str, dict[str, Any]]
