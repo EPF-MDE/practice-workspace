@@ -1,6 +1,3 @@
-// Copied from the Software Factories cohort (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m),
-// ai-hero-dev/cohort-005-project@4339a30, .sandcastle/agent-workflows/implement/implement.ts.
-
 import * as path from "node:path";
 import * as sandcastle from "@ai-hero/sandcastle";
 import { noSandbox } from "@ai-hero/sandcastle/sandboxes/no-sandbox";

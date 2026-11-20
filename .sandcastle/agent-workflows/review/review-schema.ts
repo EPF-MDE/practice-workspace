@@ -1,6 +1,3 @@
-// Copied from the Software Factories cohort (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m),
-// ai-hero-dev/cohort-005-project@4339a30, .sandcastle/agent-workflows/review/review-schema.ts.
-
 import { z } from "zod/v4";
 
 // The findings the review left unfixed. The workflow posts each one as an

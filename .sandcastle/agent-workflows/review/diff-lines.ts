@@ -1,6 +1,3 @@
-// Copied from the Software Factories cohort (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m),
-// ai-hero-dev/cohort-005-project@4339a30, .sandcastle/agent-workflows/review/diff-lines.ts.
-
 // The lines GitHub accepts an inline review comment on: every line in a hunk
 // of the diff, on the new side, per file. A review with one comment outside
 // the hunks is rejected whole, so the workflow drops those comments first.

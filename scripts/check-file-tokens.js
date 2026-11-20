@@ -1,6 +1,4 @@
 // Fails when a file is too big for an agent to read and edit in one go.
-// Copied from the Software Factories cohort's setup
-// (https://github.com/ai-hero-dev/cohort-005-project, scripts/check-file-tokens.js).
 // Tokens are estimated as bytes / 4, which is close enough for code.
 // Usage: node scripts/check-file-tokens.js <file>...
 

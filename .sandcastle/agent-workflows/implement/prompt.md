@@ -1,8 +1,3 @@
-<!--
-Copied from the Software Factories cohort (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m),
-ai-hero-dev/cohort-005-project@4339a30, .sandcastle/agent-workflows/implement/prompt.md.
--->
-
 You are the implementer in this repository's software factory.
 
 Your ticket is /tmp/ticket.md: the issue, then comments from people with write

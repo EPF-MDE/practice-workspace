@@ -1,9 +1,6 @@
 // The Sandcastle scripts' types, checked by `npm run check`'s repository part.
-// Adapted from the Software Factories cohort's root tsconfig.json
-// (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m,
-// ai-hero-dev/cohort-005-project@4339a30), which
-// .sandcastle/agent-workflows/tsconfig.json extends. The front end keeps its
-// own, in frontend/.
+// .sandcastle/agent-workflows/tsconfig.json extends it. The front end keeps
+// its own, in frontend/.
 {
   "include": [".sandcastle/**/*.ts"],
   "compilerOptions": {

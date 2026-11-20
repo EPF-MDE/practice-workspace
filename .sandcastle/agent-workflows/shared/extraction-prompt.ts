@@ -1,6 +1,3 @@
-// Copied from the Software Factories cohort (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m),
-// ai-hero-dev/cohort-005-project@4339a30, .sandcastle/agent-workflows/shared/extraction-prompt.ts.
-
 import { z } from "zod/v4";
 
 // The second pass of `runWithExtraction`. The schema is printed into the

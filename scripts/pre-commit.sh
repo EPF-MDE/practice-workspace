@@ -1,9 +1,7 @@
 #!/bin/sh
 # The fast part of `npm run check`, every job in parallel, in a few seconds.
-# Tests stay in `npm run check`. The shape is the Software Factories cohort's
-# (https://github.com/ai-hero-dev/cohort-005-project, scripts/pre-commit.sh),
-# with the back end's jobs added beside the front end's. The commands it shares
-# with check are in check-steps.sh.
+# Tests stay in `npm run check`. The commands it shares with check are in
+# check-steps.sh.
 # lint-staged runs with --no-stash: its checks never write, and stashing would
 # change the working tree under the checks running beside it.
 

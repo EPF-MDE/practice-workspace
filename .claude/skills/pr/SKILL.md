@@ -9,11 +9,6 @@ metadata:
     url: "https://github.com/humanlayer/skills/blob/main/plugins/show-me/skills/show-me/SKILL.md"
 ---
 
-<!--
-Copied from the Software Factories cohort (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m),
-ai-hero-dev/cohort-005-project@4339a30, .agents/skills/pr/SKILL.md.
--->
-
 Use this template for writing the PR body:
 
 ```markdown

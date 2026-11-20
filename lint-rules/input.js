@@ -1,7 +1,3 @@
-// Copied from the Software Factories cohort's lint-rules/input.js
-// (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m,
-// ai-hero-dev/cohort-005-project@4339a30), with the glossary's words.
-
 // Number() turns bad input into a number that looks good: Number("") is 0,
 // and an empty stepId would open Step 0 for every Student. Request
 // input goes through a zod schema instead, z.coerce.number().int(), which

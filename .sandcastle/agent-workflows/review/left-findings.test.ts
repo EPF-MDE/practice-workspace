@@ -1,6 +1,3 @@
-// Copied from the Software Factories cohort (https://www.aihero.dev/cohorts/software-factories-for-real-engineers-xdy1m),
-// ai-hero-dev/cohort-005-project@4339a30, .sandcastle/agent-workflows/review/left-findings.test.ts.
-
 import { describe, expect, it } from "vitest";
 import { addLeftFindings } from "./left-findings";
 import type { ReviewComment } from "./review-schema";
