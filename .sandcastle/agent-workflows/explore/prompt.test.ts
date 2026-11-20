@@ -13,7 +13,7 @@ describe("the explore prompt's blast radius", () => {
     expect(blastRadius).toContain("the Store");
   });
 
-  it("no longer names the cohort's layout", () => {
+  it("no longer names app/modules/ or tables", () => {
     expect(blastRadius).not.toContain("app/modules/");
     expect(blastRadius).not.toContain("tables");
   });
