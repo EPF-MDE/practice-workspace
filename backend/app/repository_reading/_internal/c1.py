@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ..reading import (
     Fact,
 )
-
-if TYPE_CHECKING:
-    pass
 from .analysis import OWN_HISTORY
 from .rules import (
     _plural,

@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ..reading import (
     Fact,
 )
-
-if TYPE_CHECKING:
-    pass
 from .rules import (
     FIX_PR,
     POSTHOG_FALLBACK,
