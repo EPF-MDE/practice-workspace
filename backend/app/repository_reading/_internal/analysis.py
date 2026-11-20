@@ -41,7 +41,7 @@ class _Analysis(_ReadingState):
             return {"files": [], "closest": None}
         comparisons = {}
         for name, usha in self.upstream.items():
-            c = self.r.compare(self.s.evidence_project, usha, sha)
+            c = self.github.compare(self.s.evidence_project, usha, sha)
             if c is not None:
                 comparisons[name] = c
         if not comparisons:
@@ -106,8 +106,8 @@ class _Analysis(_ReadingState):
 
     def _own_history(self, sha: str) -> dict[str, Any]:
         repo = self.s.evidence_project
-        tree = self.r.github.get(f"repos/{repo}/git/trees/{sha}?recursive=1")
-        commit = self.r.github.get(f"repos/{repo}/git/commits/{sha}")
+        tree = self.github.get(f"repos/{repo}/git/trees/{sha}?recursive=1")
+        commit = self.github.get(f"repos/{repo}/git/commits/{sha}")
         if tree.status != 200 or commit.status != 200:
             return UNREADABLE
         paths = sorted(
@@ -135,7 +135,7 @@ class _Analysis(_ReadingState):
         commits = c.get("commits", [])
         if c.get("ahead_by", 0) > len(commits):
             last_page = math.ceil(c["ahead_by"] / 100)
-            r = self.r.github.get(
+            r = self.github.get(
                 f"repos/{self.s.evidence_project}/compare/{base}...{sha}?per_page=100&page={last_page}"
             )
             if r.status == 200:
@@ -149,7 +149,7 @@ class _Analysis(_ReadingState):
             name, parent = FALLBACK_CHAIN[i], FALLBACK_CHAIN[i - 1]
             if name not in self.upstream or parent not in self.upstream:
                 continue
-            c = self.r.compare(self.s.evidence_project, self.upstream[name], sha)
+            c = self.github.compare(self.s.evidence_project, self.upstream[name], sha)
             if c is None:
                 continue
             if c["behind_by"] == 0:
@@ -157,7 +157,7 @@ class _Analysis(_ReadingState):
             mb = (c.get("merge_base_commit") or {}).get("sha")
             if not mb:
                 continue
-            p = self.r.compare(self.s.upstream, self.upstream[parent], mb)
+            p = self.github.compare(self.s.upstream, self.upstream[parent], mb)
             if p is not None and p["ahead_by"] > 0:
                 return name
         return None

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable
+from datetime import datetime
+from typing import Any
 
 import yaml
 
@@ -10,9 +12,7 @@ from ..reading import (
     RepositoryReading,
     StudentToRead,
 )
-
-if TYPE_CHECKING:
-    from ..reader import RepositoryReader
+from .cached_github import _CachedGitHub
 
 
 class _ReadingState:
@@ -24,17 +24,19 @@ class _ReadingState:
 
     def __init__(
         self,
-        reader: RepositoryReader,
+        github: _CachedGitHub,
+        now: Callable[[], datetime],
         student: StudentToRead,
         previous: RepositoryReading | None,
     ):
-        self.r = reader
+        self.github = github
+        self.now = now
         self.s = student
         self.previous = previous
         self.facts: dict[str, list[Fact]] = {c: [] for c in COMPETENCIES}
 
     def _workflow(self, sha: str, path: str) -> dict[str, Any] | None:
-        text = self.r.file_at(self.s.evidence_project, sha, path)
+        text = self.github.file_at(self.s.evidence_project, sha, path)
         if text is None:
             return None
         try:
@@ -55,7 +57,7 @@ class _ReadingState:
         return out
 
     def _all_workflows(self, sha: str) -> dict[str, dict[str, Any]]:
-        r = self.r.github.get(
+        r = self.github.get(
             f"repos/{self.s.evidence_project}/contents/.github/workflows?ref={sha}"
         )
         if r.status != 200 or not isinstance(r.body, list):

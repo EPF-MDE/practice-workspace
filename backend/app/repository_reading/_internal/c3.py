@@ -59,7 +59,7 @@ class _C3Facts(_ReadingState):
             ):
                 continue
             c = (
-                self.r.compare(self.s.evidence_project, sha, latest["sha"])
+                self.github.compare(self.s.evidence_project, sha, latest["sha"])
                 if sha != latest["sha"]
                 else {"behind_by": 0}
             )
