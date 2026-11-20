@@ -8,9 +8,9 @@ from pydantic import BaseModel
 
 from app.content import Competency, ContentError, load_content
 
-from ._internal.settings_file import SETTINGS_FILE, read_settings
+from ._internal.settings_file import read_settings
 
-__all__ = ["SETTINGS_FILE", "Course", "Loading", "load_course", "router"]
+__all__ = ["Course", "Loading", "load_course", "router"]
 
 
 @dataclass(frozen=True)
