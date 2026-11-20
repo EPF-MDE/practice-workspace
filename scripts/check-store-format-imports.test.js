@@ -39,6 +39,18 @@ describe("check-store-format-imports", () => {
     expect(result.status).toBe(1);
   });
 
+  it("refuses a test importing even the Store itself from its internals", () => {
+    const result = checkTests({
+      "backend/tests/test_answers.py":
+        "from app.store._internal.model import Store\n",
+    });
+
+    expect(result.stderr).toContain(
+      "test_answers.py:1: imports app.store._internal.model.Store"
+    );
+    expect(result.status).toBe(1);
+  });
+
   it("refuses a test importing the Store's internals or the whole module", () => {
     const result = checkTests({
       "backend/tests/test_answers.py": `import app.store._internal.comments

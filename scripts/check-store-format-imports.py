@@ -19,6 +19,10 @@ def is_store(module: str) -> bool:
     return module == STORE or module.startswith(f"{STORE}.")
 
 
+def is_internal(module: str) -> bool:
+    return any(part.startswith("_") for part in module.split("."))
+
+
 def refused_imports(source: str) -> list[tuple[int, str]]:
     refused = []
     for node in ast.walk(ast.parse(source)):
@@ -33,7 +37,7 @@ def refused_imports(source: str) -> list[tuple[int, str]]:
                 refused += [
                     (node.lineno, f"{node.module}.{a.name}")
                     for a in node.names
-                    if a.name not in THE_STORE_ITSELF
+                    if is_internal(node.module) or a.name not in THE_STORE_ITSELF
                 ]
         elif isinstance(node, ast.Import):
             refused += [(node.lineno, a.name) for a in node.names if is_store(a.name)]
