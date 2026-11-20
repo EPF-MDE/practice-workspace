@@ -10,7 +10,7 @@ A split that `scripts/check-file-tokens.js` forced is in scope for any ticket: t
 
 ## Fix everything a person does not have to decide
 
-The human reviewer gets **decisions** only: product behaviour the ticket leaves open, or a trade-off between two documented rules. Everything else you fix on `{{BRANCH}}`, however large: deepening a module, taking the Store or the clock as a parameter, writing the tests a module lacks, extracting a shared component, splitting a function off a lint exemption list. A fix is done when `npm run check` passes and the hook accepts its commit. Commit each fix on its own. The workflow pushes your commits. Leave `.github/` untouched.
+The human reviewer gets **decisions** only: product behaviour the ticket leaves open, or a trade-off between two documented rules. Everything else you fix on `{{BRANCH}}`, however large: deepening a module, taking the Store or the clock as a parameter, writing the tests a module lacks, extracting a shared component, splitting a function off a lint exemption list. A fix is done when `npm run check` passes and the hook accepts its commit. Commit each fix on its own. The workflow pushes your commits. Leave `.github/` untouched, unless the ticket explicitly asks for a change there.
 
 Every finding you leave becomes an inline comment on the first line it concerns, one comment per finding. You will be asked for them as structured output. Its body says what decision it needs.
 

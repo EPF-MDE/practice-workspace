@@ -22,7 +22,7 @@ Once per clone: `npm install`, `npm --prefix frontend install`, `(cd backend && 
 
 The pre-commit hook runs the fast part of `check` in a few seconds, without the tests. It refuses any file over 5000 tokens, including one you only touched, so editing a large file means splitting it in the same change. Never skip it with `--no-verify`.
 
-Never bypass the hook, and never edit it or the workflows: `.husky/`, `scripts/pre-commit.sh`, `scripts/check-steps.sh`, `core.hooksPath` and `.github/` are the factory's brakes. Only the Instructor changes them.
+Never bypass the hook, and never edit it: `.husky/`, `scripts/pre-commit.sh`, `scripts/check-steps.sh` and `core.hooksPath` are the factory's brakes. Only the Instructor changes them. Leave `.github/` untouched too, unless the ticket explicitly asks for a change there: the Instructor's review before merge is then the guard.
 
 ## Issue tracker
 

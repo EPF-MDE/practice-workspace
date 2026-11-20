@@ -9,7 +9,7 @@ Read CODING_STANDARDS.md.
 - `npm run check` must pass too.
 - Commit with `git commit` on the current branch. When the pre-commit hook rejects a commit, fix the work and commit again. The hook stays as it is: no `--no-verify`, no edits to `.husky/`, `scripts/pre-commit.sh`, `scripts/check-steps.sh` or `core.hooksPath`.
 - Finish with at least one commit and a clean working tree. The workflow pushes and opens the pull request.
-- Leave `.github/` untouched.
+- Leave `.github/` untouched, unless the ticket explicitly asks for a change there.
 - When the change shows in the UI, save a before and an after screenshot as PNGs in /tmp/evidence/.
 
 Write /tmp/pr-body.md in the voice of the `pr` skill: what the ticket asked for, what you built, what you deliberately left out. In its Evidence section, reference each screenshot by its absolute path, e.g. `![after](/tmp/evidence/after.png)`. The workflow uploads them.
