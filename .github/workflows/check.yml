@@ -1,0 +1,60 @@
+# `npm run check` on every pull request, one job per part, each required by
+# branch protection before a merge into main. A layer on top of the
+# pre-commit hook and the review run, replacing neither. It holds no secret,
+# so a fork's pull request gets the check and reaches nothing.
+name: Check
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  HUSKY: "0"
+
+jobs:
+  repository:
+    name: repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check -- repository
+
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: npm run check -- backend
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      - run: |
+          npm ci --no-audit --no-fund
+          npm --prefix frontend ci --no-audit --no-fund
+      - run: npm run check -- frontend

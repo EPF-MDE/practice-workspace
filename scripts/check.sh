@@ -1,32 +1,54 @@
 #!/bin/sh
 # Everything, in one command: what an implementing agent, the review run, CI
 # and the Instructor all call green. The pre-commit hook runs its fast part.
+#
+# Usage: npm run check [-- part ...], a part being one of $parts below.
+# With no part, every part runs.
 set -e
+
+parts="repository backend frontend"
+
+. "$(dirname "$0")/check-steps.sh"
 
 step() { printf '\n▶ %s\n' "$1"; }
 
-step "File size (every tracked file)"
-git ls-files -z | xargs -0 node scripts/check-file-tokens.js
+repository() {
+  step "Repository: file size (every tracked file)"
+  git ls-files -z | xargs -0 node scripts/check-file-tokens.js
+  step "Repository: format (Markdown, JSON, configuration)"
+  npx biome format .
+  step "Repository: lint (everything outside the front end)"
+  npx oxlint -c .oxlintrc.json --ignore-pattern "frontend/**"
+}
 
-step "Format"
-npx biome format .
-npx prettier --check "**/*.md"
-(cd backend && uv run --frozen ruff format --check .)
+backend() {
+  step "Back end: format and lint"
+  uv_backend ruff format --check .
+  uv_backend ruff check .
+  step "Back end: types"
+  backend_types
+  step "Back end: boundaries"
+  backend_boundaries
+  backend_cycles
+  step "Back end: tests"
+  uv_backend pytest
+}
 
-step "Lint"
-npx oxlint -c .oxlintrc.json
-(cd backend && uv run --frozen ruff check .)
+frontend() {
+  step "Front end: lint"
+  npx oxlint -c .oxlintrc.json frontend
+  step "Front end: types"
+  frontend_types
+  step "Front end: boundaries"
+  frontend_boundaries
+}
 
-step "Types"
-(cd backend && uv run --frozen mypy)
-npm --prefix frontend run --silent typecheck
+[ $# -gt 0 ] || set -- $parts
+for part in "$@"; do
+  case $part in
+    repository | backend | frontend) "$part" ;;
+    *) echo "Unknown part: $part (one of: $parts)" >&2; exit 2 ;;
+  esac
+done
 
-step "Boundaries"
-(cd backend && uv run --frozen tach check)
-(cd backend && uv run --frozen python scripts/check_cycles.py)
-npm --prefix frontend run --silent lint:boundaries
-
-step "Tests"
-(cd backend && uv run --frozen pytest)
-
-printf '\n✔ check passed\n'
+printf '\n✔ check passed: %s\n' "$*"
