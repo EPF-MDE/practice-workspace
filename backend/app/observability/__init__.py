@@ -67,13 +67,12 @@ class Signals:
             yield
 
     def shutdown(self) -> None:
-        wiring = self._wiring
-        if wiring is None:
+        if self._wiring is None:
             return
-        for logger in wiring.loggers:
-            logger.removeHandler(wiring.handler)
-        wiring.logger_provider.shutdown()
-        wiring.client.shutdown()
+        for logger in self._wiring.loggers:
+            logger.removeHandler(self._wiring.handler)
+        self._wiring.logger_provider.shutdown()
+        self._wiring.client.shutdown()
 
 
 def start(service_name: str, token: str, host: str, environment: str) -> Signals:
