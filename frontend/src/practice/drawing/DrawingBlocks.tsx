@@ -1,12 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  lazy,
-  type ReactNode,
-  type RefObject,
-  Suspense,
-  useRef,
-  useState,
-} from "react";
+import { lazy, type ReactNode, Suspense, useState } from "react";
 import type { Editor } from "tldraw";
 import {
   type CanvasBlock,
@@ -117,14 +110,14 @@ export function StudentCanvas(props: CanvasProps) {
 function useSendDrawing(
   competency: string,
   step: StepOut,
-  editor: RefObject<Editor | null>
+  editor: Editor | null
 ) {
   const queryClient = useQueryClient();
   const [empty, setEmpty] = useState(false);
   const send = useMutation({
     mutationFn: async () => {
       const { exportDrawing } = await views();
-      const drawing = editor.current && (await exportDrawing(editor.current));
+      const drawing = editor && (await exportDrawing(editor));
       if (!drawing) {
         setEmpty(true);
         return null;
@@ -205,8 +198,7 @@ function CanvasAndSend({
   licenseKey,
   initial,
 }: CanvasProps & { initial: Snapshot | null }) {
-  const editor = useRef<Editor | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const [editor, setEditor] = useState<Editor | null>(null);
   const [kept, setKept] = useState(true);
   const sending = useSendDrawing(competency, step, editor);
   return (
@@ -216,10 +208,7 @@ function CanvasAndSend({
           initial={initial}
           licenseKey={licenseKey}
           readOnly={closed}
-          onEditor={(ready) => {
-            editor.current = ready;
-            setMounted(true);
-          }}
+          onEditor={setEditor}
           onChange={(snapshot) =>
             setKept(
               drafts.setDrawing({ studentId, competency }, step.id, snapshot)
@@ -229,7 +218,7 @@ function CanvasAndSend({
       </Frame>
       <DrawingSendBar
         step={step}
-        disabled={closed || !mounted}
+        disabled={closed || !editor}
         kept={kept}
         sending={sending}
       />
