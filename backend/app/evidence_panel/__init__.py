@@ -1,7 +1,7 @@
 """The Evidence panel and the Evidence Project declarations (spec #460, ticket #468).
 
-    # facts per point, never a Band
-    panel = build_panel("C2", reading, declaration)
+    # facts per point, never a Band, from the declared Evidence Project or the roster's
+    panel = read_panel("C2", source, student, declaration)
     # what the closing step stores
     snapshot(panel)
     # GitHub or GitLab, else NotAProject
@@ -33,14 +33,13 @@ from .panel import (
     EvidencePanel,
     NotVisible,
     PanelFact,
-    build_panel,
     snapshot,
-    unavailable_panel,
 )
 from .source import (
     LazyRepositoryReadingSource,
     OfflineRepositoryReading,
     RepositoryReadingSource,
+    read_panel,
 )
 
 __all__ = [
@@ -62,8 +61,7 @@ __all__ = [
     "PanelFact",
     "Project",
     "access",
-    "build_panel",
     "parse_project",
+    "read_panel",
     "snapshot",
-    "unavailable_panel",
 ]

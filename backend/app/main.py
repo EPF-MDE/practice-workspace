@@ -39,6 +39,7 @@ from app.repository_reading import (
     RepositoryReader,
     WorkspaceDataReadings,
     installation_token,
+    repository_tokens,
 )
 from app.roster import RefreshingRoster, RosterSource, StaticRoster
 from app.settings import Settings, get_settings
@@ -121,25 +122,7 @@ def default_store(settings: Settings) -> Store:
                 "WORKSPACE_STORE=memory: every send is lost when the app restarts"
             )
         return InMemoryStore()
-    client = installation_client(
-        settings.store_app_id,
-        settings.store_app_private_key_base64,
-        settings.store_app_installation_id,
-    )
-    # Only the Store App's own comments are sends; its slug defaults to the course's
-    # App.
-    bot: dict[str, Any] = (
-        {"bot_login": f"{settings.store_app_slug}[bot]"}
-        if settings.store_app_slug
-        else {}
-    )
-    return GitHubStore(
-        client,
-        settings.repository,
-        label=settings.store_label,
-        data_branch=settings.data_branch,
-        **bot,
-    )
+    return GitHubStore.from_settings(settings)
 
 
 def _fake_repository_reading(settings: Settings) -> bool:
@@ -162,7 +145,7 @@ def default_repository_reading(settings: Settings) -> RepositoryReadingSource:
     def build() -> RepositoryReadingSource:
         # Raises until the Student Connector has an installation: the panel then says
         # the repository could not be read now, and the next view tries again.
-        token = installation_token(
+        token = repository_tokens(
             settings.github_app_id,
             settings.github_app_private_key_base64,
             settings.github_app_installation_id,

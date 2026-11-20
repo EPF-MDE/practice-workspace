@@ -43,8 +43,9 @@ from typing import Any
 
 import httpx
 
-from app.github_app import data_branch_lock
+from app.github_app import data_branch_lock, installation_client
 from app.roster import Student
+from app.settings import Settings
 from app.store._internal.comments import (
     _MARKER_RE,
     _entry,
@@ -76,6 +77,29 @@ DATA_RETRIES = 5  # attempts at one file write while the data branch keeps movin
 class GitHubStore:
     """The Store on GitHub Issues. `http` is a client on api.github.com, as the Store
     App."""
+
+    @classmethod
+    def from_settings(cls, settings: Settings) -> GitHubStore:
+        """The Store as the settings name it: the Store App's installation, on the
+        course repository. Only the Store App's own comments are sends; its slug
+        defaults to the course's App."""
+        client = installation_client(
+            settings.store_app_id,
+            settings.store_app_private_key_base64,
+            settings.store_app_installation_id,
+        )
+        bot: dict[str, Any] = (
+            {"bot_login": f"{settings.store_app_slug}[bot]"}
+            if settings.store_app_slug
+            else {}
+        )
+        return cls(
+            client,
+            settings.repository,
+            label=settings.store_label,
+            data_branch=settings.data_branch,
+            **bot,
+        )
 
     def __init__(
         self,
@@ -200,11 +224,38 @@ class GitHubStore:
         with self._student_lock(student):
             return Record(student, tuple(self._entries(student)))
 
+    def records(self, students: list[Student]) -> list[Record]:
+        """One listing of the repository's comments, rather than one per Student."""
+        with self._lock:
+            owners = {
+                number: github_id
+                for github_id, numbers in self._index().items()
+                for number in numbers
+            }
+        comments = self._all_pages(f"/repos/{self._repository}/issues/comments", {})
+        found: dict[int, list[Entry]] = {}
+        for comment in comments:
+            number = int(str(comment.get("issue_url", "")).rsplit("/", 1)[-1] or 0)
+            entry = _entry(comment, self._bot_login)
+            if entry is not None and number in owners:
+                found.setdefault(owners[number], []).append(entry)
+        return [
+            Record(
+                student,
+                tuple(
+                    _renumbered(
+                        sorted(found.get(student.github_id, []), key=lambda e: e.at)
+                    )
+                ),
+            )
+            for student in students
+        ]
+
     def _append(
         self,
         student: Student,
         kind: Kind,
-        competency: str,
+        competency: str | None,
         key: str | None,
         payload: dict[str, Any],
     ) -> Entry:
@@ -370,12 +421,8 @@ class GitHubStore:
     ) -> Entry:
         return self._append(student, Kind.EVIDENCE_PLAN, competency, None, dict(plan))
 
-    def save_declaration(
-        self, student: Student, competency: str, declaration: dict[str, Any]
-    ) -> Entry:
-        return self._append(
-            student, Kind.DECLARATION, competency, None, dict(declaration)
-        )
+    def save_declaration(self, student: Student, declaration: dict[str, Any]) -> Entry:
+        return self._append(student, Kind.DECLARATION, None, None, dict(declaration))
 
     def save_question(
         self, student: Student, competency: str, step: str, text: str

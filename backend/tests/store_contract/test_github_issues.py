@@ -140,6 +140,22 @@ def test_an_evidence_plan_comment_names_it_and_stores_its_kind(
     assert '{"kind": "evidence-panel-snapshot", "competency": "C2"' in snapshot
 
 
+def test_a_declaration_comment_is_for_every_competency(github: FakeGitHub) -> None:
+    store = github_store(github)
+    SENDS[Kind.DECLARATION](store, ADA)
+    store.save_declaration(ADA, {})
+
+    declared, withdrawn = (c["body"] for c in github.comments[401])
+
+    assert declared.startswith(
+        "**Evidence Project** declared for every Competency (version 1)\n\n"
+    )
+    assert '{"kind": "declaration", "competency": null, "version": 1' in declared
+    assert withdrawn.startswith(
+        "**Evidence Project** withdrawn for every Competency (version 2)\n\n"
+    )
+
+
 def test_a_send_before_sign_in_opened_the_issue_opens_it(github: FakeGitHub) -> None:
     github_store(github).save_question(ADA, "C1", "read-the-chain", "?")
 

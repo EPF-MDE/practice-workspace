@@ -153,7 +153,7 @@ def close_competency(
         "confirmed": True,
     }
     plan |= _drafted(page, record, sent.text, sent.drafted)
-    current = record.declaration(competency)
+    current = record.declaration()
     if declaration and (current is None or _changed(current[0], declaration)):
         plan["declaration"] = declaration
         current = (declaration, _now())

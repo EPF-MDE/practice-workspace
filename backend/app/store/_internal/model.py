@@ -28,9 +28,9 @@ class Kind(StrEnum):
     # step's one send also carries "evidence_panel_snapshot" and, when declared
     # there, "declaration"
     EVIDENCE_PLAN = "evidence-plan"
-    DECLARATION = (
-        "declaration"  # key: None. payload: {"url", "note", ...}, or {} when withdrawn
-    )
+    # competency and key: None, one for every Competency. payload: {"url", "note",
+    # ...}, or {} when withdrawn
+    DECLARATION = "declaration"
     # key: the step id. payload: {"text": ...}. Every question counts, not only the
     # latest.
     QUESTION = "question"
@@ -46,7 +46,7 @@ class Entry:
     """One send: what, for which Competency and step (or drawing, or none), and when."""
 
     kind: Kind
-    competency: str  # "C1", "C2", "C3"
+    competency: str | None  # "C1", "C2", "C3"; None for a declaration
     key: str | None  # the step or drawing id; None for a per-Competency kind
     payload: dict[str, Any]  # JSON-safe
     version: int  # 1, 2... per (kind, competency, key)
@@ -100,7 +100,7 @@ class Record:
     entries: tuple[Entry, ...] = ()
 
     def history(
-        self, kind: Kind, competency: str, key: str | None = None
+        self, kind: Kind, competency: str | None, key: str | None = None
     ) -> list[Entry]:
         """Every version of one thing, oldest first."""
         return [
@@ -110,7 +110,7 @@ class Record:
         ]
 
     def latest(
-        self, kind: Kind, competency: str, key: str | None = None
+        self, kind: Kind, competency: str | None, key: str | None = None
     ) -> Entry | None:
         """The current state of one thing: its latest version, or None if never sent."""
         versions = self.history(kind, competency, key)
@@ -124,14 +124,12 @@ class Record:
             if e.kind == kind and competency in (None, e.competency)
         ]
 
-    def declaration(self, competency: str) -> tuple[dict[str, Any], datetime] | None:
-        """The Evidence Project declared now, and when: sent alone, or with the closing
-        step's Evidence Plan. None if never declared, or withdrawn since (an empty
-        declaration)."""
+    def declaration(self) -> tuple[dict[str, Any], datetime] | None:
+        """The Evidence Project declared now for every Competency, and when: sent alone,
+        or with any closing step's Evidence Plan. None if never declared, or withdrawn
+        since (an empty declaration)."""
         found: tuple[dict[str, Any], datetime] | None = None
         for entry in self.entries:
-            if entry.competency != competency:
-                continue
             if entry.kind == Kind.DECLARATION:
                 found = (entry.payload, entry.at) if entry.payload else None
             elif entry.kind == Kind.EVIDENCE_PLAN and "declaration" in entry.payload:
@@ -241,10 +239,13 @@ class Store(Protocol):
         """Save the Evidence Plan as it stands (the Student's text wins once edited)."""
         ...
 
-    def save_declaration(
-        self, student: Student, competency: str, declaration: dict[str, Any]
-    ) -> Entry:
-        """Save the Evidence Project declared for a Competency; `{}` withdraws it."""
+    def save_declaration(self, student: Student, declaration: dict[str, Any]) -> Entry:
+        """Save the Evidence Project declared for every Competency; `{}` withdraws
+        it."""
+        ...
+
+    def records(self, students: list[Student]) -> list[Record]:
+        """Read every given Student's record at once, in their order."""
         ...
 
     def save_question(

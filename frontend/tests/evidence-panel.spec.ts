@@ -11,7 +11,7 @@ const HEDY = 1042; // MATHutrice, an empty Evidence Project
 
 const sidebar = (page: Page) => path(page).getByTestId("evidence-panel");
 
-test("the Evidence panel says what the Reading Day would find, then the closing step declares an Evidence Project", async ({
+test("the Evidence panel says what the Reading Day would find, then the closing step declares an Evidence Project for every Competency", async ({
   page,
 }) => {
   await signIn(page, ALAN);
@@ -34,22 +34,38 @@ test("the Evidence panel says what the Reading Day would find, then the closing 
   await expect(close.section.getByTestId("plan-sent")).toContainText(
     "Version 1 confirmed"
   );
-
-  // That Competency's Evidence Project facts are greyed.
-  const panel = sidebar(page);
-  await expect(panel.getByTestId("evidence-panel-greyed")).toHaveText(
-    "The Reading Day reads alan/bakery for C1, instead of your Evidence Project."
-  );
   await expect(close.evidence.getByTestId("declared")).toContainText(
     "https://github.com/alan/bakery"
   );
 
-  // Withdrawn: the Evidence Project is read again.
-  await close.evidence
-    .getByRole("button", { name: "Withdraw it: back to my Evidence Project" })
+  // The panel now reads the declared repository, for this Competency and the others.
+  const panel = sidebar(page);
+  await expect(panel.getByTestId("evidence-panel-project")).toHaveText(
+    "alan/bakery"
+  );
+  await expect(panel.getByTestId("fact-C1")).toHaveCount(0);
+  await page.goto("/competencies/C2");
+  await expect(sidebar(page).getByTestId("evidence-panel-project")).toHaveText(
+    "alan/bakery"
+  );
+  await expect(closing(page).evidence.getByTestId("declared")).toContainText(
+    "https://github.com/alan/bakery"
+  );
+
+  // Withdrawn: the roster's Evidence Project is read again.
+  await closing(page)
+    .evidence.getByRole("button", { name: /Withdraw it/ })
     .click();
-  await expect(close.evidence).toContainText("Nothing else declared");
-  await expect(panel.getByTestId("evidence-panel-greyed")).toHaveCount(0);
+  await expect(
+    closing(page).evidence.getByTestId("roster-evidence-project")
+  ).toBeVisible();
+  await page.goto("/competencies/C1");
+  await expect(sidebar(page).getByTestId("evidence-panel-project")).toHaveText(
+    "alan-oceens/OceENS"
+  );
+  await expect(sidebar(page).getByTestId("fact-C1")).toContainText(
+    "feature/order-timeout"
+  );
 });
 
 /** Facts naming their point, when they were read, a refresh, and a way to ask. */
@@ -106,7 +122,7 @@ async function checkAccess(evidence: Locator) {
   await expect(evidence.getByTestId("access")).toContainText("Readable");
 }
 
-test("an empty repository reads as a provisional reading, and GitLab is told about Reporter access", async ({
+test("an empty repository reads as a provisional reading; a GitLab project and a repository the App cannot read are said as such", async ({
   page,
 }) => {
   await signIn(page, HEDY);
@@ -119,9 +135,39 @@ test("an empty repository reads as a provisional reading, and GitLab is told abo
     "a provisional reading, not a zero"
   );
 
-  const access = await closing(page).declare(
-    "https://gitlab.com/hedy/radio",
+  // A GitLab project, declared with the confirmation: not read, never a zero.
+  const close = closing(page);
+  await expect(
+    await close.declare("https://gitlab.com/hedy/radio", "The README first.")
+  ).toHaveAttribute("data-status", "gitlab");
+  await close.rate("C1.a", "I understand");
+  await close.sendSelfAssessment.click();
+  await expect(close.section.getByTestId("sa-sent")).toContainText("Version 1");
+  await close.example.fill("The radio's README.");
+  await close.confirm.click();
+  await expectNotRead(sidebar(page), "hedy/radio");
+
+  // Changed for a GitHub repository the App cannot read: said as such too.
+  await close.declare(
+    "https://github.com/hedy/radio-private",
     "The README first."
   );
-  await expect(access).toContainText("give the Instructor Reporter access");
+  await close.evidence
+    .getByRole("button", { name: "Change my Evidence Project" })
+    .click();
+  await expect(
+    close.evidence.getByTestId("declared").getByTestId("access")
+  ).toHaveAttribute("data-status", "not-readable");
+  await expectNotRead(sidebar(page), "hedy/radio-private");
+  await page.goto("/competencies/C3");
+  await expectNotRead(sidebar(page), "hedy/radio-private");
 });
+
+/** The panel names the project and says it is not read: no facts, not empty. */
+async function expectNotRead(panel: Locator, repository: string) {
+  await expect(panel.getByTestId("evidence-panel-project")).toHaveText(
+    repository
+  );
+  await expect(panel.getByTestId("evidence-panel-unavailable")).toBeVisible();
+  await expect(panel.getByTestId("evidence-panel-empty")).toHaveCount(0);
+}

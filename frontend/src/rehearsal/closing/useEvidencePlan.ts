@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { type CompetencyPage, RehearsalService } from "@/client";
-import { evidencePanelKey } from "../evidence/EvidencePanel";
+import { evidencePanelsKey } from "../evidence/EvidencePanel";
 import {
   closingDrafts,
   type DraftScope,
@@ -146,12 +146,9 @@ export function useSendPlan({
     onSuccess: () => {
       plan.edit(null);
       if (declaring) draftEvidence(null);
-      void queryClient.invalidateQueries({
-        queryKey: evidencePanelKey(competency),
-      });
-      return queryClient.invalidateQueries({
-        queryKey: ["competency", competency],
-      });
+      // A declaration riding with this send is every Competency's Evidence Project.
+      void queryClient.invalidateQueries({ queryKey: evidencePanelsKey });
+      return queryClient.invalidateQueries({ queryKey: ["competency"] });
     },
   });
   return { send, confirming, planChanged };

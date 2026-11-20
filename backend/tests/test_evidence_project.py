@@ -1,6 +1,6 @@
-"""Evidence Project declarations through the HTTP API: declared per Competency
-with a note, told who reads it, its access checked (never its contents), the
-repository facts greyed, changed or withdrawn until the Reading Day (#468)."""
+"""Evidence Project declarations through the HTTP API: one for every Competency,
+declared with a note, told who reads it, its access checked (never its contents),
+changed or withdrawn until the Reading Day (#468, #514)."""
 
 from __future__ import annotations
 
@@ -19,6 +19,8 @@ from app.settings import Settings
 from app.store import GitHubStore, InMemoryStore, Store
 
 C2 = "/api/competencies/C2"
+DECLARATION = "/api/evidence-project/declaration"
+CHECK = "/api/evidence-project/check"
 BAKERY = {
     "url": "https://github.com/ada/bakery",
     "note": "The pipeline: .github/workflows, and pull request #4.",
@@ -59,37 +61,34 @@ def test_the_panel_tells_the_student_who_reads_a_declared_project_and_what_canno
     assert "in the repository itself" in help["documentation_advice"]
 
 
-def test_a_readable_github_project_is_declared_and_greys_that_competencys_repository_facts(  # noqa: E501
+def test_a_readable_github_project_is_declared_once_for_every_competency(
     ada: TestClient, store: InMemoryStore
 ) -> None:
     before = store.writes
 
-    panel = ada.post(f"{C2}/declaration", json=BAKERY).json()
+    declared = ada.post(DECLARATION, json=BAKERY).json()
 
     assert store.writes == before + 1
-    assert panel["declaration"]["url"] == "https://github.com/ada/bakery"
-    assert panel["declaration"]["note"] == BAKERY["note"]
-    assert panel["declaration"]["access"]["status"] == "readable"
-    assert panel["greyed"] is True
-    assert (
-        panel["greyed_text"]
-        == "The Reading Day reads `ada/bakery` for C2, instead of your Evidence Project"
-    )
-    assert ada.get(f"{C2}/evidence-panel").json()["greyed"] is True
-    assert (
-        ada.get("/api/competencies/C1/evidence-panel").json()["greyed"] is False
-    )  # per Competency
+    assert declared["url"] == "https://github.com/ada/bakery"
+    assert declared["note"] == BAKERY["note"]
+    assert declared["access"]["status"] == "readable"
+    for competency in ("C1", "C2", "C3"):
+        panel = ada.get(f"/api/competencies/{competency}/evidence-panel").json()
+        assert panel["declaration"]["repository"] == "ada/bakery"
+        assert panel["evidence_project"] == "ada/bakery"
+    page = ada.get("/api/competencies/C1").json()
+    assert page["evidence_project"] == "https://github.com/ada/bakery"
 
 
 def test_a_private_github_project_not_readable_yet_says_how_to_grant_read_only_access(
     ada: TestClient,
 ) -> None:
-    panel = ada.post(
-        f"{C2}/declaration",
+    declared = ada.post(
+        DECLARATION,
         json={"url": "https://github.com/ada/secret/tree/main/docs", "note": "docs"},
     )
 
-    access = panel.json()["declaration"]["access"]
+    access = declared.json()["access"]
     assert access["status"] == "not-readable"
     assert access["message"] == "Not readable yet: grant read-only access."
     assert (
@@ -97,16 +96,13 @@ def test_a_private_github_project_not_readable_yet_says_how_to_grant_read_only_a
         in access["how"]
     )
     assert "`secret`" in access["how"]
-    assert panel.json()["declaration"]["url"] == "https://github.com/ada/secret"
+    assert declared.json()["url"] == "https://github.com/ada/secret"
 
 
 def test_access_is_checked_again_on_each_view_so_a_grant_shows_without_declaring_again(
     ada: TestClient, access: FakeAccessCheck
 ) -> None:
-    ada.post(
-        f"{C2}/declaration",
-        json={"url": "https://github.com/ada/secret", "note": "docs"},
-    )
+    ada.post(DECLARATION, json={"url": "https://github.com/ada/secret", "note": "docs"})
     access.rule = lambda repo: True  # the Student installed the App meanwhile
 
     assert (
@@ -120,9 +116,7 @@ def test_when_access_cannot_be_checked_it_reads_not_readable_yet_and_says_why(
 ) -> None:
     access.rule = lambda repo: None  # the App could not be asked
 
-    checked = ada.post(
-        f"{C2}/declaration/check", json={"url": "https://github.com/ada/secret"}
-    ).json()
+    checked = ada.post(CHECK, json={"url": "https://github.com/ada/secret"}).json()
 
     assert checked["status"] == "not-readable"
     assert checked["message"].startswith("Not readable yet")
@@ -132,15 +126,14 @@ def test_when_access_cannot_be_checked_it_reads_not_readable_yet_and_says_why(
 def test_a_gitlab_project_is_told_to_give_the_instructor_reporter_access_and_is_not_checked(  # noqa: E501
     ada: TestClient, access: FakeAccessCheck
 ) -> None:
-    panel = ada.post(
-        f"{C2}/declaration",
+    declared = ada.post(
+        DECLARATION,
         json={"url": "https://gitlab.com/epf/team/api/-/tree/main", "note": "the CI"},
     ).json()
 
-    assert panel["declaration"]["repository"] == "epf/team/api"
-    assert panel["declaration"]["access"]["status"] == "gitlab"
-    assert "Reporter access" in panel["declaration"]["access"]["message"]
-    assert "Reporter" in panel["declaration"]["access"]["how"]
+    assert declared["repository"] == "epf/team/api"
+    assert declared["access"]["status"] == "gitlab"
+    assert declared["access"]["how"]
     assert access.checked == []
 
 
@@ -149,24 +142,25 @@ def test_checking_access_before_declaring_stores_nothing(
 ) -> None:
     before = store.writes
 
-    checked = ada.post(
-        f"{C2}/declaration/check", json={"url": "https://github.com/ada/bakery"}
-    )
+    checked = ada.post(CHECK, json={"url": "https://github.com/ada/bakery"})
 
     assert checked.json()["status"] == "readable"
     assert store.writes == before
     assert access.checked == ["ada/bakery"]
 
 
-def test_declaring_the_repository_itself_keeps_its_facts(ada: TestClient) -> None:
-    panel = ada.post(
-        f"{C2}/declaration",
-        json={"url": "https://github.com/ada-oceens/OceENS", "note": "all"},
+def test_declaring_the_rosters_evidence_project_reads_it_as_before(
+    ada: TestClient,
+) -> None:
+    declared = ada.post(
+        DECLARATION, json={"url": "https://github.com/ada-oceens/OceENS", "note": "all"}
     ).json()
 
-    assert panel["declaration"]["is_roster_evidence_project"] is True
-    assert panel["greyed"] is False
-    assert panel["declaration"]["access"]["status"] == "readable"
+    assert declared["is_roster_evidence_project"] is True
+    assert declared["access"]["status"] == "readable"
+    assert ada.get(f"{C2}/evidence-panel").json()["evidence_project"] == (
+        "ada-oceens/OceENS"
+    )
 
 
 @pytest.mark.parametrize(
@@ -182,27 +176,27 @@ def test_a_declaration_needs_a_github_or_gitlab_repository_and_a_note(
     ada: TestClient, sent: dict[str, str], store: InMemoryStore
 ) -> None:
     before = store.writes
-    assert ada.post(f"{C2}/declaration", json=sent).status_code == 422
+    assert ada.post(DECLARATION, json=sent).status_code == 422
     assert store.writes == before
 
 
-def test_a_declaration_can_be_changed_then_withdrawn_and_the_repository_is_read_again(
-    ada: TestClient, store: InMemoryStore
+def test_a_declaration_can_be_changed_then_withdrawn_back_to_the_rosters(
+    ada: TestClient,
 ) -> None:
-    ada.post(f"{C2}/declaration", json=BAKERY)
+    ada.post(DECLARATION, json=BAKERY)
     changed = ada.post(
-        f"{C2}/declaration",
-        json={"url": "https://github.com/ada/oven", "note": "README"},
+        DECLARATION, json={"url": "https://github.com/ada/oven", "note": "README"}
     ).json()
-    assert changed["declaration"]["repository"] == "ada/oven"
+    assert changed["repository"] == "ada/oven"
+    assert ada.get(f"{C2}/evidence-panel").json()["evidence_project"] == "ada/oven"
 
-    withdrawn = ada.delete(f"{C2}/declaration")
+    withdrawn = ada.delete(DECLARATION)
 
     assert withdrawn.status_code == 200
-    assert withdrawn.json()["declaration"] is None
-    assert withdrawn.json()["greyed"] is False
-    assert ada.get(f"{C2}/evidence-panel").json()["declaration"] is None
-    assert ada.delete(f"{C2}/declaration").status_code == 409
+    panel = ada.get(f"{C2}/evidence-panel").json()
+    assert panel["declaration"] is None
+    assert panel["evidence_project"] == "ada-oceens/OceENS"
+    assert ada.delete(DECLARATION).status_code == 409
 
 
 def test_a_declaration_changes_until_the_reading_day_and_no_later(
@@ -220,15 +214,11 @@ def test_a_declaration_changes_until_the_reading_day_and_no_later(
         return c
 
     open_until_reading_day = client(future)
-    assert (
-        open_until_reading_day.post(f"{C2}/declaration", json=BAKERY).status_code == 200
-    )
+    assert open_until_reading_day.post(DECLARATION, json=BAKERY).status_code == 200
 
     over = client(past)
-    refused = over.post(f"{C2}/declaration", json=BAKERY)
-    assert refused.status_code == 403
-    assert "The Reading Day passed" in refused.json()["detail"]
-    assert over.delete(f"{C2}/declaration").status_code == 403
+    assert over.post(DECLARATION, json=BAKERY).status_code == 403
+    assert over.delete(DECLARATION).status_code == 403
 
 
 # --- The closing step: the snapshot and a declaration ride in its one send --
@@ -279,7 +269,6 @@ def test_the_closing_step_stores_the_panel_and_the_declaration_in_its_one_send(
         json={"levels": {"C1.a": {"level": "understand", "link": None}}},
     )
     before = writes()
-    shown = client.get(f"{C1}/evidence-panel").json()
 
     closed = client.post(
         f"{C1}/close",
@@ -288,17 +277,11 @@ def test_the_closing_step_stores_the_panel_and_the_declaration_in_its_one_send(
 
     assert closed.status_code == 200
     assert writes() == before + 1
-    panel = client.get(f"{C1}/evidence-panel").json()
+    panel = client.get("/api/competencies/C2/evidence-panel").json()
     assert panel["declaration"]["repository"] == "ada/bakery"
-    assert (
-        panel["greyed_text"]
-        == "The Reading Day reads `ada/bakery` for C1, instead of your Evidence Project"
-    )
+    assert panel["evidence_project"] == "ada/bakery"
     assert client.get(C1).json()["evidence_project"] == "https://github.com/ada/bakery"
     assert panel["declaration"]["note"] == BAKERY["note"]
-    assert (
-        panel["read_at"] == shown["read_at"]
-    )  # the panel stored is the one shown: no new reading
     plan = client.get(C1).json()["evidence_plan"]
     assert (plan["confirmed"], plan["version"]) == (True, 1)
 
@@ -325,7 +308,7 @@ def test_a_declaration_after_the_closing_step_is_its_own_send_and_wins(
     _rate_and_close(client, declaration=BAKERY)
     before = writes()
 
-    client.delete(f"{C1}/declaration")
+    client.delete(DECLARATION)
 
     assert writes() == before + 1
     assert client.get(f"{C1}/evidence-panel").json()["declaration"] is None

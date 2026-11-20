@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, Request
 
 from app import evidence_panel
 from app.auth import current_student
-from app.evidence_panel import EvidencePanel, NotAProject
+from app.evidence_panel import Declaration, EvidencePanel, NotAProject
 from app.roster import Student
 from app.settings import Settings
 
@@ -14,6 +14,7 @@ from .evidence import (
     _competency,
     _declaration_out,
     _declaration_payload,
+    _declared,
     _panel,
 )
 from .models import (
@@ -34,7 +35,7 @@ def evidence_panel_view(
     """What the Reading Day would find on the Student's Evidence Project today for
     this Competency: facts, never a Band."""
     c = _competency(request, competency, student)
-    declared = _store(request).record(student).declaration(c)
+    declared = _store(request).record(student).declaration()
     return _panel(
         request, student, c, _declaration_out(declared, request, student), refresh=False
     )
@@ -46,25 +47,23 @@ def evidence_panel_view(
 def refresh_evidence_panel(
     competency: str, request: Request, student: Student = Depends(current_student)
 ) -> EvidencePanel:
-    """Check the repository for a push since its last reading, and recompute what moved.
-    Stores nothing in the record."""
+    """Check the Evidence Project for a push since its last reading, and recompute what
+    moved. Stores nothing in the record."""
     c = _competency(request, competency, student)
-    declared = _store(request).record(student).declaration(c)
+    declared = _store(request).record(student).declaration()
     return _panel(
         request, student, c, _declaration_out(declared, request, student), refresh=True
     )
 
 
-@router.post("/api/competencies/{competency}/declaration/check", tags=["rehearsal"])
+@router.post("/api/evidence-project/check", tags=["rehearsal"])
 def check_project_access(
-    competency: str,
     sent: ProjectIn,
     request: Request,
     student: Student = Depends(current_student),
 ) -> evidence_panel.Access:
     """Whether the Reading Day could read this project, before declaring it. Stores
     nothing."""
-    _competency(request, competency, student)
     try:
         project = evidence_panel.parse_project(sent.url)
     except NotAProject as error:
@@ -78,38 +77,28 @@ def check_project_access(
     )
 
 
-@router.post("/api/competencies/{competency}/declaration", tags=["rehearsal"])
+@router.post("/api/evidence-project/declaration", tags=["rehearsal"])
 def declare_evidence_project(
-    competency: str,
     sent: DeclarationIn,
     request: Request,
     student: Student = Depends(current_student),
-) -> EvidencePanel:
-    """Declare (or change) the Evidence Project of this Competency, until the Reading
+) -> Declaration:
+    """Declare (or change) the Evidence Project of every Competency, until the Reading
     Day."""
-    c = _competency(request, competency, student)
     declaration = _declaration_payload(request, student, sent)
     _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Project")
-    entry = _store(request).save_declaration(student, c, declaration)
-    return _panel(
-        request,
-        student,
-        c,
-        _declaration_out((entry.payload, entry.at), request, student),
-        refresh=False,
-    )
+    entry = _store(request).save_declaration(student, declaration)
+    return _declared(entry.payload, entry.at, request, student)
 
 
-@router.delete("/api/competencies/{competency}/declaration", tags=["rehearsal"])
+@router.delete("/api/evidence-project/declaration", tags=["rehearsal"])
 def withdraw_evidence_project(
-    competency: str, request: Request, student: Student = Depends(current_student)
-) -> EvidencePanel:
-    """Withdraw the Evidence Project of this Competency: the Reading Day reads the
-    repository again."""
-    c = _competency(request, competency, student)
+    request: Request, student: Student = Depends(current_student)
+) -> None:
+    """Withdraw the Evidence Project declared: the Reading Day reads the roster's
+    again."""
     _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Project")
     store = _store(request)
-    if store.record(student).declaration(c) is None:
-        raise HTTPException(409, f"No Evidence Project is declared for {c}")
-    store.save_declaration(student, c, {})
-    return _panel(request, student, c, None, refresh=False)
+    if store.record(student).declaration() is None:
+        raise HTTPException(409, "No other Evidence Project is declared")
+    store.save_declaration(student, {})

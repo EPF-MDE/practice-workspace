@@ -1,12 +1,13 @@
 """GitHub's Issues and Contents APIs, faked over HTTP for the GitHub Store's tests.
 
 Only what the Store calls: list a repository's issues by label, open an issue,
-list and add an issue's comments; on a branch, list a folder, read a file (at
-the branch or at a commit), and create or update a file (one commit each,
-refused with 409 when the file's `sha` is stale). It answers like
-api.github.com (status codes, JSON shapes, `Link` pagination, server
-timestamps), counts the content-generating requests GitHub's secondary limit
-counts, and can be made to fail like GitHub down or rate-limited.
+list and add an issue's comments, list every issue's comments at once; on a
+branch, list a folder, read a file (at the branch or at a commit), and create
+or update a file (one commit each, refused with 409 when the file's `sha` is
+stale). It answers like api.github.com (status codes, JSON shapes, `Link`
+pagination, server timestamps), counts the content-generating requests GitHub's
+secondary limit counts, and can be made to fail like GitHub down or
+rate-limited.
 """
 
 from __future__ import annotations
@@ -114,6 +115,14 @@ class FakeGitHub:
         if not path.startswith(prefix):
             return httpx.Response(404, json={"message": "Not Found"})
         rest = path[len(prefix) :]
+        if rest == "/comments" and request.method == "GET":
+            return self._page(
+                request,
+                sorted(
+                    (c for cs in self.comments.values() for c in cs),
+                    key=lambda c: c["id"],
+                ),
+            )
         if rest == "" and request.method == "GET":
             return self._list_issues(request)
         if rest == "" and request.method == "POST":
@@ -173,6 +182,7 @@ class FakeGitHub:
             "user": user,
             "created_at": self._tick(),
             "html_url": f"https://github.com/{self.repository}/issues/{number}#issuecomment",
+            "issue_url": f"https://api.github.com/repos/{self.repository}/issues/{number}",
         }
         self.comments[number].append(comment)
         return comment

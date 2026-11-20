@@ -82,7 +82,7 @@ def competency_page(
         evidence_plan_draft=_draft(
             page, record, assessment.payload["levels"] if assessment else {}
         ),
-        evidence_project=_evidence_project(record, page.competency),
+        evidence_project=_evidence_project(record),
         tldraw_license_key=settings.tldraw_license_key,
     )
 

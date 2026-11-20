@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "../progress";
 
+/** Every Competency's Evidence panel: one Evidence Project is read for all of them. */
+export const evidencePanelsKey = ["evidence-panel"];
+
 export const evidencePanelKey = (competency: string) => [
-  "evidence-panel",
+  ...evidencePanelsKey,
   competency,
 ];
 
@@ -85,7 +88,8 @@ function Fact({ fact }: { fact: PanelFact }) {
           <ul className="pl-4">
             {fact.files?.map((file) => (
               <li key={String(file.path)}>
-                <code>{String(file.path)}</code> +{String(file.additions)}
+                <code>{String(file.path)}</code>
+                {typeof file.additions === "number" && ` +${file.additions}`}
               </li>
             ))}
           </ul>
@@ -102,11 +106,9 @@ function Fact({ fact }: { fact: PanelFact }) {
 export function EvidencePanelView({
   competency,
   onMyWorkMissing,
-  title = "What the Reading Day would find on your Evidence Project",
 }: {
   competency: string;
   onMyWorkMissing: () => void;
-  title?: string;
 }) {
   const queryClient = useQueryClient();
   const panel = useEvidencePanel(competency);
@@ -124,7 +126,9 @@ export function EvidencePanelView({
       data-testid="evidence-panel"
       className="flex flex-col gap-2 rounded-lg border p-4 text-sm"
     >
-      <h2 className="font-semibold">{title}</h2>
+      <h2 className="font-semibold">
+        What the Reading Day would find on your Evidence Project
+      </h2>
       {panel.isPending && <p>Reading your Evidence Project…</p>}
       {panel.isError && (
         <p role="alert">
@@ -220,20 +224,12 @@ function PanelActions({
 function PanelBody({ panel, ...actions }: PanelBodyProps) {
   return (
     <>
-      {panel.greyed && panel.greyed_text && (
-        <p
-          data-testid="evidence-panel-greyed"
-          className="rounded-md bg-muted p-2"
-        >
-          <Sentence text={panel.greyed_text} />.
-        </p>
-      )}
-      <div
-        className={cn("flex flex-col gap-2", panel.greyed && "opacity-50")}
-        data-greyed={panel.greyed}
-      >
+      <div className="flex flex-col gap-2">
         <p className="text-muted-foreground">
-          <code>{panel.evidence_project}</code>, read{" "}
+          <code data-testid="evidence-panel-project">
+            {panel.evidence_project}
+          </code>
+          , read{" "}
           <span data-testid="evidence-panel-read-at">
             {when(panel.read_at)}
           </span>
@@ -243,8 +239,10 @@ function PanelBody({ panel, ...actions }: PanelBodyProps) {
           </span>
           .
         </p>
-        {!panel.available && (
-          <output className="block">{panel.unavailable}</output>
+        {!panel.available && panel.unavailable && (
+          <output data-testid="evidence-panel-unavailable" className="block">
+            <Sentence text={panel.unavailable} />
+          </output>
         )}
         <PanelFindings panel={panel} />
       </div>

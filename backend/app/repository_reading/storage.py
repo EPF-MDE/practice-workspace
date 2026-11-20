@@ -1,5 +1,7 @@
 """Where readings are kept: one JSON file per Student,
-`repository-readings/<login>.json` on `workspace-data`.
+`repository-readings/<login>.json` on `workspace-data`, the reading of the Evidence
+Project read last. A reading names the repository it read: once the Student changes
+their Evidence Project, it is no longer served (`RepositoryReading.reads`).
 
 `ReadingStore` is the seam. Adapters: `InMemoryReadings` (tests, local development),
 `DirectoryReadings` (a local folder: the batch's dry run), and `WorkspaceDataReadings`

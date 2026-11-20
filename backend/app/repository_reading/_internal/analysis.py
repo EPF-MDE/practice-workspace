@@ -1,12 +1,12 @@
-"""One ref of a repository, against every upstream `course-2026*` branch."""
+"""One ref of a repository, against every upstream `course-2026*` branch; or, when it
+shares no history with them (a repository that is not a fork of the Group's upstream),
+on its own."""
 
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    pass
 from .rules import (
     FALLBACK_CHAIN,
     IDENTITY,
@@ -30,7 +30,7 @@ class _Analysis(_ReadingState):
             if c is not None:
                 comparisons[name] = c
         if not comparisons:
-            return {"files": [], "closest": None, "unreadable": True}
+            return self._own_history(sha)
         merge_bases = {
             n: (c.get("merge_base_commit") or {}).get("sha")
             for n, c in comparisons.items()
@@ -88,6 +88,34 @@ class _Analysis(_ReadingState):
                 f["path"] for f in files if f["path"].startswith(".github/workflows/")
             ],
             "merge_bases": merge_bases,
+        }
+
+    def _own_history(self, sha: str) -> dict[str, Any]:
+        """A ref no upstream branch can be compared with: every file it holds is the
+        Student's (their lines are not counted)."""
+        repo = self.s.evidence_project
+        tree = self.r.github.get(f"repos/{repo}/git/trees/{sha}?recursive=1")
+        commit = self.r.github.get(f"repos/{repo}/git/commits/{sha}")
+        if tree.status != 200 or commit.status != 200:
+            return {"files": [], "closest": None}
+        paths = sorted(
+            e["path"]
+            for e in tree.body.get("tree", [])
+            if e.get("type") == "blob" and e["path"].rsplit("/", 1)[-1] not in LOCKFILES
+        )
+        return {
+            "closest": None,
+            "own_history": True,
+            "files": [{"path": path} for path in paths],
+            "lines_added": None,
+            "last_change": _date((commit.body.get("committer") or {}).get("date")),
+            "link": f"https://github.com/{repo}/tree/{sha}",
+            "posthog_identity": False,
+            "posthog_files": [],
+            "workflow_files": [
+                path for path in paths if path.startswith(".github/workflows/")
+            ],
+            "merge_bases": {},
         }
 
     def _last_change(self, c: dict[str, Any], sha: str, base: str) -> str | None:

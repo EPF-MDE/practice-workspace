@@ -11,7 +11,14 @@ See NOTES.md of the rehearsal, in the course repository this engine came from, f
 interface the Evidence panel and the Eval read.
 """
 
-from .github import GitHub, HttpGitHub, Response, installation_token, static_token
+from .github import (
+    GitHub,
+    HttpGitHub,
+    Response,
+    installation_token,
+    repository_tokens,
+    static_token,
+)
 from .reader import RepositoryReader
 from .reading import (
     COMPETENCIES,
@@ -44,5 +51,6 @@ __all__ = [
     "StudentToRead",
     "WorkspaceDataReadings",
     "installation_token",
+    "repository_tokens",
     "static_token",
 ]

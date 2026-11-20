@@ -116,7 +116,7 @@ def test_the_transfer_defaults_to_the_evidence_project(
     ada: TestClient, store: InMemoryStore
 ) -> None:
     ada.post(
-        f"{PAGE}/declaration",
+        "/api/evidence-project/declaration",
         json={"url": "https://github.com/ada/best", "note": "The README"},
     )
 

@@ -59,7 +59,7 @@ class RepositoryReader:
     def read(self, student: StudentToRead) -> RepositoryReading:
         """The stored reading (the batch's, or the last refresh's); a repository never
         read is read now."""
-        stored = self.readings.load(student.login)
+        stored = self._stored(student)
         if stored is not None:
             return stored
         return self.read_now(student)
@@ -67,7 +67,7 @@ class RepositoryReader:
     def refresh(self, student: StudentToRead) -> RepositoryReading:
         """Lists the repository's refs; recomputes only if a ref changed (else 2
         requests)."""
-        stored = self.readings.load(student.login)
+        stored = self._stored(student)
         if stored is None:
             return self.read_now(student)
         branches, pulls = _ref_shas(*self._list_refs(student))
@@ -78,6 +78,14 @@ class RepositoryReader:
             self.readings.save(student.login, fresh, changed=False)
             return fresh
         return self.read_now(student, previous=stored)
+
+    def _stored(self, student: StudentToRead) -> RepositoryReading | None:
+        """The Student's stored reading, unless it reads another Evidence Project than
+        the one asked for (the Student changed it since)."""
+        stored = self.readings.load(student.login)
+        if stored is None or not stored.reads(student):
+            return None
+        return stored
 
     def read_now(
         self, student: StudentToRead, previous: RepositoryReading | None = None

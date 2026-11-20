@@ -1,5 +1,5 @@
-"""The Evidence panel: one Competency's reading of the repository, worded for the
-Student.
+"""The Evidence panel: one Competency's reading of the Student's Evidence Project,
+worded for the Student.
 
 Facts, each naming the point it supports, and never a Band. The fixed
 sentences live here, so the panel, its snapshot at the closing step and the
@@ -14,7 +14,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-from app.repository_reading import Fact, RepositoryReading, StudentToRead
+from app.repository_reading import Fact, RepositoryReading
 
 NOT_VISIBLE = "Not visible from your Evidence Project: show it at the Eval"
 NOT_VISIBLE_C3 = "Not visible from your Evidence Project: show your PostHog at the Eval"
@@ -69,15 +69,23 @@ def empty_text(branches: int, pulls: int) -> str:
         f"({_looked(branches, pulls)} read). "
         "What to do next: push your work to any branch of your Evidence Project, "
         "or open a pull request, then press Refresh; "
-        "or declare another Evidence Project for this Competency in its closing step. "
+        "or change your Evidence Project in a closing step. "
         "This is a provisional reading, not a zero."
     )
 
 
-def greyed_text(repository: str, competency: str) -> str:
+def not_read_text(declaration: Declaration) -> str:
+    """Why a declared Evidence Project is not read here: never a zero."""
+    if declaration.host == "gitlab":
+        return (
+            f"The workspace cannot read a GitLab project: nothing of "
+            f"`{declaration.repository}` shows here, which says nothing about your "
+            "work. The Reading Day reads it; show your evidence at the Eval."
+        )
     return (
-        f"The Reading Day reads `{repository}` for {competency}, "
-        "instead of your Evidence Project"
+        f"The course GitHub App cannot read `{declaration.repository}` yet: nothing of "
+        "it shows here, which is not a zero. Grant read-only access, or show your "
+        "evidence at the Eval."
     )
 
 
@@ -143,10 +151,7 @@ class EvidencePanel(BaseModel):
     nothing_found_text: str | None
     not_visible: list[NotVisible]
     not_judged: str | None  # C1: the workspace does not judge the files
-    # a declared Evidence Project replaces the repository for this Competency
-    greyed: bool
-    greyed_text: str | None
-    declaration: Declaration | None
+    declaration: Declaration | None  # the Evidence Project declared instead, if any
     help: DeclarationHelp  # told as the Student declares
 
 
@@ -163,20 +168,11 @@ def _fact(fact: Fact) -> PanelFact:
     )
 
 
-def _greyed(
-    competency: str, declaration: Declaration | None
-) -> tuple[bool, str | None]:
-    if declaration is None or declaration.is_roster_evidence_project:
-        return False, None
-    return True, greyed_text(declaration.repository, competency)
-
-
 def build_panel(
     competency: str, reading: RepositoryReading, declaration: Declaration | None
 ) -> EvidencePanel:
     """The panel of one Competency, from a reading of the repository."""
     found = reading[competency]
-    greyed, grey = _greyed(competency, declaration)
     nothing = [p for p in found.nothing_found if p != "C1"]
     looked = _looked(reading.branches_read, reading.pull_requests_read)
     return EvidencePanel(
@@ -209,23 +205,24 @@ def build_panel(
             for p in found.not_visible
         ],
         not_judged=C1_NOT_JUDGED if competency == "C1" else None,
-        greyed=greyed,
-        greyed_text=grey,
         declaration=declaration,
         help=DeclarationHelp(),
     )
 
 
 def unavailable_panel(
-    competency: str, student: StudentToRead, declaration: Declaration | None
+    competency: str,
+    evidence_project: str,
+    declaration: Declaration | None,
+    unavailable: str = UNAVAILABLE,
 ) -> EvidencePanel:
-    """The panel when the repository cannot be read now: said plainly, never a zero."""
-    greyed, grey = _greyed(competency, declaration)
+    """The panel when the Evidence Project is not read now: said plainly, never a
+    zero."""
     return EvidencePanel(
         competency=competency,
-        evidence_project=student.evidence_project,
+        evidence_project=evidence_project,
         available=False,
-        unavailable=UNAVAILABLE,
+        unavailable=unavailable,
         read_at=None,
         checked_at=None,
         default_branch=None,
@@ -238,8 +235,6 @@ def unavailable_panel(
         nothing_found_text=None,
         not_visible=[],
         not_judged=None,
-        greyed=greyed,
-        greyed_text=grey,
         declaration=declaration,
         help=DeclarationHelp(),
     )

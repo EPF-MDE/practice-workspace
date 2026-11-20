@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { healthHealthData, healthHealthResponses, rehearsalAskQuestionData, rehearsalAskQuestionErrors, rehearsalAskQuestionResponses, rehearsalCheckProjectAccessData, rehearsalCheckProjectAccessErrors, rehearsalCheckProjectAccessResponses, rehearsalCloseCompetencyData, rehearsalCloseCompetencyErrors, rehearsalCloseCompetencyResponses, rehearsalCompetencyPageData, rehearsalCompetencyPageErrors, rehearsalCompetencyPageResponses, rehearsalDeclareEvidenceProjectData, rehearsalDeclareEvidenceProjectErrors, rehearsalDeclareEvidenceProjectResponses, rehearsalDraftEvidencePlanData, rehearsalDraftEvidencePlanErrors, rehearsalDraftEvidencePlanResponses, rehearsalEvidencePanelViewData, rehearsalEvidencePanelViewErrors, rehearsalEvidencePanelViewResponses, rehearsalMyDrawingData, rehearsalMyDrawingErrors, rehearsalMyDrawingResponses, rehearsalRefreshEvidencePanelData, rehearsalRefreshEvidencePanelErrors, rehearsalRefreshEvidencePanelResponses, rehearsalSendAnswerData, rehearsalSendAnswerErrors, rehearsalSendAnswerResponses, rehearsalSendDrawingData, rehearsalSendDrawingErrors, rehearsalSendDrawingResponses, rehearsalSendEvidencePlanData, rehearsalSendEvidencePlanErrors, rehearsalSendEvidencePlanResponses, rehearsalSendSelfAssessmentData, rehearsalSendSelfAssessmentErrors, rehearsalSendSelfAssessmentResponses, rehearsalTickMissedCheckPointsData, rehearsalTickMissedCheckPointsErrors, rehearsalTickMissedCheckPointsResponses, rehearsalWithdrawEvidenceProjectData, rehearsalWithdrawEvidenceProjectErrors, rehearsalWithdrawEvidenceProjectResponses, sessionMeData, sessionMeResponses, sessionRefusalData, sessionRefusalResponses, sessionSignInPageData, sessionSignInPageResponses } from './types.gen';
+import type { healthHealthData, healthHealthResponses, rehearsalAskQuestionData, rehearsalAskQuestionErrors, rehearsalAskQuestionResponses, rehearsalCheckProjectAccessData, rehearsalCheckProjectAccessErrors, rehearsalCheckProjectAccessResponses, rehearsalCloseCompetencyData, rehearsalCloseCompetencyErrors, rehearsalCloseCompetencyResponses, rehearsalCompetencyPageData, rehearsalCompetencyPageErrors, rehearsalCompetencyPageResponses, rehearsalDeclareEvidenceProjectData, rehearsalDeclareEvidenceProjectErrors, rehearsalDeclareEvidenceProjectResponses, rehearsalDraftEvidencePlanData, rehearsalDraftEvidencePlanErrors, rehearsalDraftEvidencePlanResponses, rehearsalEvidencePanelViewData, rehearsalEvidencePanelViewErrors, rehearsalEvidencePanelViewResponses, rehearsalMyDrawingData, rehearsalMyDrawingErrors, rehearsalMyDrawingResponses, rehearsalRefreshEvidencePanelData, rehearsalRefreshEvidencePanelErrors, rehearsalRefreshEvidencePanelResponses, rehearsalSendAnswerData, rehearsalSendAnswerErrors, rehearsalSendAnswerResponses, rehearsalSendDrawingData, rehearsalSendDrawingErrors, rehearsalSendDrawingResponses, rehearsalSendEvidencePlanData, rehearsalSendEvidencePlanErrors, rehearsalSendEvidencePlanResponses, rehearsalSendSelfAssessmentData, rehearsalSendSelfAssessmentErrors, rehearsalSendSelfAssessmentResponses, rehearsalTickMissedCheckPointsData, rehearsalTickMissedCheckPointsErrors, rehearsalTickMissedCheckPointsResponses, rehearsalWithdrawEvidenceProjectData, rehearsalWithdrawEvidenceProjectResponses, sessionMeData, sessionMeResponses, sessionRefusalData, sessionRefusalResponses, sessionSignInPageData, sessionSignInPageResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -250,8 +250,8 @@ export class RehearsalService {
     /**
      * Refresh Evidence Panel
      *
-     * Check the repository for a push since its last reading, and recompute what moved.
-     * Stores nothing in the record.
+     * Check the Evidence Project for a push since its last reading, and recompute what
+     * moved. Stores nothing in the record.
      */
     public static refreshEvidencePanel<ThrowOnError extends boolean = true>(options: Options<rehearsalRefreshEvidencePanelData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalRefreshEvidencePanelResponses, rehearsalRefreshEvidencePanelErrors, ThrowOnError>({
@@ -270,7 +270,7 @@ export class RehearsalService {
     public static checkProjectAccess<ThrowOnError extends boolean = true>(options: Options<rehearsalCheckProjectAccessData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalCheckProjectAccessResponses, rehearsalCheckProjectAccessErrors, ThrowOnError>({
             responseType: 'json',
-            url: '/api/competencies/{competency}/declaration/check',
+            url: '/api/evidence-project/check',
             ...options,
             headers: {
                 'Content-Type': 'application/json',
@@ -282,13 +282,13 @@ export class RehearsalService {
     /**
      * Withdraw Evidence Project
      *
-     * Withdraw the Evidence Project of this Competency: the Reading Day reads the
-     * repository again.
+     * Withdraw the Evidence Project declared: the Reading Day reads the roster's
+     * again.
      */
-    public static withdrawEvidenceProject<ThrowOnError extends boolean = true>(options: Options<rehearsalWithdrawEvidenceProjectData, ThrowOnError>) {
-        return (options.client ?? client).delete<rehearsalWithdrawEvidenceProjectResponses, rehearsalWithdrawEvidenceProjectErrors, ThrowOnError>({
+    public static withdrawEvidenceProject<ThrowOnError extends boolean = true>(options?: Options<rehearsalWithdrawEvidenceProjectData, ThrowOnError>) {
+        return (options?.client ?? client).delete<rehearsalWithdrawEvidenceProjectResponses, unknown, ThrowOnError>({
             responseType: 'json',
-            url: '/api/competencies/{competency}/declaration',
+            url: '/api/evidence-project/declaration',
             ...options
         });
     }
@@ -296,13 +296,13 @@ export class RehearsalService {
     /**
      * Declare Evidence Project
      *
-     * Declare (or change) the Evidence Project of this Competency, until the Reading
+     * Declare (or change) the Evidence Project of every Competency, until the Reading
      * Day.
      */
     public static declareEvidenceProject<ThrowOnError extends boolean = true>(options: Options<rehearsalDeclareEvidenceProjectData, ThrowOnError>) {
         return (options.client ?? client).post<rehearsalDeclareEvidenceProjectResponses, rehearsalDeclareEvidenceProjectErrors, ThrowOnError>({
             responseType: 'json',
-            url: '/api/competencies/{competency}/declaration',
+            url: '/api/evidence-project/declaration',
             ...options,
             headers: {
                 'Content-Type': 'application/json',

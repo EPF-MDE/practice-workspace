@@ -2,7 +2,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type Access, type EvidencePanel, RehearsalService } from "@/client";
 import { Button } from "@/components/ui/button";
 import { type EvidenceDraft, errorMessage } from "../progress";
-import { evidencePanelKey, Sentence, useEvidencePanel } from "./EvidencePanel";
+import {
+  evidencePanelKey,
+  evidencePanelsKey,
+  Sentence,
+  useEvidencePanel,
+} from "./EvidencePanel";
 
 function AccessView({ access }: { access: Access }) {
   return (
@@ -24,41 +29,34 @@ type Props = {
 };
 
 /** The requests of the Evidence Project: check its access, declare it, withdraw it. */
-function useEvidenceRequests({ competency, draft, onDraft }: Props) {
+function useEvidenceRequests({ draft, onDraft }: Props) {
   const queryClient = useQueryClient();
-  const shown = (fresh: EvidencePanel | undefined) => {
-    queryClient.setQueryData(evidencePanelKey(competency), fresh);
-    return queryClient.invalidateQueries({
-      queryKey: ["competency", competency],
-    });
-  };
+  // One Evidence Project for every Competency: each panel and page reads it again.
+  const changed = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: evidencePanelsKey }),
+      queryClient.invalidateQueries({ queryKey: ["competency"] }),
+    ]);
   const check = useMutation({
     mutationFn: async () =>
       (
         await RehearsalService.checkProjectAccess({
-          path: { competency },
           body: { url: draft.url },
         })
       ).data,
   });
   const declare = useMutation({
     mutationFn: async () =>
-      (
-        await RehearsalService.declareEvidenceProject({
-          path: { competency },
-          body: draft,
-        })
-      ).data,
-    onSuccess: (fresh) => {
+      (await RehearsalService.declareEvidenceProject({ body: draft })).data,
+    onSuccess: () => {
       onDraft(null);
-      return shown(fresh);
+      return changed();
     },
   });
   const withdraw = useMutation({
     mutationFn: async () =>
-      (await RehearsalService.withdrawEvidenceProject({ path: { competency } }))
-        .data,
-    onSuccess: shown,
+      (await RehearsalService.withdrawEvidenceProject()).data,
+    onSuccess: changed,
   });
   return { check, declare, withdraw };
 }
@@ -83,7 +81,7 @@ function Declared({
       className="flex flex-col gap-2 rounded-md border p-3 text-sm"
     >
       <p>
-        For {competency}, the Reading Day reads{" "}
+        For every Competency, the Reading Day reads{" "}
         <a className="underline" href={declared.url}>
           {declared.url}
         </a>{" "}
@@ -109,10 +107,25 @@ function Declared({
           disabled={over || withdraw.isPending}
           onClick={() => withdraw.mutate()}
         >
-          Withdraw it: back to my Evidence Project
+          Withdraw it: back to the one the roster names
         </Button>
       </div>
     </div>
+  );
+}
+
+function RosterEvidenceProject({ repository }: { repository?: string }) {
+  return (
+    <p className="text-sm" data-testid="roster-evidence-project">
+      Nothing else declared: for every Competency, the Reading Day reads the
+      Evidence Project the roster names
+      {repository && (
+        <>
+          , <code>{repository}</code>
+        </>
+      )}
+      .
+    </p>
   );
 }
 
@@ -154,9 +167,8 @@ function DraftFields({
   draft,
   over,
   declared,
-  evidenceProject,
   edit,
-}: FieldProps & { declared: boolean; evidenceProject: string | undefined }) {
+}: FieldProps & { declared: boolean }) {
   return (
     <>
       <label className="flex flex-col gap-1 text-sm">
@@ -173,20 +185,6 @@ function DraftFields({
           onChange={(event) => edit({ url: event.target.value })}
         />
       </label>
-      {evidenceProject !== undefined && (
-        <div>
-          <button
-            type="button"
-            className="text-sm underline"
-            disabled={over}
-            onClick={() =>
-              edit({ url: `https://github.com/${evidenceProject}` })
-            }
-          >
-            Use my Evidence Project instead
-          </button>
-        </div>
-      )}
       <NoteField draft={draft} over={over} edit={edit} />
     </>
   );
@@ -234,9 +232,9 @@ function DraftActions({
 }
 
 /**
- * The Evidence Project of one Competency, in its closing step. Declared there
- * before the Evidence Plan is confirmed, it rides with that one send; after,
- * a change or a withdrawal is its own send, until the Reading Day.
+ * The Evidence Project, one for every Competency, in a closing step. Declared
+ * there before that Evidence Plan is confirmed, it rides with that one send;
+ * else a change or a withdrawal is its own send, until the Reading Day.
  */
 export function EvidenceProject(props: Props) {
   const { competency, draft, onDraft, over } = props;
@@ -261,17 +259,13 @@ export function EvidenceProject(props: Props) {
           withdraw={withdraw}
         />
       ) : (
-        <p className="text-sm">
-          Nothing else declared: the Reading Day reads your Evidence Project for{" "}
-          {competency}.
-        </p>
+        <RosterEvidenceProject repository={data?.evidence_project} />
       )}
       {data && <DeclareHelp panel={data} />}
       <DraftFields
         draft={draft}
         over={over}
         declared={Boolean(declared)}
-        evidenceProject={data?.evidence_project}
         edit={edit}
       />
       <DraftActions

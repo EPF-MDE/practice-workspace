@@ -412,14 +412,6 @@ export type EvidencePanel = {
      * Not Judged
      */
     not_judged: string | null;
-    /**
-     * Greyed
-     */
-    greyed: boolean;
-    /**
-     * Greyed Text
-     */
-    greyed_text: string | null;
     declaration: Declaration | null;
     help: DeclarationHelp;
 };
@@ -1489,14 +1481,9 @@ export type rehearsalRefreshEvidencePanelResponse = rehearsalRefreshEvidencePane
 
 export type rehearsalCheckProjectAccessData = {
     body: ProjectIn;
-    path: {
-        /**
-         * Competency
-         */
-        competency: string;
-    };
+    path?: never;
     query?: never;
-    url: '/api/competencies/{competency}/declaration/check';
+    url: '/api/evidence-project/check';
 };
 
 export type rehearsalCheckProjectAccessErrors = {
@@ -1519,44 +1506,23 @@ export type rehearsalCheckProjectAccessResponse = rehearsalCheckProjectAccessRes
 
 export type rehearsalWithdrawEvidenceProjectData = {
     body?: never;
-    path: {
-        /**
-         * Competency
-         */
-        competency: string;
-    };
+    path?: never;
     query?: never;
-    url: '/api/competencies/{competency}/declaration';
+    url: '/api/evidence-project/declaration';
 };
-
-export type rehearsalWithdrawEvidenceProjectErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type rehearsalWithdrawEvidenceProjectError = rehearsalWithdrawEvidenceProjectErrors[keyof rehearsalWithdrawEvidenceProjectErrors];
 
 export type rehearsalWithdrawEvidenceProjectResponses = {
     /**
      * Successful Response
      */
-    200: EvidencePanel;
+    200: unknown;
 };
-
-export type rehearsalWithdrawEvidenceProjectResponse = rehearsalWithdrawEvidenceProjectResponses[keyof rehearsalWithdrawEvidenceProjectResponses];
 
 export type rehearsalDeclareEvidenceProjectData = {
     body: DeclarationIn;
-    path: {
-        /**
-         * Competency
-         */
-        competency: string;
-    };
+    path?: never;
     query?: never;
-    url: '/api/competencies/{competency}/declaration';
+    url: '/api/evidence-project/declaration';
 };
 
 export type rehearsalDeclareEvidenceProjectErrors = {
@@ -1572,7 +1538,7 @@ export type rehearsalDeclareEvidenceProjectResponses = {
     /**
      * Successful Response
      */
-    200: EvidencePanel;
+    200: Declaration;
 };
 
 export type rehearsalDeclareEvidenceProjectResponse = rehearsalDeclareEvidenceProjectResponses[keyof rehearsalDeclareEvidenceProjectResponses];

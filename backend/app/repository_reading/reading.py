@@ -36,7 +36,8 @@ STUDENT = "student"
 
 @dataclass(frozen=True)
 class StudentToRead:
-    """A roster row, as far as the Repository reading needs it."""
+    """A Student, as far as the Repository reading needs them: `evidence_project` is the
+    one the roster names, or the one they declared instead."""
 
     login: str
     project: str  # the roster's `project`: "OcéENS" or "MATHutrice"
@@ -100,6 +101,14 @@ class RepositoryReading:
 
     def __getitem__(self, competency: str) -> CompetencyReading:
         return self.competencies[competency]
+
+    def reads(self, student: StudentToRead) -> bool:
+        """Whether this is a reading of that Student's Evidence Project."""
+        return (
+            self.student.login == student.login
+            and self.student.evidence_project.lower()
+            == student.evidence_project.lower()
+        )
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)

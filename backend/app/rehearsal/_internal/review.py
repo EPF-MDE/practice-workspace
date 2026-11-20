@@ -84,8 +84,8 @@ def _evidence_plan(record: Record, competency: str) -> EvidencePlan | None:
     )
 
 
-def _evidence_project(record: Record, competency: str) -> str | None:
-    declared = record.declaration(competency)
+def _evidence_project(record: Record) -> str | None:
+    declared = record.declaration()
     return declared[0]["url"] if declared else None
 
 
@@ -102,7 +102,7 @@ def _transfer(page: Page, record: Record) -> closing.Transfer | None:
         fields = sent.payload["fields"]
         project = (
             fields.get("project", "").strip()
-            or _evidence_project(record, page.competency)
+            or _evidence_project(record)
             or "my Evidence Project"
         )
         plan = "; ".join(
@@ -119,7 +119,7 @@ def _draft(page: Page, record: Record, levels: dict[str, Any]) -> str:
         _points(page),
         levels,
         _transfer(page, record),
-        _evidence_project(record, page.competency),
+        _evidence_project(record),
     )
 
 

@@ -103,7 +103,7 @@ def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_
         (f"{C1}/close", {"text": "x" * 12_001, "example": "e"}, "Evidence Plan"),
         (f"{C1}/close", {"text": "p", "example": "x" * 2_001}, "example"),
         (
-            f"{C1}/declaration",
+            "/api/evidence-project/declaration",
             {"url": "https://github.com/ada/bakery", "note": "x" * 2_001},
             "note",
         ),

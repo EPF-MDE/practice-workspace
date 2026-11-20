@@ -84,7 +84,7 @@ SENDS: dict[Kind, Callable[[Store, Student], Entry]] = {
         },
     ),
     Kind.DECLARATION: lambda s, who: s.save_declaration(
-        who, "C3", {"url": "https://gitlab.com/a/b", "note": "été"}
+        who, {"url": "https://gitlab.com/a/b", "note": "été"}
     ),
     Kind.QUESTION: lambda s, who: s.save_question(
         who, "C1", "read-the-chain", "Why 10?\nAnd why ``` here?"

@@ -84,11 +84,14 @@ class InMemoryStore:
         with self._lock:
             return Record(student, tuple(self._entries.get(student.github_id, ())))
 
+    def records(self, students: list[Student]) -> list[Record]:
+        return [self.record(student) for student in students]
+
     def _append(
         self,
         student: Student,
         kind: Kind,
-        competency: str,
+        competency: str | None,
         key: str | None,
         payload: dict[str, Any],
     ) -> Entry:
@@ -155,12 +158,8 @@ class InMemoryStore:
     ) -> Entry:
         return self._append(student, Kind.EVIDENCE_PLAN, competency, None, dict(plan))
 
-    def save_declaration(
-        self, student: Student, competency: str, declaration: dict[str, Any]
-    ) -> Entry:
-        return self._append(
-            student, Kind.DECLARATION, competency, None, dict(declaration)
-        )
+    def save_declaration(self, student: Student, declaration: dict[str, Any]) -> Entry:
+        return self._append(student, Kind.DECLARATION, None, None, dict(declaration))
 
     def save_question(
         self, student: Student, competency: str, step: str, text: str

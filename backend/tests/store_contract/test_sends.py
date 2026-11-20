@@ -110,31 +110,27 @@ def test_every_question_is_kept_with_its_step(store: Store) -> None:
 
 
 def test_an_empty_declaration_withdraws_the_last_one(store: Store) -> None:
-    store.save_declaration(ADA, "C3", {"url": "https://github.com/a/b"})
-    store.save_declaration(ADA, "C3", {})
+    store.save_declaration(ADA, {"url": "https://github.com/a/b"})
+    store.save_declaration(ADA, {})
 
-    latest = store.record(ADA).latest(Kind.DECLARATION, "C3")
+    latest = store.record(ADA).latest(Kind.DECLARATION, None)
     assert latest is not None
     assert latest.payload == {}
+    assert store.record(ADA).declaration() is None
 
 
-def test_the_declaration_now_is_the_latest_sent_alone_or_with_the_closing_step(
+def test_one_declaration_per_student_the_latest_sent_alone_or_with_any_closing_step(
     store: Store,
 ) -> None:
-    assert store.record(ADA).declaration("C2") is None
-    store.save_declaration(
-        ADA, "C2", {"url": "https://github.com/ada/a", "note": "first"}
-    )
+    assert store.record(ADA).declaration() is None
+    store.save_declaration(ADA, {"url": "https://github.com/ada/a", "note": "first"})
     store.save_evidence_plan(
         ADA,
         "C2",
         {"text": "p", "declaration": {"url": "https://github.com/ada/b", "note": "n"}},
     )
-    store.save_declaration(
-        ADA, "C3", {"url": "https://github.com/ada/c", "note": "other Competency"}
-    )
 
-    declaration = store.record(ADA).declaration("C2")
+    declaration = store.record(ADA).declaration()
     assert declaration is not None
     payload, at = declaration
     assert payload["url"] == "https://github.com/ada/b"
@@ -142,11 +138,32 @@ def test_the_declaration_now_is_the_latest_sent_alone_or_with_the_closing_step(
     assert plan is not None
     assert at == plan.at
 
-    store.save_declaration(ADA, "C2", {})
-    assert store.record(ADA).declaration("C2") is None
-    other = store.record(ADA).declaration("C3")
-    assert other is not None
-    assert other[0]["note"] == "other Competency"
+    store.save_declaration(ADA, {"url": "https://github.com/ada/c", "note": "c"})
+    changed = store.record(ADA).declaration()
+    assert changed is not None
+    assert changed[0]["url"] == "https://github.com/ada/c"
+    assert store.record(GRACE).declaration() is None
+
+    store.save_declaration(ADA, {})
+    assert store.record(ADA).declaration() is None
+
+
+def test_several_records_are_read_at_once_each_its_own_students(store: Store) -> None:
+    store.save_declaration(ADA, {"url": "https://github.com/ada/a", "note": "n"})
+    store.save_answer(GRACE, "C1", "guided-calculation", {"sentence": "Grace's"})
+    store.save_declaration(ADA, {"url": "https://github.com/ada/b", "note": "n"})
+    nobody = Student(3000, "nobody", "No One", "OcéENS", "OcéENS", "nobody/OceENS")
+
+    ada, grace, none = store.records([ADA, GRACE, nobody])
+
+    assert ada.entries == store.record(ADA).entries
+    declared = ada.declaration()
+    assert declared is not None
+    assert declared[0]["url"] == "https://github.com/ada/b"
+    assert [e.version for e in ada.history(Kind.DECLARATION, None)] == [1, 2]
+    assert grace.entries == store.record(GRACE).entries
+    assert grace.declaration() is None
+    assert none.entries == ()
 
 
 def test_the_missed_check_points_now_are_the_latest_ticked_alone_or_with_a_self_assessment(  # noqa: E501

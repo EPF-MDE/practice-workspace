@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime
 from typing import Any
 
@@ -21,13 +20,12 @@ from .models import (
     _at_most,
 )
 
-logger = logging.getLogger("app.rehearsal")
-
-
 # --- The Evidence panel and the Evidence Project ---------------------------------
 
 
 def _student_to_read(student: Student) -> StudentToRead:
+    """The Student as the roster names them: their Evidence Project unless declared
+    otherwise."""
     return StudentToRead(
         student.github_login, student.project, student.evidence_project
     )
@@ -74,9 +72,12 @@ def _declaration_out(
 ) -> Declaration | None:
     """The declaration with its access checked now (the App may have been installed
     since)."""
-    if declared is None:
-        return None
-    payload, at = declared
+    return None if declared is None else _declared(*declared, request, student)
+
+
+def _declared(
+    payload: dict[str, Any], at: datetime, request: Request, student: Student
+) -> Declaration:
     project = evidence_panel.parse_project(payload["url"])
     settings: Settings = request.app.state.settings
     return Declaration(
@@ -103,24 +104,18 @@ def _panel(
     declaration: Declaration | None,
     refresh: bool,
 ) -> EvidencePanel:
-    source = request.app.state.repository_reading
-    try:
-        reading = (
-            source.refresh(_student_to_read(student))
-            if refresh
-            else source.read(_student_to_read(student))
-        )
-    except Exception:  # the panel says so; the page and the closing step go on
-        logger.exception("The repository of %s could not be read", student.github_login)
-        return evidence_panel.unavailable_panel(
-            competency, _student_to_read(student), declaration
-        )
-    return evidence_panel.build_panel(competency, reading, declaration)
+    return evidence_panel.read_panel(
+        competency,
+        request.app.state.repository_reading,
+        _student_to_read(student),
+        declaration,
+        refresh,
+    )
 
 
 def _competency(request: Request, competency: str, student: Student) -> str:
-    """A Competency of the course: its Evidence panel and declaration exist before its
-    content does."""
+    """A Competency of the course: its Evidence panel exists before its content
+    does."""
     if competency not in COMPETENCIES:
         raise HTTPException(404, f"No Competency {competency}")
     return competency

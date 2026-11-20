@@ -29,7 +29,11 @@ _KEY_NAME: dict[str, str] = {
 
 
 def _line(
-    kind: str, competency: str, key: str | None, version: int, payload: dict[str, Any]
+    kind: str,
+    competency: str | None,
+    key: str | None,
+    version: int,
+    payload: dict[str, Any],
 ) -> str:
     """The comment's first line, for a person reading the issue."""
     v = f"(version {version})"
@@ -82,7 +86,7 @@ def _line(
             )
         case Kind.DECLARATION:
             what = "withdrawn" if not payload else "declared"
-            return f"**Evidence Project** {what} for {competency} {v}"
+            return f"**Evidence Project** {what} for every Competency {v}"
         case Kind.EVIDENCE_PANEL_SNAPSHOT:
             return f"**Evidence panel** as seen at {competency}'s closing step {v}"
     raise ValueError(kind)
@@ -90,7 +94,7 @@ def _line(
 
 def comment_body(
     entry_kind: str,
-    competency: str,
+    competency: str | None,
     key: str | None,
     version: int,
     payload: dict[str, Any],

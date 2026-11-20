@@ -54,7 +54,10 @@ class _C1Facts(_ReadingState):
     def _c1_fact(self, a: dict[str, Any], where: str, ref: dict[str, Any]) -> Fact:
         n = len(a["files"])
         text = (
-            f"{where} changes {_plural(n, 'file')} beyond `{a['closest']}`, "
+            f"{where} holds {_plural(n, 'file')} of its own history, none from the "
+            f"course's code; last change on {a['last_change']}."
+            if a.get("own_history")
+            else f"{where} changes {_plural(n, 'file')} beyond `{a['closest']}`, "
             f"{_plural(a['lines_added'], 'line')} added; "
             f"last change on {a['last_change']}."
         )

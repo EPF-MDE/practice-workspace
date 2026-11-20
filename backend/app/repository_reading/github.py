@@ -7,6 +7,7 @@ token provider) and `RecordedGitHub` (tests, replaying recorded responses).
 from __future__ import annotations
 
 import re
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -43,18 +44,26 @@ def next_page_path(link_header: str | None) -> str | None:
     return m.group(1).lstrip("/") if m else None
 
 
-class HttpGitHub:
-    """GitHub over HTTP. `token` returns a token for each request (refreshed by its
-    provider)."""
+# How long a repository the App is not installed on is read with the default token,
+# before asking again.
+INSTALLED_TTL = 15 * 60
 
-    def __init__(self, token: Callable[[], str], client: httpx.Client | None = None):
+# A token for a repository ("owner/name"), refreshed by its provider.
+TokenFor = Callable[[str], str]
+
+
+class HttpGitHub:
+    """GitHub over HTTP. `token` gives a token for the repository each request reads."""
+
+    def __init__(self, token: TokenFor, client: httpx.Client | None = None):
         self._token = token
         self._client = client or httpx.Client(base_url=API, timeout=30)
 
     def get(self, path: str) -> Response:
+        repository = "/".join(path.lstrip("/").split("/")[1:3])
         r = self._client.get(
             "/" + path.lstrip("/"),
-            headers={**HEADERS, "Authorization": f"Bearer {self._token()}"},
+            headers={**HEADERS, "Authorization": f"Bearer {self._token(repository)}"},
         )
         if r.status_code >= 500:
             raise GitHubError(f"GET {path}: {r.status_code}")
@@ -65,8 +74,41 @@ class HttpGitHub:
         return Response(r.status_code, body, next_page_path(r.headers.get("link")))
 
 
-def static_token(token: str) -> Callable[[], str]:
-    return lambda: token
+def static_token(token: str) -> TokenFor:
+    return lambda repository: token
+
+
+def repository_tokens(
+    app_id: str, private_key_base64: str, installation_id: str = ""
+) -> TokenFor:
+    """The Student Connector App's token for each repository: its installation on that
+    repository, so that a private repository it was installed on can be read; else the
+    `installation_id` one (or the first), which reads any public repository."""
+    pem = private_key_from_base64(private_key_base64)
+    default = installation_token(app_id, private_key_base64, installation_id)
+    # per repository: when it was asked, and its installation's token provider if any
+    seen: dict[str, tuple[float, Callable[[], str] | None]] = {}
+
+    def installed(repository: str) -> Callable[[], str] | None:
+        app_jwt = InstallationAuth(app_id, pem, "").app_jwt()
+        found = httpx.get(
+            f"{API}/repos/{repository}/installation",
+            headers={**HEADERS, "Authorization": f"Bearer {app_jwt}"},
+            timeout=20,
+        )
+        if found.status_code != 200:
+            return None
+        return InstallationAuth(app_id, pem, str(found.json()["id"])).token
+
+    def token(repository: str) -> str:
+        key = repository.lower()
+        if key not in seen or (
+            seen[key][1] is None and time.monotonic() - seen[key][0] > INSTALLED_TTL
+        ):
+            seen[key] = (time.monotonic(), installed(repository))
+        return (seen[key][1] or default)()
+
+    return token
 
 
 def installation_token(

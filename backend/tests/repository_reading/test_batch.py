@@ -10,10 +10,13 @@ from app.repository_reading import (
     GitHubWorkspaceData,
     InMemoryReadings,
     RepositoryReader,
+    StudentToRead,
     WorkspaceDataReadings,
 )
-from app.repository_reading.batch import roster_students, run_batch
+from app.repository_reading.batch import evidence_projects, run_batch
 from app.repository_reading.recorded import RecordedGitHub
+from app.roster import parse_roster
+from app.store import InMemoryStore
 
 from .conftest import FIXTURES, NOW, REPOSITORIES
 
@@ -42,7 +45,12 @@ def recorded_github(*names: str) -> RecordedGitHub:
     return RecordedGitHub.load(*(FIXTURES / f"{n}.json.gz" for n in names))
 
 
-def test_the_roster_gives_each_students_repository() -> None:
+def roster_students(csv_text: str) -> list[StudentToRead]:
+    to_read, _ = evidence_projects(list(parse_roster(csv_text)), InMemoryStore())
+    return to_read
+
+
+def test_the_roster_gives_each_students_evidence_project() -> None:
     students = roster_students(ROSTER)
     assert [s.evidence_project for s in students] == [
         "dorothy-math/MATHutrice",
@@ -50,6 +58,43 @@ def test_the_roster_gives_each_students_repository() -> None:
         "barbara-oceens/OceENS",
     ]
     assert students[1].upstream == "EPF-MDE/OceENS"
+
+
+def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named() -> (
+    None
+):
+    dorothy, radia, barbara = parse_roster(ROSTER)
+    store = InMemoryStore()
+    store.save_declaration(
+        radia,
+        {
+            "url": "https://github.com/radia/notes",
+            "note": "n",
+            "repository": "radia/notes",
+            "host": "github",
+        },
+    )
+    store.save_declaration(
+        barbara,
+        {
+            "url": "https://gitlab.com/b/api",
+            "note": "n",
+            "repository": "b/api",
+            "host": "gitlab",
+        },
+    )
+
+    to_read, gitlab = evidence_projects([dorothy, radia, barbara], store)
+
+    assert [(s.login, s.evidence_project) for s in to_read] == [
+        ("dorothy-math", "dorothy-math/MATHutrice"),
+        ("radia-oceens", "radia/notes"),
+    ]
+    assert gitlab == {"barbara-oceens": "b/api"}
+
+    store.save_declaration(radia, {})
+    to_read, _ = evidence_projects([radia], store)
+    assert to_read[0].evidence_project == "radia-oceens/OceENS"
 
 
 def test_the_batch_stores_one_file_per_student_in_one_commit() -> None:
