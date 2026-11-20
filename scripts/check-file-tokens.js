@@ -4,7 +4,7 @@
 // Tokens are estimated as bytes / 4, which is close enough for code.
 // Usage: node scripts/check-file-tokens.js <file>...
 
-import { readFileSync } from "node:fs";
+import { lstatSync, readFileSync } from "node:fs";
 
 const MAX_TOKENS = 5000;
 const BYTES_PER_TOKEN = 4;
@@ -17,12 +17,18 @@ const IGNORED = [
   /^\.github\/workflows\/[^/]+\.yml$/,
 ];
 
+// git lists a symlink as one path, such as .claude/skills, a link to
+// .agents/skills. Its target is checked on its own path, so only regular
+// files are read.
+const isRegularFile = (file) => lstatSync(file).isFile();
+
 const isBinary = (contents) => contents.subarray(0, 8000).includes(0);
 
 const oversized = process.argv
   .slice(2)
   .map((file) => file.replaceAll("\\", "/").replace(`${process.cwd()}/`, ""))
   .filter((file) => !IGNORED.some((pattern) => pattern.test(file)))
+  .filter(isRegularFile)
   .map((file) => ({ file, contents: readFileSync(file) }))
   .filter(({ contents }) => !isBinary(contents))
   .map(({ file, contents }) => ({

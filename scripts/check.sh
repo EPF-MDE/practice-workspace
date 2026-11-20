@@ -21,6 +21,8 @@ repository() {
   npx oxlint -c .oxlintrc.json --ignore-pattern "frontend/**"
   step "Repository: types (the Sandcastle scripts in .sandcastle/)"
   sandcastle_types
+  step "Repository: tests (the Sandcastle scripts and scripts/)"
+  npx vitest run .sandcastle/ scripts/
 }
 
 backend() {
