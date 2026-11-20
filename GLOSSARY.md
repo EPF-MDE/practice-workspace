@@ -34,6 +34,11 @@ _Avoid_: course config, content directory
 **Demo course**: The fictional Course folder shipped with the Engine, for its
 own tests and its README. No real Course, Student or answer is in it.
 
+**Software Factory**: The agent runs that work on the Engine's own issues and
+pull requests: GitHub Actions workflows that a label starts, each running an
+agent script in `.sandcastle/`. It implements and reviews; the Instructor
+merges. _Avoid_: bot, pipeline
+
 ### People
 
 **Student**: Someone on a Course's Roster, who follows the Paths. _Avoid_:

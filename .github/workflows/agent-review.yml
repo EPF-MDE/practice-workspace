@@ -360,9 +360,14 @@ jobs:
       - name: Run check
         # The review's own run of `npm run check`, on the branch after its
         # fixes, so its output is on this run's page whatever the agent did.
-        # No secret in its env: it runs the PR's code. If it fails, the next
-        # step is skipped, the PR stays a draft, and the failure path below
-        # adds `agent:blocked`.
+        # It runs the PR's code, so no secret goes in its env. That is
+        # tidiness, not a wall: the PR's code can write to $GITHUB_ENV or
+        # $GITHUB_PATH, and every later step inherits them, the ones holding
+        # FACTORY_PAT included. The real defence is who can reach this run —
+        # same-repo PRs only, and a label only a collaborator can apply.
+        # If it fails, the next step is skipped, the PR stays a draft, and
+        # the failure path below adds `agent:blocked` and says how to retry.
+        id: check
         run: npm run check
 
       - name: Mark the pull request ready
@@ -389,6 +394,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: gh pr edit "$PR_NUMBER" --add-label "agent:blocked" || true
+
+      - name: Say check failed and how to retry
+        # The verdict above was posted before check ran, so it cannot say
+        # check failed. This comment does.
+        if: failure() && steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+        run: |
+          {
+            echo "Review run: \`npm run check\` **failed** — [logs](${RUN_URL})."
+            echo "The pull request stays a draft. Re-add \`agent:review\` to retry."
+          } > /tmp/review-check-failed.md
+          gh pr comment "$PR_NUMBER" --body-file /tmp/review-check-failed.md || true
 
       - name: Always remove in-progress
         if: always()

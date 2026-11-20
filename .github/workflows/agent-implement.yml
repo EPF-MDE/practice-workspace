@@ -89,10 +89,13 @@ on:
 permissions:
   contents: read # the checkout
 
-# One run per ticket. A second label event on the same issue waits for the
-# first to finish rather than building the same ticket twice at once.
+# One run per ticket. A second `agent:implement` on the same issue waits for
+# the first run to finish rather than building the same ticket twice at once.
+# Only that label joins the group: every other label, the run's own
+# `agent:in-progress` and `agent:blocked` included, gets a throwaway group of
+# its own, so it cannot replace the waiting retry.
 concurrency:
-  group: agent-implement-${{ github.event.issue.number }}
+  group: ${{ github.event.label.name == 'agent:implement' && format('agent-implement-{0}', github.event.issue.number) || format('ignore-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
