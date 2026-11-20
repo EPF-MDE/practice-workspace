@@ -27,16 +27,23 @@ entry in the same change that names it.
 
 ## A Deep Module: a small interface, a lot behind it
 
-Each subpackage of `app` is a Deep Module. Its `__init__.py` is its
-interface: the names listed in its `__all__` are everything a caller needs to
-read. A public submodule, one without a leading `_`, adds to that interface,
-so keep them few. Everything else lives under `_internal/`, where the module's
-files import each other freely. `npm run check` refuses any import past the
-interface, a star re-export and a cycle between modules. It cannot tell
-whether the module is deep. These are findings:
+Each subpackage of the back end's `app`, and each folder under the front end's
+`src/packages`, is a Deep Module. Its interface is everything a caller needs to
+read:
 
-- a name in the interface that only one caller needs, or that shows how the
+- In the back end, the names in `__init__.py`'s `__all__`, plus any submodule
+  without a leading `_`. Everything else lives under `_internal/`.
+- In the front end, the files at the package's root: several small entry
+  points rather than one `index.ts` re-exporting everything. Everything else
+  lives in subfolders: `lib/` for the implementation, `tests/` for its tests,
+  which go through the entry points too.
+
+Behind the interface, the module's files import each other freely.
+`npm run check` refuses any import past an interface, and any cycle. It cannot
+tell whether the module is deep. These are findings:
+
+- a name or an entry point that only one caller needs, or that shows how the
   module works rather than what it does;
-- a public function that only passes its arguments on to `_internal/`, where a
-  re-export would do;
+- a public function that only passes its arguments on to the implementation,
+  where a re-export would do;
 - two modules a caller must always use together to do one thing.
