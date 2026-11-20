@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterable, Iterator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
+from dataclasses import dataclass
 from typing import Any
 
 import posthog
@@ -32,31 +33,33 @@ def check_settings(
     return token, host, environment
 
 
+@dataclass(frozen=True)
+class _Wiring:
+    client: posthog.Posthog
+    logger_provider: LoggerProvider
+    handler: LoggingHandler
+    loggers: Iterable[logging.Logger]
+
+
 class Signals:
-    def __init__(
-        self,
-        client: posthog.Posthog | None = None,
-        logger_provider: LoggerProvider | None = None,
-        handler: LoggingHandler | None = None,
-        loggers: Iterable[logging.Logger] = (),
-    ) -> None:
-        self._client = client
-        self._logger_provider = logger_provider
-        self._handler = handler
-        self._loggers = loggers
+    def __init__(self, wiring: _Wiring | None = None) -> None:
+        self._wiring = wiring
 
     def request_context(
         self, distinct_id: str | None, **properties: Any
     ) -> AbstractContextManager[None]:
-        if self._client is None:
+        if self._wiring is None:
             return nullcontext()
-        return self._context(distinct_id, properties)
+        return self._context(self._wiring.client, distinct_id, properties)
 
     @contextmanager
     def _context(
-        self, distinct_id: str | None, properties: dict[str, Any]
+        self,
+        client: posthog.Posthog,
+        distinct_id: str | None,
+        properties: dict[str, Any],
     ) -> Iterator[None]:
-        with posthog.new_context(client=self._client):
+        with posthog.new_context(client=client):
             if distinct_id:
                 posthog.identify_context(distinct_id)
             for name, value in properties.items():
@@ -64,13 +67,13 @@ class Signals:
             yield
 
     def shutdown(self) -> None:
-        if self._client is None:
+        wiring = self._wiring
+        if wiring is None:
             return
-        assert self._handler is not None and self._logger_provider is not None
-        for logger in self._loggers:
-            logger.removeHandler(self._handler)
-        self._logger_provider.shutdown()
-        self._client.shutdown()
+        for logger in wiring.loggers:
+            logger.removeHandler(wiring.handler)
+        wiring.logger_provider.shutdown()
+        wiring.client.shutdown()
 
 
 def start(service_name: str, token: str, host: str, environment: str) -> Signals:
@@ -104,4 +107,4 @@ def start(service_name: str, token: str, host: str, environment: str) -> Signals
     ]
     for logger in loggers:
         logger.addHandler(handler)
-    return Signals(client, logger_provider, handler, loggers)
+    return Signals(_Wiring(client, logger_provider, handler, loggers))
