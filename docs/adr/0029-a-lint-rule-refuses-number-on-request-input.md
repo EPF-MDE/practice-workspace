@@ -1,3 +1,0 @@
-# A lint rule refuses Number() on request input
-
-`Number()` turns bad input into a number that looks good: `Number("")` is 0, so an empty `stepId` would open Step 0 for every Student. CODING_STANDARDS.md's "Parse untrusted input with a schema, at the edge" says request input goes through a zod schema, and a reviewer can miss a `Number()` call. **So the oxlint plugin `lint-rules/input.js` has a rule, `input/no-number-coercion`, that refuses `Number()` on a route's `params` or on a form or URL search parameter (`formData.get`, `form.get`, `searchParams.get`, and their `getAll`), and points at `z.coerce.number().int()`, which refuses it at the edge.** `.oxlintrc.json` sets the rule to `error`.

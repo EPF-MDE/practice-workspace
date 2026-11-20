@@ -1,0 +1,8 @@
+# A whole Path costs at most ten writes to the Store, and none before a Send
+
+Every write to the GitHub Store is a content-generating request, which GitHub's secondary rate limit counts, and a Course's Students all write to one repository. **So a Student's whole Path through one Competency makes at most ten writes to the Store, and none before a Send.** `test_a_full_competency_path_makes_at_most_10_writes_and_none_before_a_send` in `backend/tests/test_store_api.py` guards it on both Stores.
+
+- **What a Student has not sent stays in their browser's `localStorage`**: a Step's fields, a question, the canvas of a redraw, the Self-assessment, the Evidence Plan text. Nothing reaches the Store before they press a send button, and a reload loses nothing. The browser's copy wins over what was sent. The Store keeps every version, so autosaving there would also fill it with versions the Student never chose to send.
+- **The Evidence Plan's draft is computed, never stored.** It is redrafted from the levels on every change until the Student edits it, and drafting writes nothing.
+- **The closing step is one Send.** It carries the Evidence Plan's confirmation, its example for the Eval, the Evidence panel as shown and any Evidence Project declared there, so they cannot land one without the next. The Evidence panel it stores is the one the Student was shown, not a fresh reading.
+- **The budget counts** every Step with fields answered, the redraw sent (two files and a comment), two questions, the Self-assessment, then the closing step's Send. Signing in writes only the first time, when the GitHub Store opens the Student's issue.

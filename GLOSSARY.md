@@ -38,7 +38,7 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Step**: One position on a Path, with what it gives the Student to read and what it asks them to send. _Avoid_: page, lesson
 
-**Locked answer**: The Instructor's answer to a Step, withheld by the server until the Student's own answer to that Step is stored. _Avoid_: solution, hidden answer
+**Locked answer**: The Instructor's answer to a Step, withheld by the server until the Student's own answer to that Step is stored: hiding it in the browser would still send it. A Step that waits for an earlier Step's answer is withheld the same way. _Avoid_: solution, hidden answer
 
 **Check**: A question with a few choices, set on the material a Student has just read, corrected and explained once they send it. It tells a Student whether they understood; it is not graded, and it is not their Self-assessment. _Avoid_: quiz, test, exercise
 
@@ -58,14 +58,14 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Repository reading**: What the Practice workspace reads of a Student's Evidence Project, to show the Student and the Instructor where it stands for each Competency. It never changes what a Path shows. _Avoid_: fork reading, scan
 
-**Evidence panel**: For one Student and each Competency, shown beside their Path and at its closing step: what the Repository reading finds on their Evidence Project, as the Roster names it or as the Student changed it. What it showed at the closing step is kept with their Evidence Plan. _Avoid_: fork panel
+**Evidence panel**: For one Student and each Competency, shown beside their Path and at its closing step: what the Repository reading finds on their Evidence Project, as the Roster names it or as the Student changed it. It shows facts, each naming the point it supports, never a grade; when it could not read the Evidence Project, it says why, and that it is not a zero. What it showed at the closing step is kept with their Evidence Plan. _Avoid_: fork panel
 
 ### Time
 
-**Close**: The instant a Course's Practice stops taking new answers, set in the Course folder. After it, a Self-assessment point can only move up, and the Evidence Plan and Evidence Project stay editable until the Reading Day. _Avoid_: deadline, cut-off
+**Close**: The instant a Course's Practice stops taking new answers, set in the Instance's settings. After it and until the Reading Day, a Self-assessment level only moves up to _I have done it_, with a link to the work, so the Self-assessment cannot be rewritten to look better than the Practice was; the Evidence Plan and Evidence Project stay editable. _Avoid_: deadline, cut-off
 
-**Reading Day**: The instant from which the Instructor reads each Student's Evidence Project, set in the Course folder. Nothing sent after it is read. _Avoid_: deadline, freeze
+**Reading Day**: The instant from which the Instructor reads each Student's Evidence Project, set in the Instance's settings. Nothing sent after it is read. _Avoid_: deadline, freeze
 
 ### Where it is kept
 
-**Store**: Where every Send is kept, with every version, as dated entries: a Student's current state is the latest entry of each kind. It speaks the domain, never its backend; an Instance sets which repository, label and data branch hold it. _Avoid_: database, persistence, storage
+**Store**: Where every Send is kept, with every version, as dated entries: a Student's current state is the latest entry of each kind. It speaks the domain, never its backend, and checks no rule: its callers decide what may be sent, and when; an Instance sets which repository, label and data branch hold it. _Avoid_: database, persistence, storage

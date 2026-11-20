@@ -23,7 +23,7 @@ The user has asked you to **delete comments**. Every comment in the part of the 
 
    - Tautology, Stale: delete it.
    - Excuse: delete it, and file one issue per fix with `gh issue create` (one issue covers every excuse that the same fix removes). The issue names the code by path and function, quotes the deleted comment, and says what the fix looks like.
-   - Decision Record: delete it, and write the decision into an ADR in `docs/adr/`, in the style of ADR-0001, numbered after the highest one. Group the decisions about one Deep Module or one tool into one ADR. Where an ADR on the same subject exists, extend it rather than starting another.
+   - Decision Record: delete it. Write the decision into an ADR in `docs/adr/` only if it is hard to reverse, surprising without context, and the result of a real trade-off (the domain-modeling skill's test); if it only fixes what a term means, write it into GLOSSARY.md instead; otherwise it goes nowhere. An ADR follows the style of ADR-0001, is numbered after the highest one, and names no private function or constant, which a rename would make stale. Group the decisions about one Deep Module or one tool into one ADR. Where an ADR on the same subject exists, extend it rather than starting another.
 
    Issues and ADRs are public: write them in the glossary's words, with no course's material, Student or answer.
 

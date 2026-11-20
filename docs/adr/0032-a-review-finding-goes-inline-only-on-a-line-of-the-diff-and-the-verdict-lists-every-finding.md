@@ -1,7 +1,0 @@
-# A review finding goes inline only on a line of the diff, and the verdict lists every finding
-
-The review run of the Software Factory posts the findings it left as inline comments on the pull request (ADR-0030). GitHub accepts an inline review comment only on a line inside a hunk of the diff, on the new side, and rejects whole a review with one comment outside the hunks. **So `review/review.ts` drops from the inline review every finding whose line is not in the diff, as `diffLines` in `review/diff-lines.ts` computes it, and `addLeftFindings` in `review/left-findings.ts` lists every finding in the verdict: one posted inline gets a single line, since its comment carries the reasoning; one dropped appears in full, because the verdict is its only home.**
-
-- **The diff is taken after the agent's commits.** The review agent fixes and commits before the script goes on, and the inline comments land on the commit it leaves, so `diffLines` reads `origin/<base>...HEAD` after the run, not before it.
-- **Each list goes at the end of its axis's section**, `## Standards` or `## Spec`. When the verdict has no section for an axis that has findings, that section is added at the end of the verdict, with its list.
-- **With no verdict, the findings still get one, and the pull request stays a draft.** When the agent wrote no verdict file, the script writes a stand-in with no `## Standards:` heading, and `agent-review.yml` marks the pull request ready only when that heading is there.

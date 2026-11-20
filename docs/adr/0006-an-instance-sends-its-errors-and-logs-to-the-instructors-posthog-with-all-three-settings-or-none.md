@@ -1,8 +1,0 @@
-# An Instance sends its errors and logs to the Instructor's PostHog, with all three settings or none
-
-The Instructor must see an Instance's errors without watching its logs, and must never mistake staging's errors for production's. **So `app.observability` sends an Instance's errors and logs to the Instructor's own PostHog project, wired by three settings set together or not at all: `WORKSPACE_POSTHOG_PROJECT_TOKEN`, `WORKSPACE_POSTHOG_HOST` and `WORKSPACE_POSTHOG_ENVIRONMENT`.**
-
-- **All three or none.** Without the token nothing is wired and the Instance runs as before. With the token but not the other two, `check_settings` raises and the Instance refuses to start, so staging's errors never mix silently with production's.
-- **Wired at start, never at import.** `start()` is called from the app's lifespan in `app.main.create_app`: uvicorn applies its own logging configuration after import, and would remove a handler set then. Uvicorn's own loggers do not propagate to the root logger, so the handler is added to each of `SERVICE_LOGGERS` that does not. The Instance's own INFO lines, sign-ins and start included, reach PostHog Logs too.
-- **An error is tied to the signed-in Student.** An exception leaving a request is captured under the signed-in Student's numeric GitHub id, then re-raised unchanged (`Signals.request_context`). The middleware doing it, `errors_to_posthog` in `backend/app/main.py`, is added before `SessionMiddleware`, so it runs inside it and the session is loaded.
-- **The Instructor can check the wiring.** `GET /api/health/error?key=…` raises on purpose, so the Instructor can see an error reach PostHog. It answers 404 unless `WORKSPACE_ERROR_CHECK_KEY` is set and the key matches.

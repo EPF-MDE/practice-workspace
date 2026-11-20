@@ -1,6 +1,6 @@
 # The Engine holds no comment, and a ratchet counts the ones left
 
-An agent writes most of the Engine's code, and reads the comments around it as truth. A comment that only says what the code shows costs tokens on every read. A stale one misleads. One that excuses a shortcut lets the agent copy the shortcut elsewhere. One that records a decision hides it where nobody searches, and it goes stale the moment someone changes the code without reading it. In November 2026 a pass sorted every comment in the Engine into these four kinds and deleted 922 of them: the decisions went into ADRs 0002 to 0032, the excuses into issues.
+An agent writes most of the Engine's code, and reads the comments around it as truth. A comment that only says what the code shows costs tokens on every read. A stale one misleads. One that excuses a shortcut lets the agent copy the shortcut elsewhere. One that records a decision hides it where nobody searches, and it goes stale the moment someone changes the code without reading it. In November 2026 a pass sorted every comment in the Engine into these four kinds and deleted 922 of them: the decisions worth an ADR went into ADRs 0002 to 0014, a few into the glossary, and the excuses into issues.
 
 **So the Engine's code holds no comment. A name says what the code does, a test says how it behaves, an ADR says why, and an issue says what is left to fix.** CODING_STANDARDS.md's "A decision lives in an ADR, not a comment" is the rule the review applies; this ADR is the one `npm run check` enforces.
 
