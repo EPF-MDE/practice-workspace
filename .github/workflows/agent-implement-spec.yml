@@ -5,8 +5,8 @@ name: Agent — Implement A Spec
 #
 # Everything before this ran once, on one ticket, because a person put a label
 # on it. This one takes a *spec*, turns it into a queue of tickets, and then
-# works the queue on its own until there is nothing left in it — and if nobody
-# ever labels anything, a clock starts it anyway.
+# works the queue on its own until there is nothing left in it — and once a
+# spec is labelled, a clock picks its queue up again whenever the chain stops.
 #
 # There are two loops here, and they are different loops. Keep them apart in
 # your head while you read:
@@ -24,7 +24,7 @@ name: Agent — Implement A Spec
 #     A ticket closes when its pull request merges, not when it opens, so a
 #     ticket is built on its dependencies' merged code. When every ticket left
 #     waits on an unmerged pull request, the chain stops; the first cron tick
-#     after the merge starts it again, within fifteen minutes.
+#     after the merge starts it again.
 #
 # THE SHAPE, AS A PICTURE
 #
@@ -87,7 +87,7 @@ name: Agent — Implement A Spec
 #                               match.
 #   The `agent:implement-spec` label. A fresh clone of this repository does
 #     not have it, and no workflow can create the label that starts it. Create
-#     it once (the cron and the button need no label):
+#     it once (the cron and the button then find the spec that carries it):
 #       gh label create "agent:implement-spec" --color 5319E7 \
 #         --description "Work this spec through the implement-spec queue"
 # ═══════════════════════════════════════════════════════════════════════════
@@ -274,8 +274,8 @@ jobs:
               echo "mode=waiting" >> "$GITHUB_OUTPUT"
             else
               # Open tickets exist but every one is blocked. That is a cycle
-              # or a ticket waiting on a human, and either way looping on it
-              # would burn a run every fifteen minutes forever.
+              # or a ticket waiting on a human, and either way building it
+              # would burn an agent run every fifteen minutes forever.
               echo "::warning::Spec #$spec has $open_count open tickets and none are unblocked."
               echo "mode=drained" >> "$GITHUB_OUTPUT"
             fi
@@ -732,14 +732,14 @@ jobs:
   # This is the loop. Four lines of `gh` at the end of a run, starting the same
   # workflow again — which surveys the queue afresh, finds the next frontier
   # ticket, and builds that one. No run holds the queue in memory. Each run
-  # ends by asking for the next; the cron only restarts a chain that stopped.
+  # ends by asking for the next.
   #
   # It runs after either loop: after `decompose`, to start building what was
   # just written; after `implement`, to take the next ticket.
   #
   # It stops when `survey` reports `waiting`, `drained` or `no-spec` — that is,
   # when a run looks at the queue and finds nothing to do. After `waiting`, the
-  # cron starts it again within fifteen minutes of the merge. The chain has no
+  # first cron tick after the merge starts it again. The chain has no
   # counter and no limit, so an empty queue is genuinely the only brake on it.
   # That is worth sitting with before you point this at your own repository.
   #
