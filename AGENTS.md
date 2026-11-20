@@ -23,6 +23,9 @@ Demo course is the only course here.
 - `frontend/`: the React front end, built and served by the back end. Each
   folder under `src/packages` is a Deep Module, reached from outside only
   through its root files; dependency-cruiser enforces it.
+- `.sandcastle/`: the Software Factory's agent scripts, run with Sandcastle
+  from the workflows in `.github/workflows/`. `npm run check` type-checks
+  them.
 
 ## Verification
 
@@ -37,6 +40,10 @@ The pre-commit hook runs the fast part of `check` in a few seconds, without
 the tests. It refuses any file over 5000 tokens, including one you only
 touched, so editing a large file means splitting it in the same change. Never
 skip it with `--no-verify`.
+
+Never bypass the hook, and never edit it or the workflows: `.husky/`,
+`scripts/pre-commit.sh`, `scripts/check-steps.sh`, `core.hooksPath` and
+`.github/` are the factory's brakes. Only the Instructor changes them.
 
 ## Issue tracker
 
