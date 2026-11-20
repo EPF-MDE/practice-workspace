@@ -21,9 +21,9 @@ which shows any line that changed on the way.
 
 The human reviewer gets **decisions** only: product behaviour the ticket
 leaves open, or a trade-off between two documented rules. Everything else you
-fix on `{{BRANCH}}`, however large: deepening a module, taking `db` as a
-parameter, writing the tests a module lacks, extracting a shared component,
-splitting a function off a lint exemption list. A fix is done when
+fix on `{{BRANCH}}`, however large: deepening a module, taking the Store or
+the clock as a parameter, writing the tests a module lacks, extracting a
+shared component, splitting a function off a lint exemption list. A fix is done when
 `npm run check` passes and the hook accepts its commit. Commit each fix on
 its own. The workflow pushes your commits. Leave `.github/` untouched.
 

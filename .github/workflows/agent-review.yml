@@ -322,6 +322,14 @@ jobs:
           gh api --method POST "repos/$GH_REPO/pulls/$TARGET/reviews" \
             --input "$review" --silent
 
+      - name: Run check
+        # The review's own run of `npm run check`, on the branch after its
+        # fixes, so its output is on this run's page whatever the agent did.
+        # No secret in its env: it runs the PR's code. If it fails, the next
+        # step is skipped, the PR stays a draft, and the failure path below
+        # adds `agent:blocked`.
+        run: npm run check
+
       - name: Mark the pull request ready
         # No `always()` here. If the agent broke, nobody has read the PR, so
         # it stays a draft. And it goes ready only when a real verdict was
