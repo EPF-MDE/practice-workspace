@@ -52,6 +52,9 @@ name: Agent — Review A Pull Request
 #
 # WHAT IT NEEDS
 #   secrets.CLAUDE_CODE_OAUTH_TOKEN — the agent's auth token.
+#   secrets.POSTHOG_API_KEY — the project token of the factory's own PostHog
+#     project (EU), which can only write events. On the agent's step only:
+#     the PostHog plugin's hook reads it there to send the session's trace.
 #   secrets.FACTORY_PAT — the factory's one token. Only the steps that call
 #     GitHub get it; the agent's step does not. It pushes the review's
 #     commits and posts its verdict and inline comments, so it needs
@@ -183,6 +186,26 @@ jobs:
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code
 
+      - name: Install the PostHog plugin
+        # Sends the agent's session to the factory's PostHog project when it
+        # ends (#508): one SessionEnd hook, and nothing the agent reads. The
+        # plugin is not pinned, so this step fails if a new version brings a
+        # skill, a command, a subagent, an MCP server or another hook.
+        run: |
+          set -euo pipefail
+          claude plugin marketplace add PostHog/ai-plugin
+          claude plugin install posthog-telemetry@posthog
+          plugin="$(echo ~/.claude/plugins/cache/posthog/posthog-telemetry/*)"
+          for part in skills commands agents output-styles .mcp.json .lsp.json; do
+            if [ -e "$plugin/$part" ]; then
+              echo "::error::The PostHog plugin now brings $part into the agent."
+              exit 1
+            fi
+          done
+          jq -e 'keys - ["name", "description", "version", "author", "homepage", "repository", "license", "keywords"] == []' \
+            "$plugin/.claude-plugin/plugin.json"
+          jq -e '.hooks | keys == ["SessionEnd"]' "$plugin/hooks/hooks.json"
+
       - name: Cache agent-browser's Chrome
         uses: actions/cache@v4
         with:
@@ -212,6 +235,18 @@ jobs:
       - name: Review the pull request
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The agent's session goes to PostHog when it ends (#508), grouped
+          # by pull request. The key is on this step only: `npm run check`
+          # refuses it anywhere else.
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_HOST: https://eu.i.posthog.com
+          POSTHOG_LLMA_CC_ENABLED: "true"
+          POSTHOG_LLMA_PRIVACY_MODE: "false"
+          POSTHOG_LLMA_DISTINCT_ID: factory:review:${{ github.event.pull_request.number }}
+          # SessionEnd hooks share 1.5 s, and a plugin's own `timeout` does
+          # not raise that budget: the upload would be cut off. 30 s is the
+          # timeout the plugin declares for its hook.
+          CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS: "30000"
           OUTPUT_DIR: ${{ runner.temp }}
         run: npx tsx .sandcastle/agent-workflows/review/review.ts
 
