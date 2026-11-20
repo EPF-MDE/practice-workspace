@@ -12,6 +12,18 @@ const KIND_ENUM = `from enum import StrEnum
 class Kind(StrEnum):
     ANSWER = "answer"
     SELF_ASSESSMENT = "self-assessment"
+
+
+@dataclass(frozen=True)
+class Entry:
+    kind: Kind
+    competency: str | None
+
+
+class Record:
+    def latest(self, kind: Kind, competency: str | None) -> Entry | None: ...
+
+    def all(self, kind: Kind) -> list[Entry]: ...
 `;
 
 const checkCode = (files) => {
@@ -27,7 +39,7 @@ const checkCode = (files) => {
   });
 };
 
-describe("check-store-kinds", () => {
+describe("check-store-kinds passes", () => {
   it("passes a kind named through its enum, and the same word for a Step", () => {
     const result = checkCode({
       "backend/app/practice/steps.py": `from app.store import Kind
@@ -52,7 +64,9 @@ def answered(record, step):
     expect(result.stderr).toBe("");
     expect(result.status).toBe(0);
   });
+});
 
+describe("check-store-kinds refuses", () => {
   it("refuses a kind written as a literal where a Record is read", () => {
     const result = checkCode({
       "backend/app/practice/closing.py": `def latest(record):
@@ -62,6 +76,22 @@ def answered(record, step):
 
     expect(result.stderr).toContain(
       'backend/app/practice/closing.py:2: "self-assessment"'
+    );
+    expect(result.status).toBe(1);
+  });
+
+  it("refuses a kind literal passed to any Store method that takes a Kind", () => {
+    const result = checkCode({
+      "backend/app/store/__init__.py": `class InMemoryStore:
+    def save(self, student, kind: Kind, payload): ...
+`,
+      "backend/app/practice/sending.py": `def send(store, student):
+    store.save(student, "answer", {})
+`,
+    });
+
+    expect(result.stderr).toContain(
+      'backend/app/practice/sending.py:2: "answer"'
     );
     expect(result.status).toBe(1);
   });
