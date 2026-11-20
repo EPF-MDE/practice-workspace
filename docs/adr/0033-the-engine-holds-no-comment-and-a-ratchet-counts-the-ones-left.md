@@ -1,6 +1,6 @@
 # The Engine holds no comment, and a ratchet counts the ones left
 
-An agent writes most of the Engine's code, and reads the comments around it as truth. A comment that only says what the code shows costs tokens on every read. A stale one misleads. One that excuses a shortcut lets the agent copy the shortcut elsewhere. One that records a decision hides it where nobody searches, and it goes stale the moment someone changes the code without reading it. In November 2026 a pass sorted every comment in the Engine into these four kinds and deleted 931 of them: the decisions went into ADRs 0002 to 0032, the excuses into issues.
+An agent writes most of the Engine's code, and reads the comments around it as truth. A comment that only says what the code shows costs tokens on every read. A stale one misleads. One that excuses a shortcut lets the agent copy the shortcut elsewhere. One that records a decision hides it where nobody searches, and it goes stale the moment someone changes the code without reading it. In November 2026 a pass sorted every comment in the Engine into these four kinds and deleted 922 of them: the decisions went into ADRs 0002 to 0032, the excuses into issues.
 
 **So the Engine's code holds no comment. A name says what the code does, a test says how it behaves, an ADR says why, and an issue says what is left to fix.** CODING_STANDARDS.md's "A decision lives in an ADR, not a comment" is the rule the review applies; this ADR is the one `npm run check` enforces.
 
@@ -14,4 +14,4 @@ An agent writes most of the Engine's code, and reads the comments around it as t
 ## Considered options
 
 - **Ban comments outright, in one change.** Rejected: a comment that a tool reads at runtime, such as the docstring argparse prints as `backend/app/repository_reading/batch.py`'s `--help`, cannot simply go, and a ban leaves no room for one.
-- **Leave it to the review.** Rejected: CODING_STANDARDS.md already had the rule, and 943 comments had piled up behind it.
+- **Leave it to the review.** Rejected: CODING_STANDARDS.md already had the rule, and 944 comments had piled up behind it.
