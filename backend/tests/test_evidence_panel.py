@@ -127,17 +127,17 @@ def test_a_point_the_repository_cannot_show_says_to_show_it_at_the_eval(
     assert c2["not_visible"] == [
         {
             "point": "C2.f",
-            "text": "Not visible from your default repository: show it at the Eval",
+            "text": "Not visible from your Evidence Project: show it at the Eval",
         },
         {
             "point": "C2.g",
-            "text": "Not visible from your default repository: show it at the Eval",
+            "text": "Not visible from your Evidence Project: show it at the Eval",
         },
     ]
     assert {n["point"] for n in c3["not_visible"]} == {"C3.a", "C3.c", "C3.d", "C3.f"}
     assert all("show your PostHog at the Eval" in n["text"] for n in c3["not_visible"])
     assert c2["nothing_found_text"] == (
-        "Looked for on your default repository (3 branches, 2 pull requests read), "
+        "Looked for on your Evidence Project (3 branches, 2 pull requests read), "
         "nothing found yet: C2.a, C2.d, C2.e."
     )
 
@@ -172,7 +172,7 @@ def test_an_empty_repository_says_where_it_looked_what_to_do_and_that_it_is_not_
     assert c1["empty"] is True
     text = c1["empty_text"]
     assert text.startswith(
-        "On your default repository, no branch or pull request changes a file "
+        "On your Evidence Project, no branch or pull request changes a file "
         "beyond the course's code (1 branch, 0 pull requests read)."
     )
     assert "What to do next" in text

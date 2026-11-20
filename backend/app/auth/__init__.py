@@ -198,7 +198,7 @@ class Me(BaseModel):
     name: str
     group: str
     project: str
-    default_repository: str
+    evidence_project: str
 
 
 router = APIRouter()

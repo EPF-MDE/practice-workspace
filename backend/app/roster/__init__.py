@@ -1,7 +1,7 @@
-"""The roster: who may sign in, and their Group, Project and default repository.
+"""The roster: who may sign in, and their Group, Project and Evidence Project.
 
 `roster.csv` on the `workspace-data` branch, one row per Student:
-`github_login,github_id,name,group,project,default_repository`. A Student is found by
+`github_login,github_id,name,group,project,evidence_project`. A Student is found by
 the numeric `github_id`, never by login: a renamed account still gets in, and
 whoever takes over a freed login does not.
 """
@@ -30,7 +30,7 @@ class Group:
     directive: (
         str  # the content's block holding what only this Group receives: `::: oceens`
     )
-    # its Project's repository, the one each Student's default repository comes from
+    # its Project's repository, the one each Student's Evidence Project comes from
     upstream: str
 
 
@@ -50,7 +50,7 @@ class Student:
     name: str
     group: str  # "OcéENS" or "MATHutrice"
     project: str  # the Group's Project, same values as `group`
-    default_repository: str  # "owner/repo"
+    evidence_project: str  # "owner/repo"
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -82,7 +82,7 @@ COLUMNS = (
     "name",
     "group",
     "project",
-    "default_repository",
+    "evidence_project",
 )
 
 
@@ -113,7 +113,7 @@ def parse_roster(text: str) -> Roster:
                 name=row["name"].strip(),
                 group=row["group"].strip(),
                 project=row["project"].strip(),
-                default_repository=row["default_repository"].strip(),
+                evidence_project=row["evidence_project"].strip(),
             )
         )
     return Roster(students)

@@ -6,8 +6,8 @@ import { path, signIn } from "./helpers/path";
 // signs in. The Repository reading is the fake one: Alan's reading is
 // backend/tests/fixtures/repository-readings/alan-oceens.json, Hedy's repository reads
 // as empty. Access: a repository whose name says "private" is not readable.
-const ALAN = 1041; // OcéENS, work on a branch of his default repository
-const HEDY = 1042; // MATHutrice, an empty default repository
+const ALAN = 1041; // OcéENS, work on a branch of his Evidence Project
+const HEDY = 1042; // MATHutrice, an empty Evidence Project
 
 const sidebar = (page: Page) => path(page).getByTestId("evidence-panel");
 
@@ -35,20 +35,20 @@ test("the Evidence panel says what the Reading Day would find, then the closing 
     "Version 1 confirmed"
   );
 
-  // That Competency's default repository facts are greyed.
+  // That Competency's Evidence Project facts are greyed.
   const panel = sidebar(page);
   await expect(panel.getByTestId("evidence-panel-greyed")).toHaveText(
-    "The Reading Day reads alan/bakery for C1, not your default repository."
+    "The Reading Day reads alan/bakery for C1, instead of your Evidence Project."
   );
   await expect(close.evidence.getByTestId("declared")).toContainText(
     "https://github.com/alan/bakery"
   );
 
-  // Withdrawn: the default repository is read again.
+  // Withdrawn: the Evidence Project is read again.
   await close.evidence
-    .getByRole("button", { name: "Withdraw it: read my default repository" })
+    .getByRole("button", { name: "Withdraw it: back to my Evidence Project" })
     .click();
-  await expect(close.evidence).toContainText("None declared");
+  await expect(close.evidence).toContainText("Nothing else declared");
   await expect(panel.getByTestId("evidence-panel-greyed")).toHaveCount(0);
 });
 
@@ -86,7 +86,7 @@ async function checkAccess(evidence: Locator) {
     "an AI tool (Mistral, which may train on what it reads)"
   );
   await expect(evidence.getByTestId("notice")).toContainText(
-    "declare your default repository instead"
+    "keep your Evidence Project instead"
   );
   await expect(evidence.getByTestId("declare-help")).toContainText(
     "behind a login"
@@ -113,7 +113,7 @@ test("an empty repository reads as a provisional reading, and GitLab is told abo
   await page.goto("/competencies/C1");
 
   await expect(sidebar(page).getByTestId("evidence-panel-empty")).toContainText(
-    "On your default repository, no branch or pull request changes a file beyond the course's code (1 branch, 0 pull requests read)."
+    "On your Evidence Project, no branch or pull request changes a file beyond the course's code (1 branch, 0 pull requests read)."
   );
   await expect(sidebar(page).getByTestId("evidence-panel-empty")).toContainText(
     "a provisional reading, not a zero"

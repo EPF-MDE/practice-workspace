@@ -108,9 +108,9 @@ class RepositoryReader:
         """Every branch, and every pull request with its head (`refs/pull/<n>/head`): 2
         requests."""
         return (
-            self.get_all(f"repos/{student.default_repository}/branches?per_page=100"),
+            self.get_all(f"repos/{student.evidence_project}/branches?per_page=100"),
             self.get_all(
-                f"repos/{student.default_repository}/pulls?state=all&per_page=100"
+                f"repos/{student.evidence_project}/pulls?state=all&per_page=100"
             ),
         )
 

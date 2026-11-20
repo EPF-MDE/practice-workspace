@@ -31,7 +31,7 @@ from .steps import (
 def evidence_panel_view(
     competency: str, request: Request, student: Student = Depends(current_student)
 ) -> EvidencePanel:
-    """What the Reading Day would find on the Student's default repository today for
+    """What the Reading Day would find on the Student's Evidence Project today for
     this Competency: facts, never a Band."""
     c = _competency(request, competency, student)
     declared = _store(request).record(student).declaration(c)
@@ -72,7 +72,7 @@ def check_project_access(
     settings: Settings = request.app.state.settings
     return evidence_panel.access(
         project,
-        student.default_repository,
+        student.evidence_project,
         request.app.state.access_check,
         settings.github_app_slug,
     )

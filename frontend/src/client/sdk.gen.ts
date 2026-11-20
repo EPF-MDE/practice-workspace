@@ -218,7 +218,7 @@ export class RehearsalService {
      * Close Competency
      *
      * The closing step, one send: the Evidence Plan confirmed, with one example for the
-     * Eval, the Evidence Project declared there if any, and a snapshot of the evidence
+     * Eval, the Evidence Project declared there if any, and a snapshot of the Evidence
      * panel as shown.
      */
     public static closeCompetency<ThrowOnError extends boolean = true>(options: Options<rehearsalCloseCompetencyData, ThrowOnError>) {
@@ -236,8 +236,8 @@ export class RehearsalService {
     /**
      * Evidence Panel View
      *
-     * What the Reading Day would find on the Student's repository today for this
-     * Competency: facts, never a Band.
+     * What the Reading Day would find on the Student's Evidence Project today for
+     * this Competency: facts, never a Band.
      */
     public static evidencePanelView<ThrowOnError extends boolean = true>(options: Options<rehearsalEvidencePanelViewData, ThrowOnError>) {
         return (options.client ?? client).get<rehearsalEvidencePanelViewResponses, rehearsalEvidencePanelViewErrors, ThrowOnError>({

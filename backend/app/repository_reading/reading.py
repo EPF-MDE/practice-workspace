@@ -16,7 +16,7 @@ from app.roster import GROUPS
 COMPETENCIES = ("C1", "C2", "C3")
 
 # Points no repository can show (#451 points 4 and 5): the panel says "Not visible
-# from your default repository: show it at the Eval" (C2) or "show your PostHog at the
+# from your Evidence Project: show it at the Eval" (C2) or "show your PostHog at the
 # Eval" (C3).
 NOT_VISIBLE = {
     "C1": (),
@@ -40,7 +40,7 @@ class StudentToRead:
 
     login: str
     project: str  # the roster's `project`: "OcéENS" or "MATHutrice"
-    default_repository: str  # "owner/repo"
+    evidence_project: str  # "owner/repo"
 
     @property
     def upstream(self) -> str:

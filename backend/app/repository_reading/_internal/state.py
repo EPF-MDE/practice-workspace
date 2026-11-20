@@ -38,7 +38,7 @@ class _ReadingState:
         self.facts: dict[str, list[Fact]] = {c: [] for c in COMPETENCIES}
 
     def _workflow(self, sha: str, path: str) -> dict[str, Any] | None:
-        text = self.r.file_at(self.s.default_repository, sha, path)
+        text = self.r.file_at(self.s.evidence_project, sha, path)
         if text is None:
             return None
         try:
@@ -60,7 +60,7 @@ class _ReadingState:
 
     def _all_workflows(self, sha: str) -> dict[str, dict[str, Any]]:
         r = self.r.github.get(
-            f"repos/{self.s.default_repository}/contents/.github/workflows?ref={sha}"
+            f"repos/{self.s.evidence_project}/contents/.github/workflows?ref={sha}"
         )
         if r.status != 200 or not isinstance(r.body, list):
             return {}

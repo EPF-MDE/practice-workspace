@@ -225,9 +225,9 @@ export type Declaration = {
      */
     host: 'github' | 'gitlab';
     /**
-     * Is Default Repository
+     * Is Roster Evidence Project
      */
-    is_default_repository: boolean;
+    is_roster_evidence_project: boolean;
     /**
      * Declared At
      */
@@ -353,9 +353,9 @@ export type EvidencePanel = {
      */
     competency: string;
     /**
-     * Default Repository
+     * Evidence Project
      */
-    default_repository: string;
+    evidence_project: string;
     /**
      * Available
      */
@@ -609,9 +609,9 @@ export type Me = {
      */
     project: string;
     /**
-     * Default Repository
+     * Evidence Project
      */
-    default_repository: string;
+    evidence_project: string;
 };
 
 /**

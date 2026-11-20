@@ -54,7 +54,7 @@ def test_a_refresh_recomputes_only_the_ref_that_moved(recorded: type[Recorded]) 
 
     # A push to `course-2026`: its tip becomes a new commit, compared as the old tip
     # was.
-    branches_path = f"repos/{r.student.default_repository}/branches?per_page=100"
+    branches_path = f"repos/{r.student.evidence_project}/branches?per_page=100"
     branches = copy.deepcopy(r.github.recording[branches_path]["body"])
     moved = next(b for b in branches if b["name"] == "course-2026")
     old, new = moved["commit"]["sha"], "f" * 40

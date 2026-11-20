@@ -1,4 +1,4 @@
-github_login,github_id,name,group,project,default_repository
+github_login,github_id,name,group,project,evidence_project
 ada-oceens,1001,Ada Lovelace,OcéENS,OcéENS,ada-oceens/OceENS
 grace-math,1002,Grace Hopper,MATHutrice,MATHutrice,grace-math/MATHutrice
 margaret-oceens,1011,Margaret Hamilton,OcéENS,OcéENS,margaret-oceens/OceENS

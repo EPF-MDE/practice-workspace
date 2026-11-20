@@ -76,7 +76,7 @@
   "read_at": "2026-11-18T07:30:00+00:00",
   "refs": {},
   "student": {
-    "default_repository": "alan-oceens/OceENS",
+    "evidence_project": "alan-oceens/OceENS",
     "login": "alan-oceens",
     "project": "OcéENS"
   },

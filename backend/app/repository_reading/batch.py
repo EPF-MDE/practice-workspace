@@ -49,10 +49,10 @@ def roster_students(csv_text: str) -> list[StudentToRead]:
         StudentToRead(
             r["github_login"].strip(),
             r["project"].strip(),
-            r["default_repository"].strip(),
+            r["evidence_project"].strip(),
         )
         for r in rows
-        if r.get("default_repository")
+        if r.get("evidence_project")
     ]
 
 

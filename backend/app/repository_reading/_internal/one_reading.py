@@ -29,9 +29,9 @@ class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
 
     def run(self) -> RepositoryReading:
         s, r = self.s, self.r
-        repo = r.github.get(f"repos/{s.default_repository}")
+        repo = r.github.get(f"repos/{s.evidence_project}")
         if repo.status != 200:
-            raise GitHubError(f"GET repos/{s.default_repository}: {repo.status}")
+            raise GitHubError(f"GET repos/{s.evidence_project}: {repo.status}")
         self.default = repo.body["default_branch"]
         branch_list, pull_list = r._list_refs(s)
         branches_by_name, pulls_by_number = _ref_shas(branch_list, pull_list)

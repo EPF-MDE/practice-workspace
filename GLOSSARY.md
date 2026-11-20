@@ -26,7 +26,7 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Instructor**: The person who writes a Course's material and reads what its Students send. _Avoid_: teacher, admin
 
-**Roster**: The list of a Course's Students, keyed by their numeric GitHub id, naming each Student's Group and their default repository. Sign-in is checked against it. _Avoid_: class list, whitelist
+**Roster**: The list of a Course's Students, keyed by their numeric GitHub id, naming each Student's Group and their Evidence Project. Sign-in is checked against it. _Avoid_: class list, whitelist
 
 **Group**: The Students of a Course who receive the same Group-specific content, named once in the Course folder's settings. _Avoid_: class, cohort, team
 
@@ -54,11 +54,11 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Evidence Plan**: For one Student and each Competency, for each point of their Self-assessment not yet done, the evidence they will put in their Evidence Project before the Reading Day, and what to do to get there. The Practice workspace drafts it from their Self-assessment and the Student amends it until the Reading Day. _Avoid_: Practice Plan, roadmap
 
-**Evidence Project**: The one repository a Student declares as their evidence for the whole Course. What is read when they declare none is the Course's setting. _Avoid_: fork, portfolio, project
+**Evidence Project**: The repository a Student puts their evidence in, the one the Roster names for them. For a Competency, they may declare another in its closing step, which the Reading Day reads instead. _Avoid_: default repository, fork, portfolio, project
 
 **Repository reading**: What the Practice workspace reads of a Student's Evidence Project, to show the Student and the Instructor where it stands for each Competency. It never changes what a Path shows. _Avoid_: fork reading, scan
 
-**Evidence panel**: For one Student and each Competency, shown beside their Path and at its closing step: what the Repository reading finds on their default repository, and the Evidence Project they declared. What it showed at the closing step is kept with their Evidence Plan. _Avoid_: fork panel
+**Evidence panel**: For one Student and each Competency, shown beside their Path and at its closing step: what the Repository reading finds on their Evidence Project, and the one they declared instead, if any. What it showed at the closing step is kept with their Evidence Plan. _Avoid_: fork panel
 
 ### Time
 

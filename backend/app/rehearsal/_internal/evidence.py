@@ -29,7 +29,7 @@ logger = logging.getLogger("app.rehearsal")
 
 def _student_to_read(student: Student) -> StudentToRead:
     return StudentToRead(
-        student.github_login, student.project, student.default_repository
+        student.github_login, student.project, student.evidence_project
     )
 
 
@@ -56,7 +56,7 @@ def _declaration_payload(
     settings: Settings = request.app.state.settings
     checked = evidence_panel.access(
         project,
-        student.default_repository,
+        student.evidence_project,
         request.app.state.access_check,
         settings.github_app_slug,
     )
@@ -84,12 +84,12 @@ def _declaration_out(
         note=payload.get("note", ""),
         repository=project.repository,
         host=project.host,
-        is_default_repository=project.repository.lower()
-        == student.default_repository.lower(),
+        is_roster_evidence_project=project.repository.lower()
+        == student.evidence_project.lower(),
         declared_at=at,
         access=evidence_panel.access(
             project,
-            student.default_repository,
+            student.evidence_project,
             request.app.state.access_check,
             settings.github_app_slug,
         ),

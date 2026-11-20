@@ -26,7 +26,7 @@ class _Analysis(_ReadingState):
             return {"files": [], "closest": None}
         comparisons = {}
         for name, usha in self.upstream.items():
-            c = self.r.compare(self.s.default_repository, usha, sha)
+            c = self.r.compare(self.s.evidence_project, usha, sha)
             if c is not None:
                 comparisons[name] = c
         if not comparisons:
@@ -95,7 +95,7 @@ class _Analysis(_ReadingState):
         if c.get("ahead_by", 0) > len(commits):
             last_page = math.ceil(c["ahead_by"] / 100)
             r = self.r.github.get(
-                f"repos/{self.s.default_repository}/compare/{base}...{sha}?per_page=100&page={last_page}"
+                f"repos/{self.s.evidence_project}/compare/{base}...{sha}?per_page=100&page={last_page}"
             )
             if r.status == 200:
                 commits = r.body.get("commits", []) or commits
@@ -110,7 +110,7 @@ class _Analysis(_ReadingState):
             name, parent = FALLBACK_CHAIN[i], FALLBACK_CHAIN[i - 1]
             if name not in self.upstream or parent not in self.upstream:
                 continue
-            c = self.r.compare(self.s.default_repository, self.upstream[name], sha)
+            c = self.r.compare(self.s.evidence_project, self.upstream[name], sha)
             if c is None:
                 continue
             if c["behind_by"] == 0:

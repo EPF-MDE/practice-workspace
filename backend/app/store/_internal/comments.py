@@ -154,7 +154,7 @@ def _header(student: Student) -> str:
         f"{_MARKER.format(student.github_id)}\n"
         f"**Student:** {student.name} (`{student.github_login}`)\n"
         f"**Group:** {student.group}\n"
-        f"**Default repository:** [{student.default_repository}](https://github.com/{student.default_repository})\n\n"
+        f"**Evidence Project:** [{student.evidence_project}](https://github.com/{student.evidence_project})\n\n"
         "Each comment below is one send from the Rehearsal workspace: a line to read, "
         f"then a `{FENCE}` block the workspace reads back. Comments by people are "
         "ignored by it.\n"

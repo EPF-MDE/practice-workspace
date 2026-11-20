@@ -109,7 +109,7 @@ function Declared({
           disabled={over || withdraw.isPending}
           onClick={() => withdraw.mutate()}
         >
-          Withdraw it: read my default repository
+          Withdraw it: back to my Evidence Project
         </Button>
       </div>
     </div>
@@ -154,9 +154,9 @@ function DraftFields({
   draft,
   over,
   declared,
-  defaultRepository,
+  evidenceProject,
   edit,
-}: FieldProps & { declared: boolean; defaultRepository: string | undefined }) {
+}: FieldProps & { declared: boolean; evidenceProject: string | undefined }) {
   return (
     <>
       <label className="flex flex-col gap-1 text-sm">
@@ -173,17 +173,17 @@ function DraftFields({
           onChange={(event) => edit({ url: event.target.value })}
         />
       </label>
-      {defaultRepository !== undefined && (
+      {evidenceProject !== undefined && (
         <div>
           <button
             type="button"
             className="text-sm underline"
             disabled={over}
             onClick={() =>
-              edit({ url: `https://github.com/${defaultRepository}` })
+              edit({ url: `https://github.com/${evidenceProject}` })
             }
           >
-            Declare my default repository instead
+            Use my Evidence Project instead
           </button>
         </div>
       )}
@@ -262,7 +262,7 @@ export function EvidenceProject(props: Props) {
         />
       ) : (
         <p className="text-sm">
-          None declared: the Reading Day reads your default repository for{" "}
+          Nothing else declared: the Reading Day reads your Evidence Project for{" "}
           {competency}.
         </p>
       )}
@@ -271,7 +271,7 @@ export function EvidenceProject(props: Props) {
         draft={draft}
         over={over}
         declared={Boolean(declared)}
-        defaultRepository={data?.default_repository}
+        evidenceProject={data?.evidence_project}
         edit={edit}
       />
       <DraftActions

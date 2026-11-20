@@ -26,10 +26,10 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 
 def main() -> None:
-    login, project, default_repository, name = sys.argv[1:5]
+    login, project, evidence_project, name = sys.argv[1:5]
     github = RecordingGitHub(HttpGitHub(static_token(os.environ["GH_TOKEN"])))
     reading = RepositoryReader(github, InMemoryReadings()).read_now(
-        StudentToRead(login, project, default_repository)
+        StudentToRead(login, project, evidence_project)
     )
     save_recording(github.recording, FIXTURES / f"{name}.json.gz")
     print(

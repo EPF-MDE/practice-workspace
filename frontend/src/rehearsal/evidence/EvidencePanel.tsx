@@ -96,13 +96,13 @@ function Fact({ fact }: { fact: PanelFact }) {
 }
 
 /**
- * What the Reading Day would find on the Student's default repository today, for one
+ * What the Reading Day would find on the Student's Evidence Project today, for one
  * Competency: facts naming the point they support, never a Band.
  */
 export function EvidencePanelView({
   competency,
   onMyWorkMissing,
-  title = "What the Reading Day would find on your default repository",
+  title = "What the Reading Day would find on your Evidence Project",
 }: {
   competency: string;
   onMyWorkMissing: () => void;
@@ -120,15 +120,15 @@ export function EvidencePanelView({
 
   return (
     <section
-      aria-label={`Your default repository for ${competency}`}
+      aria-label={`Your Evidence Project for ${competency}`}
       data-testid="evidence-panel"
       className="flex flex-col gap-2 rounded-lg border p-4 text-sm"
     >
       <h2 className="font-semibold">{title}</h2>
-      {panel.isPending && <p>Reading your default repository…</p>}
+      {panel.isPending && <p>Reading your Evidence Project…</p>}
       {panel.isError && (
         <p role="alert">
-          Your default repository's panel cannot be shown just now.
+          Your Evidence Project's panel cannot be shown just now.
         </p>
       )}
       {panel.data && (
@@ -233,7 +233,7 @@ function PanelBody({ panel, ...actions }: PanelBodyProps) {
         data-greyed={panel.greyed}
       >
         <p className="text-muted-foreground">
-          <code>{panel.default_repository}</code>, read{" "}
+          <code>{panel.evidence_project}</code>, read{" "}
           <span data-testid="evidence-panel-read-at">
             {when(panel.read_at)}
           </span>

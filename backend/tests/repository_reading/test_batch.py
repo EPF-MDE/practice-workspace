@@ -18,7 +18,7 @@ from app.repository_reading.recorded import RecordedGitHub
 from .conftest import FIXTURES, NOW, REPOSITORIES
 
 ROSTER = (
-    "github_login,github_id,name,group,project,default_repository\r\n"
+    "github_login,github_id,name,group,project,evidence_project\r\n"
     "dorothy-math,1,A,MATHutrice,MATHutrice,dorothy-math/MATHutrice\r\n"
     "radia-oceens,2,B,OcéENS,OcéENS,radia-oceens/OceENS\r\n"
     "barbara-oceens,3,C,OcéENS,OcéENS,barbara-oceens/OceENS\r\n"
@@ -44,7 +44,7 @@ def recorded_github(*names: str) -> RecordedGitHub:
 
 def test_the_roster_gives_each_students_repository() -> None:
     students = roster_students(ROSTER)
-    assert [s.default_repository for s in students] == [
+    assert [s.evidence_project for s in students] == [
         "dorothy-math/MATHutrice",
         "radia-oceens/OceENS",
         "barbara-oceens/OceENS",

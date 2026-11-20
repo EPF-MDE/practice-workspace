@@ -7,7 +7,7 @@
     # GitHub or GitLab, else NotAProject
     project = parse_project(url)
     # readable, "not readable yet", or GitLab's instruction
-    access(project, default_repository, check, app_slug)
+    access(project, evidence_project, check, app_slug)
 
 The reading comes from a `RepositoryReadingSource`: the Repository reading (#467) in
 production, `OfflineRepositoryReading` locally and in tests. The access check is an

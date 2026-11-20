@@ -16,24 +16,22 @@ from pydantic import BaseModel
 
 from app.repository_reading import Fact, RepositoryReading, StudentToRead
 
-NOT_VISIBLE = "Not visible from your default repository: show it at the Eval"
-NOT_VISIBLE_C3 = (
-    "Not visible from your default repository: show your PostHog at the Eval"
-)
+NOT_VISIBLE = "Not visible from your Evidence Project: show it at the Eval"
+NOT_VISIBLE_C3 = "Not visible from your Evidence Project: show your PostHog at the Eval"
 C1_NOT_JUDGED = (
     "These are the files you changed beyond the course's code, per branch and pull "
     "request. "
     "The workspace does not judge them: at the Eval, you explain what they do and why."
 )
 UNAVAILABLE = (
-    "Your default repository could not be read just now. "
+    "Your Evidence Project could not be read just now. "
     "This says nothing about your work: the Reading Day will read it. "
     "Press Refresh later."
 )
 NOTICE = (
     "The Instructor and an AI tool (Mistral, which may train on what it reads) will "
     "read the project you declare. "
-    "If you cannot agree to that, declare your default repository instead."
+    "If you cannot agree to that, keep your Evidence Project instead."
 )
 PASSWORD_EXAMPLE = (
     "Evidence behind a password cannot be read on the Reading Day: for example an app "
@@ -66,12 +64,12 @@ def _looked(branches: int, pulls: int) -> str:
 
 def empty_text(branches: int, pulls: int) -> str:
     return (
-        "On your default repository, no branch or pull request changes a file "
+        "On your Evidence Project, no branch or pull request changes a file "
         "beyond the course's code "
         f"({_looked(branches, pulls)} read). "
-        "What to do next: push your work to any branch of your default repository, "
+        "What to do next: push your work to any branch of your Evidence Project, "
         "or open a pull request, then press Refresh; "
-        "or declare an Evidence Project for this Competency in its closing step. "
+        "or declare another Evidence Project for this Competency in its closing step. "
         "This is a provisional reading, not a zero."
     )
 
@@ -79,7 +77,7 @@ def empty_text(branches: int, pulls: int) -> str:
 def greyed_text(repository: str, competency: str) -> str:
     return (
         f"The Reading Day reads `{repository}` for {competency}, "
-        "not your default repository"
+        "instead of your Evidence Project"
     )
 
 
@@ -112,7 +110,9 @@ class Declaration(BaseModel):
     note: str  # what to read
     repository: str  # "owner/name" (GitLab: the project's full path)
     host: Literal["github", "gitlab"]
-    is_default_repository: bool  # the Student declared their default repository itself
+    is_roster_evidence_project: (
+        bool  # the Student declared their Evidence Project itself
+    )
     declared_at: datetime
     access: Access
 
@@ -127,7 +127,7 @@ class DeclarationHelp(BaseModel):
 
 class EvidencePanel(BaseModel):
     competency: str
-    default_repository: str  # "owner/repo"
+    evidence_project: str  # "owner/repo"
     # False: the repository could not be read now (`unavailable` says so)
     available: bool
     unavailable: str | None
@@ -166,7 +166,7 @@ def _fact(fact: Fact) -> PanelFact:
 def _greyed(
     competency: str, declaration: Declaration | None
 ) -> tuple[bool, str | None]:
-    if declaration is None or declaration.is_default_repository:
+    if declaration is None or declaration.is_roster_evidence_project:
         return False, None
     return True, greyed_text(declaration.repository, competency)
 
@@ -181,7 +181,7 @@ def build_panel(
     looked = _looked(reading.branches_read, reading.pull_requests_read)
     return EvidencePanel(
         competency=competency,
-        default_repository=reading.student.default_repository,
+        evidence_project=reading.student.evidence_project,
         available=True,
         unavailable=None,
         read_at=reading.read_at,
@@ -196,7 +196,7 @@ def build_panel(
         facts=[_fact(f) for f in found.facts],
         nothing_found=list(found.nothing_found),
         nothing_found_text=(
-            f"Looked for on your default repository ({looked} read), "
+            f"Looked for on your Evidence Project ({looked} read), "
             "nothing found yet: "
             f"{', '.join(nothing)}."
             if nothing
@@ -223,7 +223,7 @@ def unavailable_panel(
     greyed, grey = _greyed(competency, declaration)
     return EvidencePanel(
         competency=competency,
-        default_repository=student.default_repository,
+        evidence_project=student.evidence_project,
         available=False,
         unavailable=UNAVAILABLE,
         read_at=None,
