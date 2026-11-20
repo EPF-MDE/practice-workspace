@@ -17,6 +17,8 @@ repository() {
   git ls-files -z | xargs -0 node scripts/check-file-tokens.js
   step "Repository: secrets (POSTHOG_API_KEY on the agent's step only)"
   node scripts/check-agent-secrets.js .github/workflows/*.yml
+  step "Repository: triggers (no pull_request_target, no workflow_run)"
+  node scripts/check-workflow-triggers.js .github/workflows/*.yml
   step "Repository: format (Markdown, JSON, configuration)"
   npx biome format .
   step "Repository: lint (everything outside the front end)"
