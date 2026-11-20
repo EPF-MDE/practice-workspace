@@ -224,8 +224,8 @@ jobs:
           #    pull request is found by the branch the implement job pushes,
           #    `agent/spec-<spec>-ticket-<ticket>-<run id>`. A pull request
           #    closed without merging leaves its ticket open with none, so a
-          #    later run builds it again: close the ticket, or label it
-          #    `agent:blocked`, to stop that.
+          #    later run builds it again: label the ticket `agent:blocked` to
+          #    stop that. Closing it instead would count it as merged.
           jq -r '
             [ .[]
               | { number,
@@ -746,6 +746,10 @@ jobs:
   # limit, so an empty queue is genuinely the only brake on it. That is worth
   # sitting with before you point this at your own repository.
   #
+  # It does not re-dispatch after a failed decompose: with no queue written,
+  # the next run would decompose again, and again. A spec the decomposer could
+  # not cut into 12 tickets or fewer stops there, red, for the Instructor.
+  #
   # It re-dispatches after a *failed* ticket too, and that is deliberate: the
   # implement job parks a ticket it could not finish with `agent:blocked`, and
   # `survey` skips a parked ticket, so the next run moves on to a different one
@@ -756,6 +760,8 @@ jobs:
     if: |
       always() &&
       needs.survey.result == 'success' &&
+      needs.decompose.result != 'failure' &&
+      needs.decompose.result != 'cancelled' &&
       contains(fromJSON('["decompose", "implement"]'), needs.survey.outputs.mode)
     runs-on: ubuntu-latest
     timeout-minutes: 5
