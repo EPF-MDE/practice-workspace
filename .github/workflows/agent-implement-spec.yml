@@ -539,8 +539,6 @@ jobs:
           agent-browser install
 
       - name: Claim the ticket
-        # Moving the label first is what stops a cron tick that lands during a
-        # long build from picking the same ticket up again.
         env:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: |
