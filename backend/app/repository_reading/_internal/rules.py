@@ -1,6 +1,3 @@
-"""The rules a reading follows: the upstream branches it compares with, and what it
-looks for in the files and pull requests of a repository."""
-
 from __future__ import annotations
 
 import re
@@ -17,9 +14,6 @@ LOCKFILES = {
     "bun.lockb",
 }
 
-# Each Fallback Branch is built on the one before it
-# (assets/course-2026-branches/course-2026-branches.mmd), and a parent is merged forward
-# into its child.
 FALLBACK_CHAIN = (
     "course-2026",
     "course-2026-fallback-clean-bench",

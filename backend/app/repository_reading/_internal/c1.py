@@ -1,5 +1,3 @@
-"""C1's facts: what each branch and pull request changes."""
-
 from __future__ import annotations
 
 from dataclasses import replace
@@ -19,9 +17,6 @@ from .state import _ReadingState
 
 
 class _C1Facts(_ReadingState):
-    # --- C1
-    # --------------------------------------------------------------------------------
-
     def _c1(
         self,
         branch_list: list[dict[str, Any]],
@@ -42,7 +37,7 @@ class _C1Facts(_ReadingState):
             sha = p["head"]["sha"]
             a = self.analyses[sha]
             if not a["files"] or sha in branch_shas:
-                continue  # its work is listed under its branch
+                continue
             deleted = p["head"]["ref"] not in branches_by_name
             where = f"pull request #{p['number']}" + (
                 " (its branch was deleted)" if deleted else ""

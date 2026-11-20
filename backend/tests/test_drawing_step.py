@@ -1,11 +1,3 @@
-"""A drawing step through the HTTP API: the Example Drawing at once, the
-Reference Drawing and its check points only once the Student's drawing is
-sent, the drawing kept with every version, and the missed check points ticked.
-
-Signed in as a roster Student, on the fixture content (tests/fixtures/content)
-and the in-memory Store.
-"""
-
 import base64
 import json
 from datetime import datetime
@@ -95,7 +87,6 @@ def test_once_sent_the_page_shows_the_reference_and_the_drawing_sent(
 
     assert block(page, "reference-drawing")["locked"] is False
     assert step(page)["drawing"]["version"] == 1
-    # another drawing step stays locked
     assert block(page, "reference-drawing", "redraw-more")["locked"] is True
 
 
@@ -153,9 +144,9 @@ def test_only_the_references_check_points_can_be_ticked(ada: TestClient) -> None
 @pytest.mark.parametrize(
     "body",
     [
-        {**SEND, "png_base64": base64.b64encode(b"GIF89a").decode()},  # not a PNG
+        {**SEND, "png_base64": base64.b64encode(b"GIF89a").decode()},
         {**SEND, "png_base64": "not base64!"},
-        {**SEND, "snapshot": {"shapes": []}},  # not a tldraw snapshot
+        {**SEND, "snapshot": {"shapes": []}},
     ],
 )
 def test_a_drawing_that_is_not_one_is_refused(

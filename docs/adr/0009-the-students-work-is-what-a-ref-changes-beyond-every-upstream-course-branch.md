@@ -1,0 +1,6 @@
+# The Student's work is what a ref changes beyond every upstream course branch
+
+A Student's Evidence Project usually starts from their Group's upstream repository, and may bring in the upstream's own course branches, such as a Fallback Branch or a Worked Example. Crediting the Student with that code would show work they did not do; requiring them to work on one branch would miss work pushed elsewhere. **So the Repository reading reads every branch and the head of every pull request, closed ones and those whose branch was deleted included, compares each ref with each upstream course branch, and counts a file as the Student's only if it differs in every comparison.** Code a course branch brought in is credited to that branch, never to the Student, whoever authored the commits.
+
+- **A repository that shares the upstream's history is never read on its own**: one of its refs that cannot be compared with any upstream branch is unreadable. Only a repository GitHub does not link to the upstream is read on its own, where every file it holds is the Student's.
+- **The Fallback Branches are built one on the next**, a parent merged forward into its child, and the reading relies on that order to find the last one the default branch contains.

@@ -4,7 +4,6 @@ import type { StepOut } from "@/client";
 import { cn } from "@/lib/utils";
 import { EvidencePanelView, openQuestion } from "./evidence/EvidencePanel";
 
-/** The session's 2 hours: three Competencies, 40 minutes each. */
 const SESSION = ["C1", "C2", "C3"];
 const MINUTES_PER_COMPETENCY = 40;
 
@@ -21,7 +20,6 @@ function useMinutesSince(start: number) {
   return Math.max(0, Math.floor((now - start) / 60_000));
 }
 
-/** Each step's minutes into the Competency: when it starts and when it ends. */
 function schedule(steps: StepOut[]) {
   return steps.map((step, index) => {
     const from = steps

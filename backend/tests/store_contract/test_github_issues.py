@@ -1,5 +1,3 @@
-"""The GitHub Store only: issues, comments, restarts, failures."""
-
 from __future__ import annotations
 
 import json
@@ -30,7 +28,7 @@ def test_first_sign_in_opens_one_labelled_issue_with_a_short_header(
         and "OcéENS" in issue["body"]
         and "ada-oceens/OceENS" in issue["body"]
     )
-    assert "@" not in issue["body"]  # no mention: GitHub would notify
+    assert "@" not in issue["body"]
 
 
 def test_after_a_restart_the_issue_is_found_again_not_opened_twice(
@@ -41,7 +39,7 @@ def test_after_a_restart_the_issue_is_found_again_not_opened_twice(
         **github.issues[401],
         "number": 999,
         "labels": [{"name": "other"}],
-    }  # not ours
+    }
 
     restarted = github_store(github)
     restarted.open_record(ADA)
@@ -67,7 +65,6 @@ def test_a_record_survives_a_restart_rebuilt_from_the_comments(
     assert (
         after.record(ADA).history(Kind.ANSWER, "C1", "guided-calculation")[0] == first
     )
-    # and sending after the restart continues the versions
     assert (
         after.save_answer(
             ADA, "C1", "guided-calculation", {"sentence": "third"}
@@ -164,7 +161,6 @@ def test_a_declaration_comment_stores_one_for_every_competency(
 
 
 def _block(body: str) -> dict[str, Any]:
-    """The JSON block a send's comment holds."""
     block: dict[str, Any] = json.loads(
         body.split("```json practice\n", 1)[1].split("\n```", 1)[0]
     )
@@ -204,9 +200,6 @@ def test_comments_by_another_app_are_not_sends(github: FakeGitHub) -> None:
 def test_a_second_issue_for_the_same_student_drops_nothing_from_their_record(
     github: FakeGitHub,
 ) -> None:
-    # A restart seconds after the first sign-in: the label search does not list
-    # the issue yet, so the restarted Store opens a second one for the same
-    # Student.
     first = github_store(github)
     first.save_answer(ADA, "C1", "guided-calculation", {"sentence": "first"})
     github.unlisted = {401}

@@ -1,15 +1,8 @@
-// Fails when a workflow hands the agent's own secrets to a step that does not
-// run the agent, or hands a step every secret at once. Why: #503, story 36
-// and "Added on top: PostHog". The agent's step is the one that runs a script
-// in .sandcastle/agent-workflows/.
-// Usage: node scripts/check-agent-secrets.js <workflow file>...
-
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 
 const AGENT_ONLY = ["CLAUDE_CODE_OAUTH_TOKEN", "POSTHOG_API_KEY"];
 
-// The agent-only secrets an `env` map sets or reads.
 const agentSecretsIn = (env) =>
   AGENT_ONLY.filter((name) => JSON.stringify(env ?? {}).includes(name));
 

@@ -6,9 +6,6 @@ export type ClientOptions = {
 
 /**
  * Access
- *
- * Whether the Reading Day can read a declared project: access only, never its
- * contents.
  */
 export type Access = {
     /**
@@ -237,8 +234,6 @@ export type Declaration = {
 
 /**
  * DeclarationHelp
- *
- * What a Student is told as they declare an Evidence Project.
  */
 export type DeclarationHelp = {
     /**

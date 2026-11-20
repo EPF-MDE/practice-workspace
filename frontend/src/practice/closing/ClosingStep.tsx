@@ -17,7 +17,6 @@ type Props = DraftScope & {
   page: CompetencyPage;
 };
 
-/** The closing step's state: the levels, then the plan drafted from them, and their sends. */
 function useClosing({ page, ...scope }: DraftScope & { page: CompetencyPage }) {
   const levels = useLevels(scope, page);
   const sendLevels = useSendLevels(scope, page, levels.rated);
@@ -33,11 +32,6 @@ function useClosing({ page, ...scope }: DraftScope & { page: CompetencyPage }) {
   return { levels, sendLevels, plan, example, evidence, sending };
 }
 
-/**
- * The closing step: a level per point, the Evidence Plan drafted as the
- * Student rates, their own text winning once edited, and one send that
- * confirms it with an example for the Eval.
- */
 export function ClosingStep({ studentId, competency, step, page }: Props) {
   const points = step.blocks.filter(
     (b): b is PointBlock & { type: "point" } => b.type === "point"

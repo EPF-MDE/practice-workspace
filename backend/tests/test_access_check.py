@@ -1,10 +1,3 @@
-"""The Evidence Project access check through the Student Connector App,
-GitHub's HTTP faked.
-
-Readable when the App is installed on the repository, or the repository is public;
-None (could not check) when GitHub fails or the App has no credentials.
-"""
-
 from __future__ import annotations
 
 import base64
@@ -50,11 +43,9 @@ def test_a_repository_the_app_is_installed_on_is_readable_asked_as_the_app(
     )
 
     assert check.can_read("ada/secret") is True
-    assert seen[0].headers["Authorization"].startswith("Bearer ey")  # the App's JWT
+    assert seen[0].headers["Authorization"].startswith("Bearer ey")
     assert all(r.method == "GET" for r in seen)
-    assert not any(
-        "/contents" in r.url.path for r in seen
-    )  # access only, never contents
+    assert not any("/contents" in r.url.path for r in seen)
 
 
 def test_a_public_repository_is_readable_without_the_app(key: str) -> None:
@@ -95,5 +86,5 @@ def test_an_answer_is_kept_a_minute(key: str) -> None:
     now[0] = 61
     check.can_read("ada/secret")
 
-    assert asked == 2  # installation, then public
+    assert asked == 2
     assert len(seen) == 4

@@ -14,10 +14,6 @@ import { reviewSchema } from "./review-schema";
 const BASE_REF = required("BASE_REF");
 const VERDICT = "/tmp/review-verdict.md";
 
-// The agent fixes and commits, writes the verdict file, and hands back the
-// findings it left. This script lists those findings in the verdict. The
-// workflow pushes the commits, posts the verdict and the inline comments,
-// and marks the PR ready.
 const result = await runWithExtraction({
   name: "review",
   agent: claudeAgent(),
@@ -36,7 +32,6 @@ const result = await runWithExtraction({
 const git = (...args: string[]): string =>
   execFileSync("git", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
 
-// The diff after the agent's commits: the comments land on that.
 const hunks = diffLines(git("diff", `origin/${BASE_REF}...HEAD`));
 const { comments: found }: z.infer<typeof reviewSchema> = result.output;
 const inDiff = ({ path: file, line }: { path: string; line: number }) =>
@@ -49,14 +44,11 @@ for (const { path: file, line } of dropped) {
   );
 }
 
-// With no verdict, the findings still need a home. No `## Standards:`
-// heading, so the workflow leaves the PR a draft.
 const verdict = fs.existsSync(VERDICT)
   ? fs.readFileSync(VERDICT, "utf8")
   : "The review run produced no verdict. See the logs. Re-add `agent:review` to retry.\n";
 fs.writeFileSync(VERDICT, addLeftFindings(verdict, posted, dropped));
 
-// The request body for POST /repos/{owner}/{repo}/pulls/{n}/reviews.
 writeJson("review-comments.json", {
   commit_id: git("rev-parse", "HEAD").trim(),
   event: "COMMENT",

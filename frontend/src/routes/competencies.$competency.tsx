@@ -21,7 +21,6 @@ export const Route = createFileRoute("/competencies/$competency")({
   component: CompetencyPage,
 });
 
-/** Which steps are finished, which greyed, and which one the Student is on. */
 function progressOf(page: PageData, read: string[]) {
   const { steps } = page;
   const finished = finishedSteps(steps, read);

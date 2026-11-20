@@ -1,12 +1,3 @@
-"""Evidence Project declarations: the project URL, and whether the Reading Day can read
-it.
-
-Only access is checked, never contents. A GitHub repository is readable when
-it is public, or when the course GitHub App (the Student Connector) is
-installed on it; GitLab gets no automatic check, only the instruction to give
-the Instructor Reporter access.
-"""
-
 from __future__ import annotations
 
 import re
@@ -60,15 +51,13 @@ def github_how(app_slug: str, name: str) -> str:
 
 
 class NotAProject(ValueError):
-    """A URL that is not a GitHub or GitLab project."""
+    pass
 
 
 @dataclass(frozen=True)
 class Project:
     host: Host
-    repository: (
-        str  # "owner/name"; on GitLab, the project's full path ("group/subgroup/name")
-    )
+    repository: str
 
     @property
     def url(self) -> str:
@@ -83,7 +72,6 @@ _SEGMENT = re.compile(r"^[\w.-]+$")
 
 
 def parse_project(url: str) -> Project:
-    """The project a URL points into: its repository page, or any page inside it."""
     m = re.match(r"^https://(?:www\.)?(github|gitlab)\.com/([^?#]+)", url.strip())
     if not m:
         raise NotAProject(
@@ -93,7 +81,7 @@ def parse_project(url: str) -> Project:
     parts = [p for p in path.split("/") if p]
     if host == GITHUB:
         parts = parts[:2]
-    elif "-" in parts:  # GitLab: /group/project/-/tree/main
+    elif "-" in parts:
         parts = parts[: parts.index("-")]
     if len(parts) < 2 or not all(_SEGMENT.match(p) for p in parts):
         raise NotAProject(
@@ -104,15 +92,12 @@ def parse_project(url: str) -> Project:
 
 
 class AccessCheck(Protocol):
-    def can_read(self, repository: str) -> bool | None:
-        """Whether the course GitHub App can read a GitHub repository; None when it
-        could not check."""
+    def can_read(self, repository: str) -> bool | None: ...
 
 
 def access(
     project: Project, evidence_project: str, check: AccessCheck, app_slug: str
 ) -> Access:
-    """What the Student reads about a declared project's access."""
     if project.host == GITLAB:
         return Access(status=GITLAB_ACCESS, message=GITLAB_MESSAGE, how=GITLAB_HOW)
     if project.repository.lower() == evidence_project.lower():
@@ -132,14 +117,6 @@ def access(
 
 
 class AppAccessCheck:
-    """Through the Student Connector App: installed on the repository, or the repository
-    public.
-
-    `GET /repos/{repo}/installation` with the App's JWT answers 200 when the App is
-    installed with access to that repository; else a public repository is still
-    readable. Answers are kept a minute.
-    """
-
     TTL = 60.0
 
     def __init__(
@@ -190,11 +167,6 @@ class AppAccessCheck:
 
 
 class FakeAccessCheck:
-    """For tests and local runs: `readable` repositories are readable, others not.
-
-    With no set given, every repository is readable unless its name contains "private".
-    """
-
     def __init__(self, readable: set[str] | Callable[[str], bool | None] | None = None):
         if readable is None:
             self.rule: Callable[[str], bool | None] = lambda repo: (

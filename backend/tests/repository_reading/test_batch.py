@@ -1,6 +1,3 @@
-"""The batch reading: every repository on the roster, one file per Student on
-`workspace-data`."""
-
 import base64
 import json
 

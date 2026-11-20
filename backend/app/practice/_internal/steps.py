@@ -1,5 +1,3 @@
-"""The rules of a page: the cut-offs, what a step withholds, and the step as sent."""
-
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -44,8 +42,6 @@ from .models import (
     WaitsFor,
 )
 
-# --- Rules -------------------------------------------------------------------
-
 
 def _now() -> datetime:
     return datetime.now(UTC)
@@ -80,9 +76,6 @@ def _refuse_if_closed(settings: Settings, what: str) -> None:
 
 
 def _unlocked(step: Step, record: Record, competency: str) -> bool:
-    """An answer block is released once the Student's own answer to its step is stored;
-    in a drawing step, the Reference Drawing and any answer block once their drawing
-    is."""
     if step.kind == "drawing":
         return record.latest(Kind.DRAWING, competency, step.id) is not None
     return (
@@ -92,8 +85,6 @@ def _unlocked(step: Step, record: Record, competency: str) -> bool:
 
 
 def _waits_for(step: Step, page: Page, record: Record) -> Step | None:
-    """The earlier step this one still waits for, None once its answer is stored (or if
-    it waits for none)."""
     before = page.step(step.after) if step.after else None
     return before if before and not _unlocked(before, record, page.competency) else None
 
@@ -174,8 +165,6 @@ def _version(entry: Entry) -> SentVersion:
 
 
 def _hints(page: Page, record: Record) -> dict[str, list[CheckPointOut]]:
-    """Per point of the review, the check points the Student ticked as missed: a hint
-    beside it."""
     hints: dict[str, list[CheckPointOut]] = {}
     for step in page.steps:
         reference = step.reference
@@ -231,9 +220,6 @@ def _step_out(
             if e.key == step.id
         ],
     )
-
-
-# --- Routes ------------------------------------------------------------------
 
 
 def _store(request: Request) -> Store:

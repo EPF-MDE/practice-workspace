@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "react", "jsx-a11y", "import"],
-  "jsPlugins": ["./lint-rules/input.js"],
+  "jsPlugins": ["./lint-rules/input.js", "./lint-rules/comments.js"],
   "categories": {
     "correctness": "error"
   },
@@ -84,7 +84,8 @@
       }
     ],
     "import/no-default-export": "error",
-    "input/no-number-coercion": "error"
+    "input/no-number-coercion": "error",
+    "comments/no-comments": "error"
   },
   "overrides": [
     {

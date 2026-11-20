@@ -15,13 +15,6 @@ import {
   step,
 } from "./helpers/path";
 
-// C1's whole Path on the Demo course (demo-course/c1.md), one Student of each
-// Group: a question, a draft kept across a reload, each Locked answer and the
-// Reference Drawing only after the Student's own, the optional redraw never
-// waited for, the Transfer filling its point, and an Evidence Plan the Student
-// edits and confirms. The roster's Students 1011 and 1012 are this file's
-// alone: the in-memory Store keeps their sends while the server runs.
-
 type Student = {
   id: number;
   group: Group;
@@ -80,7 +73,6 @@ for (const student of STUDENTS) {
   });
 }
 
-/** The Group's own service, and a question folded by default. */
 async function readAndAsk(page: Page, student: Student) {
   const read = step(page, "read-the-scenario");
   await expectOwnGroupOnly(read, student.group);
@@ -94,7 +86,6 @@ async function readAndAsk(page: Page, student: Student) {
   ).toContainText("Is the peak always at opening time?");
 }
 
-/** A draft survives a reload, unsent; the answer shows once the Student's own is stored. */
 async function estimate(page: Page, student: Student) {
   const guided = step(page, "estimate-the-load");
   await guided.locator('[name="sentence"]').fill("___ is at most ___");
@@ -114,11 +105,10 @@ async function estimate(page: Page, student: Student) {
   await expectFinished(page, "estimate-the-load");
 }
 
-/** The redraw and its check points, one missed; then the number changes. */
 async function redrawAndChange(page: Page, student: Student) {
   const checkPoints = await redraw(page, step(page, "redraw"), student.chain);
   await expect(checkPoints).toHaveCount(student.checkPoints);
-  await checkPoints.nth(1).check(); // missed: the one on C1.c
+  await checkPoints.nth(1).check();
   await expectFinished(page, "redraw");
 
   const changes = step(page, "the-number-changes");
@@ -133,7 +123,6 @@ async function redrawAndChange(page: Page, student: Student) {
   );
 }
 
-/** The missed check point beside its point, the levels, the plan drafted from them. */
 async function rateC1(page: Page) {
   const close = closing(page);
   await expect(close.section.getByTestId("hints-C1.c")).toBeVisible();
@@ -145,14 +134,13 @@ async function rateC1(page: Page) {
   );
   await close.rate("C1.c", "Not yet");
   await close.rate("C1.d", "I have done it");
-  await expect(close.sendSelfAssessment).toBeDisabled(); // its link first
+  await expect(close.sendSelfAssessment).toBeDisabled();
   await close.link("C1.d", LINK);
   await expect(close.plan).not.toHaveValue(/C1\.d/);
   await close.sendSelfAssessment.click();
   await expect(close.section.getByTestId("sa-sent")).toContainText("Version 1");
 }
 
-/** The Student's text wins; a removed block leaves the levels as they are. */
 async function editAndConfirmC1(page: Page) {
   const close = closing(page);
   const drafted = await close.plan.inputValue();

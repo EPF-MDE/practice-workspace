@@ -1,5 +1,3 @@
-"""The closing step's routes: Self-assessment, Evidence Plan, example for the Eval."""
-
 from __future__ import annotations
 
 from typing import Any
@@ -54,8 +52,6 @@ def send_self_assessment(
     request: Request,
     student: Student = Depends(current_student),
 ) -> Stored:
-    """Store the Self-assessment: one level per point rated, a link for "I have done
-    it", and the missed check points this browser kept since the drawing was sent."""
     page = _page(request, competency, student)
     levels = _levels(page, sent.levels)
     settings: Settings = request.app.state.settings
@@ -85,8 +81,6 @@ def draft_evidence_plan(
     request: Request,
     student: Student = Depends(current_student),
 ) -> Draft:
-    """The Evidence Plan drafted from levels not sent yet, as the Student rates. Stores
-    nothing."""
     page = _page(request, competency, student)
     levels = _levels(page, sent.levels) if sent.levels else {}
     return Draft(text=_draft(page, _store(request).record(student), levels))
@@ -99,9 +93,6 @@ def send_evidence_plan(
     request: Request,
     student: Student = Depends(current_student),
 ) -> EvidencePlanVersion:
-    """Store the Student's own Evidence Plan text, a new dated version; it wins over the
-    draft. The example for the Eval and the confirmation carry over from the closing
-    step."""
     page = _page(request, competency, student)
     _at_most(sent.text, MAX_PLAN_CHARS, "Your Evidence Plan")
     _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Plan")
@@ -127,9 +118,6 @@ def close_competency(
     request: Request,
     student: Student = Depends(current_student),
 ) -> EvidencePlanVersion:
-    """The closing step, one send: the Evidence Plan confirmed, with one example for the
-    Eval, the Evidence Project declared there if any, and a snapshot of the Evidence
-    panel as shown."""
     page = _page(request, competency, student)
     if not sent.example.strip():
         raise HTTPException(422, "Write one example you will show at the Eval")

@@ -1,5 +1,3 @@
-"""Questions: one field per step, each question stored with its Competency and step."""
-
 from datetime import datetime
 from typing import Any
 

@@ -1,13 +1,3 @@
-"""The Repository reading: one reading of a Student's repository, for three readers
-(spec #460, ticket #467).
-
-    reader = RepositoryReader(github, readings)
-    # the stored reading; a repository never read is read now
-    reading = reader.read(student)
-    # 2 requests if no ref moved; else recomputes the refs that moved
-    reading = reader.refresh(student)
-"""
-
 from .github import (
     GitHub,
     HttpGitHub,

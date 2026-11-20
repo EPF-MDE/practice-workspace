@@ -1,14 +1,9 @@
-"""The token each repository is read with: the Student Connector's installation on
-it, asked once; a repository it is not installed on is asked again after a while."""
-
 from collections.abc import Callable
 
 from app.repository_reading.github import INSTALLED_TTL, tokens_per_repository
 
 
 class Installations:
-    """The App's installations, by repository, counting every question."""
-
     def __init__(self, tokens: dict[str, str]) -> None:
         self.tokens = tokens
         self.asked: list[str] = []

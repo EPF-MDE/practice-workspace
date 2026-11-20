@@ -1,9 +1,3 @@
-"""A choice field (#470): the Student picks one of its options, and nothing
-else is stored.
-
-Through the HTTP API, on a content folder holding one step with a choice field.
-"""
-
 from pathlib import Path
 
 import pytest

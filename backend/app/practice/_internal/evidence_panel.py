@@ -1,5 +1,3 @@
-"""The Evidence panel's and the Evidence Project's routes."""
-
 from __future__ import annotations
 
 from fastapi import Depends, HTTPException, Request
@@ -32,8 +30,6 @@ from .steps import (
 def evidence_panel_view(
     competency: str, request: Request, student: Student = Depends(current_student)
 ) -> EvidencePanel:
-    """What the Reading Day would find on the Student's Evidence Project today for
-    this Competency: facts, never a Band."""
     return _read_panel(request, student, competency, refresh=False)
 
 
@@ -41,16 +37,12 @@ def evidence_panel_view(
 def refresh_evidence_panel(
     competency: str, request: Request, student: Student = Depends(current_student)
 ) -> EvidencePanel:
-    """Check the Evidence Project for a push since its last reading, and recompute what
-    moved. Stores nothing in the record."""
     return _read_panel(request, student, competency, refresh=True)
 
 
 def _read_panel(
     request: Request, student: Student, competency: str, refresh: bool
 ) -> EvidencePanel:
-    """A Competency's panel, from the Evidence Project declared now, its access checked
-    again."""
     c = _competency(request, competency, student)
     declared = _store(request).record(student).declaration()
     return evidence_panel.read_panel(
@@ -68,8 +60,6 @@ def check_project_access(
     request: Request,
     student: Student = Depends(current_student),
 ) -> evidence_panel.Access:
-    """Whether the Reading Day could read this project, before declaring it. Stores
-    nothing."""
     try:
         project = evidence_panel.parse_project(sent.url)
     except NotAProject as error:
@@ -89,8 +79,6 @@ def declare_evidence_project(
     request: Request,
     student: Student = Depends(current_student),
 ) -> Declaration:
-    """Declare (or change) the Evidence Project of every Competency, until the Reading
-    Day."""
     declaration = _declaration_payload(request, student, sent)
     _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Project")
     entry = _store(request).save_declaration(student, declaration)
@@ -103,8 +91,6 @@ def declare_evidence_project(
 def withdraw_evidence_project(
     request: Request, student: Student = Depends(current_student)
 ) -> None:
-    """Withdraw the Evidence Project declared: the Reading Day reads the roster's
-    again."""
     _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Project")
     store = _store(request)
     if store.record(student).declaration() is None:

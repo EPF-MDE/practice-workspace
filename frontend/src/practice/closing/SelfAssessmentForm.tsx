@@ -181,7 +181,6 @@ function LevelsSendBar({
   );
 }
 
-/** The Self-assessment: a level per point, with its hints, and its send. */
 export function SelfAssessmentForm({
   points,
   page,

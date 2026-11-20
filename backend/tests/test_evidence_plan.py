@@ -1,11 +1,3 @@
-"""The Evidence Plan through the HTTP API: drafted from the levels, filled by
-the Transfer, then the Student's own text, which wins, every version dated;
-confirmed by the closing step with one example for the Eval.
-
-Signed in as a roster Student, on the fixture content (tests/fixtures/content)
-and the in-memory Store. Cut-offs are set through the date settings.
-"""
-
 from datetime import datetime
 from typing import Any
 
@@ -259,9 +251,7 @@ def test_confirming_the_untouched_draft_keeps_it_a_draft_that_follows_later_leve
     assert closed.json()["drafted"] is True
     ada.post(SELF, json=levels(a="understand", b="redo"))
     page = ada.get(PAGE).json()
-    assert (
-        page["evidence_plan"]["drafted"] is True
-    )  # not the Student's text: the page offers the new draft
+    assert page["evidence_plan"]["drafted"] is True
     assert (
         page["evidence_plan_draft"] != draft and "C1.b" in page["evidence_plan_draft"]
     )

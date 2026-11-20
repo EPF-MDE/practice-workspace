@@ -1,14 +1,8 @@
-// Fails when a file is too big for an agent to read and edit in one go.
-// Tokens are estimated as bytes / 4, which is close enough for code.
-// Usage: node scripts/check-file-tokens.js <file>...
-
 import { lstatSync, readFileSync } from "node:fs";
 
 const MAX_TOKENS = 5000;
 const BYTES_PER_TOKEN = 4;
 
-// Generated files that nobody edits by hand, and workflow files, which
-// GitHub reads as one file each and which cannot be split.
 const IGNORED = [
   /(^|\/)package-lock\.json$/,
   /(^|\/)uv\.lock$/,
@@ -17,9 +11,6 @@ const IGNORED = [
   /^\.github\/workflows\/[^/]+\.yml$/,
 ];
 
-// git lists a symlink as one path, such as .agents/skills, a link to
-// .claude/skills. Its target is checked on its own path, so only regular
-// files are read.
 const isRegularFile = (file) => lstatSync(file).isFile();
 
 const isBinary = (contents) => contents.subarray(0, 8000).includes(0);

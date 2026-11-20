@@ -1,5 +1,3 @@
-"""Parsing a content file."""
-
 from __future__ import annotations
 
 import re
@@ -13,8 +11,6 @@ from .model import (
 )
 from .render import Competency
 from .tree import _Directive, _Node, _RawStep, _walk
-
-# --- Parsing -----------------------------------------------------------------
 
 _FRONT_MATTER = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 _COMMENT = re.compile(r"<!--.*?-->", re.S)
@@ -74,7 +70,7 @@ def _without_instructor(nodes: list[_Node]) -> list[_Node]:
     return kept
 
 
-Drawings = Callable[[str], dict[str, Any]]  # a drawing's `src` -> its tldraw snapshot
+Drawings = Callable[[str], dict[str, Any]]
 
 
 def _no_drawings(src: str) -> dict[str, Any]:
@@ -84,7 +80,6 @@ def _no_drawings(src: str) -> dict[str, Any]:
 def parse_competency(
     text: str, source: str = "content", drawings: Drawings = _no_drawings
 ) -> Competency:
-    """One content file. `drawings` reads a drawing's snapshot from its `src`."""
     text = text.replace("\r\n", "\n")
     front = _FRONT_MATTER.match(text)
     if not front:

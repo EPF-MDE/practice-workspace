@@ -1,6 +1,3 @@
-"""The Store as the API's clients see it: the write budget, the GitHub Store
-behind the app, and a clear 503 when GitHub fails."""
-
 from __future__ import annotations
 
 import base64
@@ -22,7 +19,6 @@ DRAWING = {
 
 @pytest.fixture(params=["memory", "github"])
 def counted(request: pytest.FixtureRequest, make_client: MakeClient) -> Counted:
-    """A client on either Store, and how many writes that Store has made so far."""
     if request.param == "memory":
         store = InMemoryStore()
         return make_client(store=store), lambda: store.writes
@@ -36,9 +32,7 @@ def test_a_full_competency_path_makes_at_most_10_writes_and_none_before_a_send(
     counted: Counted,
 ) -> None:
     client, writes = counted
-    sign_in(
-        client, ADA
-    )  # the GitHub Store opens the Student's issue here, once per course
+    sign_in(client, ADA)
     after_sign_in = writes()
 
     page = client.get(PAGE).json()
@@ -46,12 +40,6 @@ def test_a_full_competency_path_makes_at_most_10_writes_and_none_before_a_send(
     client.get(PAGE)
     assert writes() == after_sign_in, "no write before a send"
 
-    # The whole path: every step with fields answered (the Transfer included),
-    # the redraw sent (not the optional one: 2 files and a comment), two
-    # questions asked; then the closing step: the Self-assessment, carrying the
-    # missed check points the browser kept, rated and drafted as the Student
-    # goes; then one send confirming the Evidence Plan with an example for the
-    # Eval (#468 adds the Evidence panel snapshot to that same send).
     missed: dict[str, list[str]] = {}
     for step in page["steps"]:
         fields = [b["id"] for b in step["blocks"] if b["type"] == "field"]

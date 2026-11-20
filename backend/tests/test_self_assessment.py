@@ -1,11 +1,3 @@
-"""The closing step's Self-assessment through the HTTP API: one of four levels
-per point, a link for "I have done it", the missed check points carried with
-it and shown beside their point, and the cut-offs.
-
-Signed in as a roster Student, on the fixture content (tests/fixtures/content)
-and the in-memory Store. Cut-offs are set through the date settings.
-"""
-
 import base64
 from datetime import datetime
 from typing import Any
@@ -34,7 +26,6 @@ def points(page: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 
 def levels(**by_point: str | tuple[str, str]) -> dict[str, Any]:
-    """levels(a="understand", b=("done", LINK)) -> the request's levels."""
     out: dict[str, dict[str, str | None]] = {}
     for letter, value in by_point.items():
         level, link = value if isinstance(value, tuple) else (value, None)
@@ -139,9 +130,6 @@ def test_until_the_workspace_closes_every_level_moves_both_ways(
     assert len(mine["history"]) == 2
 
 
-# --- The missed check points ------------------------------------------------
-
-
 def test_missed_check_points_ride_with_the_self_assessment_and_show_beside_their_point(
     ada: TestClient,
 ) -> None:
@@ -211,9 +199,6 @@ def test_a_self_assessment_without_ticks_leaves_the_last_ticks(ada: TestClient) 
 
     redraw = next(s for s in ada.get(PAGE).json()["steps"] if s["id"] == "redraw")
     assert redraw["missed_check_points"] == ["oceens-1"]
-
-
-# --- The cut-offs -----------------------------------------------------------
 
 
 def test_after_the_close_a_level_can_only_move_up_to_i_have_done_it_with_a_link(

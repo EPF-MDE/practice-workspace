@@ -16,6 +16,7 @@
       "node scripts/check-file-tokens.js"
     ],
     "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": "oxlint -c .oxlintrc.json --no-error-on-unmatched-pattern",
+    "*.{py,sh}": "uv run --project backend --frozen python scripts/check-comments.py",
     "*.py": [
       "uv run --project backend --frozen ruff check",
       "uv run --project backend --frozen ruff format --check"

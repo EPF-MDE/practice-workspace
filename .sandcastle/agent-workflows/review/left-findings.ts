@@ -21,11 +21,6 @@ const leftList = (posted: ReviewComment[], dropped: ReviewComment[]): string =>
     ...dropped.map((comment) => entry(comment, false)),
   ].join("\n");
 
-// The verdict lists each finding the review left. One posted inline gets a
-// single line, since its comment carries the reasoning; one GitHub would not
-// take inline (its line is outside the diff) appears here in full, because
-// the verdict is its only home. Each list goes at the end of its axis's
-// section; with no such section, the lists go at the end.
 export const addLeftFindings = (
   verdict: string,
   posted: ReviewComment[],

@@ -1,5 +1,3 @@
-"""One full reading of one repository, from its rules."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -31,16 +29,11 @@ class _Source(BaseModel):
 
 
 class _Repository(BaseModel):
-    """What the reading needs of GitHub's answer for the repository: `source` is the
-    repository GitHub links it to, absent if none."""
-
     default_branch: str
     source: _Source | None = None
 
 
 class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
-    """One full reading of one repository."""
-
     def run(self) -> RepositoryReading:
         s, r = self.s, self.r
         repo = r.github.get(f"repos/{s.evidence_project}")

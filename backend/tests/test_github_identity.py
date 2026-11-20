@@ -1,6 +1,3 @@
-"""GitHub's web flow, with GitHub's HTTP faked: the code becomes an id and a
-login, and the Student's token is revoked, never kept."""
-
 import json
 
 import httpx

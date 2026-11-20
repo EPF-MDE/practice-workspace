@@ -1,9 +1,5 @@
 import { cn } from "@/lib/utils";
 
-/**
- * The Instructor's Markdown, rendered to HTML on the server from the content
- * file, with raw HTML disabled: the only HTML here is what Markdown produces.
- */
 export function Html({
   html,
   className,
@@ -20,7 +16,6 @@ export function Html({
   );
 }
 
-/** The text of server-rendered HTML, e.g. a field's label for screen readers. */
 export function plainText(html: string): string {
   return (
     new DOMParser().parseFromString(html, "text/html").body.textContent ?? ""

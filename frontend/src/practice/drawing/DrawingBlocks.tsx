@@ -21,7 +21,6 @@ import { Html } from "../Html";
 import { closingDrafts, drafts, errorMessage } from "../progress";
 import type { Snapshot } from "./views";
 
-// tldraw is most of the bundle: it loads with the first drawing on a page.
 const views = () => import("./views");
 const ReadOnlyDrawing = lazy(() =>
   views().then((m) => ({ default: m.ReadOnlyDrawing }))
@@ -83,13 +82,11 @@ type CanvasProps = {
   licenseKey: string;
 };
 
-/** The Student's canvas: kept in this browser while they draw, sent on demand. */
 export function StudentCanvas(props: CanvasProps) {
   const { studentId, competency, step } = props;
   const [draft] = useState(() =>
     drafts.getDrawing({ studentId, competency }, step.id)
   );
-  // A browser with no copy draws on from the version sent.
   const sent = useQuery({
     queryKey: ["drawing", competency, step.id],
     queryFn: async () =>
@@ -117,7 +114,6 @@ export function StudentCanvas(props: CanvasProps) {
   );
 }
 
-/** Sends the drawing on the canvas; `empty` once the Student sent a blank one. */
 function useSendDrawing(
   competency: string,
   step: StepOut,
@@ -210,7 +206,7 @@ function CanvasAndSend({
   initial,
 }: CanvasProps & { initial: Snapshot | null }) {
   const editor = useRef<Editor | null>(null);
-  const [mounted, setMounted] = useState(false); // tldraw loads after the page
+  const [mounted, setMounted] = useState(false);
   const [kept, setKept] = useState(true);
   const sending = useSendDrawing(competency, step, editor);
   return (
@@ -303,7 +299,6 @@ function CheckPoints({
   block: ReferenceDrawingBlock;
   closed: boolean;
 }) {
-  // Kept in this browser: the Self-assessment carries them, in one send.
   const [missed, setMissed] = useState<string[]>(
     () =>
       closingDrafts.getTicks({ studentId, competency }, step.id) ??

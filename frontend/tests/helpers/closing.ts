@@ -7,7 +7,6 @@ export type Level =
   | "I can redo"
   | "I have done it";
 
-/** The closing step's controls: the Self-assessment, the Evidence Plan and the Evidence Project. */
 export function closing(page: Page) {
   const section = step(page, "closing");
   const evidence = section.getByTestId("evidence-project");
@@ -31,7 +30,6 @@ export function closing(page: Page) {
     }),
     confirm: section.getByRole("button", { name: "Confirm my Evidence Plan" }),
     evidence,
-    /** Fills in an Evidence Project and checks its access; it rides with the confirmation. */
     declare: async (url: string, note: string) => {
       await evidence
         .getByRole("textbox", { name: /its address on GitHub/ })

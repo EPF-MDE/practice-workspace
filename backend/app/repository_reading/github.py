@@ -1,9 +1,3 @@
-"""The GitHub seam: read-only GET requests on GitHub's REST API.
-
-The Repository reading only ever reads. Its adapters: `HttpGitHub` (production, with a
-token provider) and `RecordedGitHub` (tests, replaying recorded responses).
-"""
-
 from __future__ import annotations
 
 import re
@@ -22,12 +16,10 @@ from app.github_app import API, HEADERS, InstallationAuth, private_key_from_base
 class Response:
     status: int
     body: Any
-    next_page: str | None = None  # the path of the next page, from the Link header
+    next_page: str | None = None
 
 
 class GitHub(Protocol):
-    """One read-only request. `path` is relative to the API root, with its query."""
-
     def get(self, path: str) -> Response: ...
 
 
@@ -45,17 +37,12 @@ def next_page_path(link_header: str | None) -> str | None:
     return m.group(1).lstrip("/") if m else None
 
 
-# How long a repository the App is not installed on is read with the default token,
-# before asking again.
 INSTALLED_TTL = 15 * 60
 
-# A token for a repository ("owner/name"), refreshed by its provider.
 TokenFor = Callable[[str], str]
 
 
 class HttpGitHub:
-    """GitHub over HTTP. `token` gives a token for the repository each request reads."""
-
     def __init__(self, token: TokenFor, client: httpx.Client | None = None):
         self._token = token
         self._client = client or httpx.Client(base_url=API, timeout=30)
@@ -76,8 +63,6 @@ class HttpGitHub:
 
 
 def repository_of(path: str) -> str:
-    """The repository ("owner/name") a request reads: every path the Repository reading
-    asks is `repos/{owner}/{name}/...`."""
     return "/".join(path.lstrip("/").split("/")[1:3])
 
 
@@ -95,9 +80,6 @@ def repository_tokens(
     installation_id: str = "",
     clock: Callable[[], float] = time.monotonic,
 ) -> TokenFor:
-    """The Student Connector App's token for each repository: its installation on that
-    repository, so that a private repository it was installed on can be read; else the
-    `installation_id` one (or the first), which reads any public repository."""
     pem = private_key_from_base64(private_key_base64)
 
     def installed(repository: str) -> Callable[[], str] | None:
@@ -124,10 +106,6 @@ def tokens_per_repository(
     default: Callable[[], str],
     clock: Callable[[], float] = time.monotonic,
 ) -> TokenFor:
-    """The token of the installation `installed` finds on each repository, asked once;
-    else `default`'s, until INSTALLED_TTL has passed and the repository is asked
-    again."""
-    # per repository: when it was asked, and its installation's token provider if any
     seen: dict[str, tuple[float, Callable[[], str] | None]] = {}
 
     def token(repository: str) -> str:
@@ -144,11 +122,6 @@ def tokens_per_repository(
 def installation_token(
     app_id: str, private_key_base64: str, installation_id: str = ""
 ) -> Callable[[], str]:
-    """A token provider for one installation of a GitHub App (`app.github_app` renews
-    it).
-
-    With no `installation_id`, the App's first installation is used.
-    """
     pem = private_key_from_base64(private_key_base64)
     if not installation_id:
         app_jwt = InstallationAuth(app_id, pem, "").app_jwt()

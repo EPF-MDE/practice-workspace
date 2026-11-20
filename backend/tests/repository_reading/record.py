@@ -1,14 +1,3 @@
-"""Records a repository's GitHub responses as a test fixture (read-only GET requests).
-
-    GH_TOKEN=$(gh auth token) uv run python -m tests.repository_reading.record \
-        <login> <project> <owner/repo> <name>
-
-writes tests/repository_reading/fixtures/<name>.json.gz, trimmed to what the reading
-reads, and prints the reading's facts and its request count. A recording of a real
-repository holds its Student's data: only fictional recordings go in this public
-repository.
-"""
-
 import os
 import sys
 from pathlib import Path

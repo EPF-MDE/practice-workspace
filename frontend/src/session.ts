@@ -18,7 +18,6 @@ export const meQuery = {
   staleTime: 60_000,
 };
 
-/** In a route's beforeLoad: the signed-in Student, or off to the sign-in page. */
 export async function requireStudent(queryClient: QueryClient): Promise<Me> {
   const me = await queryClient.fetchQuery(meQuery);
   if (!me) {

@@ -11,18 +11,9 @@ import {
 export type RunWithExtractionOptions<T> = Omit<RunOptions, "output"> & {
   readonly output: OutputObjectDefinition<T>;
   readonly extractionPrompt: string;
-  /**
-   * Extra attempts after the first if extraction or validation fails. Forwarded
-   * to `Output`'s built-in `maxRetries`, which resumes the extraction session
-   * and feeds back the error so the agent can re-emit a corrected tag.
-   * Default: `2` (three attempts total). Ignored when the agent can't resume.
-   */
   readonly maxRetries?: number;
 };
 
-// Two passes over one session. The first run does the work with the whole
-// toolset. The second resumes that session and asks only for the structured
-// output, so the answer is extracted from everything the first run read.
 export async function runWithExtraction<T>(
   options: RunWithExtractionOptions<T>
 ): Promise<RunResult & { output: T }> {
@@ -33,9 +24,6 @@ export async function runWithExtraction<T>(
     ...produceOptions
   } = options;
 
-  // Agents that can't resume a session (a custom provider with no session
-  // storage; every built-in agent can) get no second pass and no retries, so
-  // they emit the structured output at the end of the work itself.
   if (!produceOptions.agent.sessionStorage) {
     return run({
       ...produceOptions,
@@ -70,8 +58,6 @@ export async function runWithExtraction<T>(
   return { ...produce, output: extraction.output };
 }
 
-// A prompt file is copied with the instructions appended, so `promptArgs`
-// substitution still applies to it.
 const appendToPrompt = (
   options: Pick<RunOptions, "prompt" | "promptFile">,
   extractionPrompt: string

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Delete comment"
+  short_description: "Sort the comments in a part of the Engine, delete them, and move what they knew into ADRs and issues."
+policy:
+  allow_implicit_invocation: false

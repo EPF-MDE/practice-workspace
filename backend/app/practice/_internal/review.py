@@ -1,5 +1,3 @@
-"""The closing step's parts: Self-assessment, Evidence Plan, example for the Eval."""
-
 from __future__ import annotations
 
 from datetime import datetime
@@ -25,8 +23,6 @@ from .models import (
     _at_most,
 )
 
-# --- The closing step: Self-assessment, Evidence Plan, example for the Eval --
-
 
 def _points(page: Page) -> list[Point]:
     return [b for step in page.steps for b in step.blocks if isinstance(b, Point)]
@@ -35,7 +31,6 @@ def _points(page: Page) -> list[Point]:
 def _since(
     dated: list[tuple[dict[str, dict[str, Any]], datetime]], point: str
 ) -> datetime:
-    """When a point of the latest version took its level: always found."""
     at = closing.since(dated, point)
     assert at is not None
     return at
@@ -90,7 +85,6 @@ def _evidence_project(record: Record) -> str | None:
 
 
 def _transfer(page: Page, record: Record) -> closing.Transfer | None:
-    """The Transfer the Student sent, if any: it fills its point's "To get there"."""
     for step in page.steps:
         sent = (
             record.latest(Kind.ANSWER, page.competency, step.id)
@@ -124,9 +118,6 @@ def _draft(page: Page, record: Record, levels: dict[str, Any]) -> str:
 
 
 def _drafted(page: Page, record: Record, text: str, flagged: bool) -> dict[str, bool]:
-    """`{"drafted": True}` when the text sent is the draft untouched (the browser says
-    so, or it matches the draft from the levels stored): it stays a draft. Only an edit
-    makes it the Student's text."""
     assessment = record.latest(Kind.SELF_ASSESSMENT, page.competency)
     levels = assessment.payload["levels"] if assessment else {}
     return (
@@ -151,8 +142,6 @@ def _levels(page: Page, levels: dict[str, PointLevel]) -> dict[str, dict[str, An
 def _ticks(
     page: Page, record: Record, sent: dict[str, list[str]], phase: closing.Phase
 ) -> dict[str, list[str]]:
-    """The missed check points riding with a Self-assessment, checked, in each
-    reference's order."""
     ticks: dict[str, list[str]] = {}
     for drawing, missed in sent.items():
         step = page.step(drawing)

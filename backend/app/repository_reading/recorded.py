@@ -1,11 +1,3 @@
-"""Recorded GitHub responses: replayed in tests, recorded from real repositories by
-`record`.
-
-A recording maps each request path to its response, trimmed to the fields the repository
-reading reads (`trim`), so that fixtures hold no names, emails or code beyond what a
-test needs.
-"""
-
 from __future__ import annotations
 
 import gzip
@@ -22,8 +14,6 @@ class Unrecorded(KeyError):
 
 
 class RecordedGitHub:
-    """Replays a recording. Counts every request, so tests can check the cost."""
-
     def __init__(self, recording: dict[str, dict[str, Any]]) -> None:
         self.recording = recording
         self.requests: list[str] = []
@@ -66,8 +56,6 @@ def save_recording(recording: dict[str, dict[str, Any]], path: Path) -> None:
 
 
 class RecordingGitHub:
-    """Passes each request to `inner` and keeps its trimmed response."""
-
     def __init__(self, inner: GitHub) -> None:
         self.inner = inner
         self.recording: dict[str, dict[str, Any]] = {}
@@ -82,9 +70,6 @@ class RecordingGitHub:
         }
         return Response(r.status, body, r.next_page)
 
-
-# --- Trimming: keep only what the reading reads
-# --------------------------------------------
 
 _KEEP_PATCH = re.compile(r"posthog|identify|distinct_id", re.I)
 _KEEP_EMAIL = re.compile(r"claude|anthropic|exemple|example|noreply", re.I)

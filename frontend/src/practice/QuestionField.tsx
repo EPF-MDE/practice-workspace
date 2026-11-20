@@ -6,7 +6,6 @@ import { type DraftScope, drafts, errorMessage } from "./progress";
 
 type Props = DraftScope & { step: StepOut; closed: boolean };
 
-/** The question being typed, kept in this browser, and the request that sends it. */
 function useQuestion({ studentId, competency, step }: Props) {
   const scope = { studentId, competency };
   const queryClient = useQueryClient();

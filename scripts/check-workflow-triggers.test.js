@@ -1,6 +1,3 @@
-// The workflow-triggers check, run as `npm run check` runs it: on workflow
-// files.
-
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

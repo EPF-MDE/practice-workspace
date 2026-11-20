@@ -1,6 +1,3 @@
-"""The reading's cost in GitHub requests (#460, "The cost"), and its caching by pair
-of SHAs."""
-
 import copy
 import re
 
@@ -22,7 +19,6 @@ def test_reading_a_repository_again_compares_nothing_already_compared(
     first = len(r.compares())
     assert first > 0
 
-    # Forget the stored reading, keep the reader and its cache.
     r.readings.readings.clear()
     r.reader.read(r.student)
 
@@ -40,20 +36,14 @@ def test_a_refresh_with_no_changed_ref_costs_at_most_2_requests(
 
     assert len(r.github.requests) <= 2
     assert after.competencies == before.competencies
-    assert (
-        r.readings.writes == 1
-    )  # the first reading only: a check with no change writes nothing
+    assert r.readings.writes == 1
 
 
 def test_a_refresh_recomputes_only_the_ref_that_moved(recorded: type[Recorded]) -> None:
     r = recorded("deleted-pr-branch")
-    reader_cold = RepositoryReader(
-        r.github, r.readings, now=lambda: NOW
-    )  # no comparison in memory
+    reader_cold = RepositoryReader(r.github, r.readings, now=lambda: NOW)
     r.reader.read(r.student)
 
-    # A push to `course-2026`: its tip becomes a new commit, compared as the old tip
-    # was.
     branches_path = f"repos/{r.student.evidence_project}/branches?per_page=100"
     branches = copy.deepcopy(r.github.recording[branches_path]["body"])
     moved = next(b for b in branches if b["name"] == "course-2026")
@@ -82,9 +72,6 @@ def test_a_refresh_recomputes_only_the_ref_that_moved(recorded: type[Recorded]) 
 
 
 class LargestShape:
-    """A repository shaped like the largest measured (19 branches, 16 pull requests), on
-    OcéENS's 13 upstream branches."""
-
     def __init__(self) -> None:
         self.requests: list[str] = []
         self.repository = "student/OceENS"
@@ -92,8 +79,6 @@ class LargestShape:
             {"name": f"b{i}", "commit": {"sha": f"{i:040x}"}, "protected": False}
             for i in range(19)
         ]
-        # Half of the pull requests point at a branch's tip; the other half at heads of
-        # deleted branches.
         self.pulls = [
             {
                 "number": n,

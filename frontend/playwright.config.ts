@@ -2,15 +2,6 @@ import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
-// The browser tests run on the real app and the Demo course: the back end
-// serves the React build (run `npm run build` first), with fake sign-in, the
-// Demo course's roster, the in-memory Store and the fake Repository reading. No
-// GitHub, no PostHog.
-//
-// Each run starts its own server on a free port and never reuses one it did
-// not start, so two runs side by side never meet. This file is read by the
-// main process and again by each worker: the main process picks the port and
-// leaves it in the environment, which the workers inherit.
 const PORT_VARIABLE = "PRACTICE_WORKSPACE_TEST_PORT";
 const isWorker = process.env.TEST_WORKER_INDEX !== undefined;
 

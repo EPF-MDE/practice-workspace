@@ -1,10 +1,3 @@
-"""The Practice workspace: one FastAPI app, serving its API and its React build.
-
-`create_app()` assembles the pieces; `app` is the instance uvicorn runs
-(`uvicorn app.main:app`, one worker: the Store serialises its writes in-process).
-Later tickets add their router here and their seam as a keyword argument.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -48,32 +41,24 @@ from app.store import GitHubStore, InMemoryStore, SendTooLarge, Store, StoreUnav
 logger = logging.getLogger("app")
 
 BACKEND = Path(__file__).resolve().parents[1]
-# The React build: copied here by the artefact build, or built in place locally.
 STATIC_CANDIDATES = (BACKEND / "static", BACKEND.parent / "frontend" / "dist")
-# The commit the artefact was built from, written by the build; "unknown" locally.
 REVISION_FILE = BACKEND / "REVISION"
-# The fake Repository reading's readings, for local runs and Playwright (not in the
-# artefact).
 FAKE_REPOSITORY_READINGS = BACKEND / "tests" / "fixtures"
-# What a Student reads when GitHub, behind the Store, fails (503).
 STORE_UNAVAILABLE = (
     "GitHub, where the workspace stores your work, did not answer. "
     "Nothing was lost: what you typed is still in this browser. Wait a minute and try "
     "again."
 )
-# What a Student reads when a send is too large for the Store (422): retrying would not
-# help.
 SEND_TOO_LARGE = (
     "This send is too long to store: shorten your text (or remove unusual characters "
     "pasted into it), "
     "then send again. What you typed is still in this browser."
 )
-# Session cookie lifetime: past the Reading Day, so a session lasts the course.
 SESSION_MAX_AGE = 60 * 60 * 24 * 60
 
 
 class ConfigurationError(RuntimeError):
-    """Settings the app refuses to run with."""
+    pass
 
 
 def _on_azure() -> bool:
@@ -108,8 +93,6 @@ def default_identity(settings: Settings) -> Identity:
 
 
 def default_content_dir(settings: Settings) -> Path:
-    """The Course folder, only ever from WORKSPACE_CONTENT_DIR: the engine
-    holds no course of its own."""
     if not settings.content_dir:
         raise ConfigurationError("No content folder: set WORKSPACE_CONTENT_DIR")
     return Path(settings.content_dir)
@@ -143,8 +126,6 @@ def default_repository_reading(settings: Settings) -> RepositoryReadingSource:
         )
 
     def build() -> RepositoryReadingSource:
-        # Raises until the Student Connector has an installation: the panel then says
-        # the repository could not be read now, and the next view tries again.
         token = repository_tokens(
             settings.github_app_id,
             settings.github_app_private_key_base64,
@@ -200,7 +181,6 @@ def create_app(
             settings.posthog_host,
             settings.posthog_environment,
         )
-        # The app's own INFO lines (sign-ins, start) reach PostHog Logs too.
         logging.getLogger("app").setLevel(logging.INFO)
         logger.info("cws-workspace %s started", revision)
         yield
@@ -209,7 +189,6 @@ def create_app(
     app = FastAPI(
         title="Practice workspace",
         lifespan=lifespan,
-        # "<tag>-<function>": the generated client's SessionService.me(), etc.
         generate_unique_id_function=lambda route: (
             f"{route.tags[0]}-{route.name}" if route.tags else route.name
         ),
@@ -226,7 +205,6 @@ def create_app(
     app.state.access_check = (
         access_check if access_check is not None else default_access_check(settings)
     )
-    # Read and checked once: a content file the app refuses stops it at start.
     app.state.content = load_content(default_content_dir(settings))
     app.state.signals = observability.Signals()
 
@@ -234,7 +212,6 @@ def create_app(
     async def errors_to_posthog(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        # Inside SessionMiddleware (added after), so the session is loaded.
         github_id = request.session.get(auth.SESSION_ID)
         with request.app.state.signals.request_context(
             str(github_id) if github_id else None, path=request.url.path
@@ -277,7 +254,6 @@ def create_app(
 
     @app.get("/api/health", tags=["health"])
     def health() -> dict[str, Any]:
-        """Answers once the app runs; the deploy waits for its revision."""
         return {"status": "ok", "revision": revision}
 
     @app.get("/api/health/error", include_in_schema=False)
@@ -295,7 +271,6 @@ def create_app(
 
 
 def _serve_frontend(app: FastAPI) -> None:
-    """The React build on the same domain; any other path gets index.html."""
     static = next(
         (path for path in STATIC_CANDIDATES if (path / "index.html").exists()), None
     )
@@ -319,8 +294,6 @@ def _app() -> FastAPI:
 
 
 def __getattr__(name: str) -> FastAPI:
-    # `app.main:app` is built on first access, so importing create_app in tests
-    # never reads the real settings or reaches GitHub.
     if name == "app":
         globals()["app"] = instance = _app()
         return instance

@@ -1,5 +1,3 @@
-"""How a send is written in an issue comment, and read back from one."""
-
 from __future__ import annotations
 
 import json
@@ -19,7 +17,6 @@ FENCE = "json practice"
 _BLOCK = re.compile(r"^```json practice\n(\{.*\})\n```$", re.MULTILINE)
 _MARKER = "<!-- practice-student-id: {} -->"
 _MARKER_RE = re.compile(r"<!-- practice-student-id: (\d+) -->")
-# The name the block gives an entry's key, per kind; other kinds have none.
 _KEY_NAME: dict[str, str] = {
     Kind.ANSWER: "step",
     Kind.QUESTION: "step",
@@ -35,7 +32,6 @@ def _line(
     version: int,
     payload: dict[str, Any],
 ) -> str:
-    """The comment's first line, for a person reading the issue."""
     v = f"(version {version})"
     match kind:
         case Kind.ANSWER:
@@ -68,8 +64,6 @@ def _line(
                 ", confirmed at the closing step" if payload.get("confirmed") else ""
             )
             confirmed += ", the draft untouched" if payload.get("drafted") else ""
-            # The closing step's one send also carries the Evidence panel shown and any
-            # declaration made there.
             snapshot = (
                 ", with the Evidence panel as shown"
                 if "evidence_panel_snapshot" in payload
@@ -105,14 +99,12 @@ def comment_body(
     block |= {"version": version, "payload": payload}
     data = json.dumps(block, ensure_ascii=False, separators=(", ", ": "))
     line = _line(entry_kind, competency, key, version, payload)
-    if len(line) > LINE_CHARS:  # a long question: the block below holds it whole
+    if len(line) > LINE_CHARS:
         line = line[: LINE_CHARS - 1] + "…"
     return f"{line}\n\n```{FENCE}\n{data}\n```\n"
 
 
 def _entry(comment: dict[str, Any], bot_login: str) -> Entry | None:
-    """The entry a comment holds, or None for a comment that is not a send (not by the
-    Store App)."""
     user = comment.get("user") or {}
     if user.get("type") != "Bot" or user.get("login") != bot_login:
         return None
@@ -122,7 +114,7 @@ def _entry(comment: dict[str, Any], bot_login: str) -> Entry | None:
     block = json.loads(match[1])
     try:
         kind = Kind(block["kind"])
-    except ValueError:  # a kind this version does not know: not a send it can read
+    except ValueError:
         return None
     key = block.get(_KEY_NAME[kind]) if kind in _KEY_NAME else None
     return Entry(
@@ -136,8 +128,6 @@ def _entry(comment: dict[str, Any], bot_login: str) -> Entry | None:
 
 
 def _renumbered(entries: list[Entry]) -> list[Entry]:
-    """Versions counted again in date order: two issues may each hold a version 1 of the
-    same thing."""
     seen: dict[tuple[Any, ...], int] = {}
     out = []
     for entry in entries:

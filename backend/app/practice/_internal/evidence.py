@@ -1,5 +1,3 @@
-"""The Evidence panel and the Evidence Project, as the routes send them."""
-
 from __future__ import annotations
 
 from typing import Any
@@ -20,8 +18,6 @@ from .models import (
     _at_most,
 )
 
-# --- The Evidence panel and the Evidence Project ---------------------------------
-
 
 def _changed(current: StoredDeclaration, new: dict[str, Any]) -> bool:
     return (current.url, current.note) != (new["url"], new["note"])
@@ -30,8 +26,6 @@ def _changed(current: StoredDeclaration, new: dict[str, Any]) -> bool:
 def _declaration_payload(
     request: Request, student: Student, sent: DeclarationIn
 ) -> dict[str, Any]:
-    """A declaration as stored: the project, the note, and its access as checked when
-    declared."""
     _at_most(sent.url, MAX_URL_CHARS, "The project's URL")
     _at_most(sent.note, MAX_NOTE_CHARS, "Your note on what to read")
     try:
@@ -62,8 +56,6 @@ def _declaration_payload(
 def _declared(
     declared: StoredDeclaration, request: Request, student: Student
 ) -> Declaration:
-    """The declaration with its access checked now (the App may have been installed
-    since)."""
     project = evidence_panel.parse_project(declared.url)
     settings: Settings = request.app.state.settings
     return Declaration(
@@ -84,8 +76,6 @@ def _declared(
 
 
 def _competency(request: Request, competency: str, student: Student) -> str:
-    """A Competency of the course: its Evidence panel exists before its content
-    does."""
     if competency not in COMPETENCIES:
         raise HTTPException(404, f"No Competency {competency}")
     return competency

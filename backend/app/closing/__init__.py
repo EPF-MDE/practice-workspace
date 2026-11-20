@@ -1,25 +1,3 @@
-"""A Competency's closing step: the Self-assessment's rules and the Evidence Plan's
-draft.
-
-The rules come from #425 as #460 restates them:
-
-- One level per point, on four: *Not yet*, *I understand*, *I can redo*,
-  *I have done it*. *I have done it* needs a GitHub or GitLab link.
-- Until the workspace closes, every level moves freely. Then, until the
-  Reading Day, a point not rated yet takes its first level freely (any of the
-  four), and a level already given only moves up to *I have done it*, with a
-  link; every other level stays as it was. After the Reading Day nothing
-  changes.
-- The Evidence Plan is drafted from the levels (shape C): one block per point
-  rated and not done, with its id, statement and level, the proof to show at
-  the Eval, how to get there at that level, and where. A Transfer fills its
-  point's "To get there". Once the Student sends their own text, it wins: the
-  draft is only a proposal.
-
-Pure functions: no Store, no HTTP. The API calls them and turns a `Refused`
-into its status code.
-"""
-
 from __future__ import annotations
 
 import re
@@ -38,17 +16,12 @@ LABELS: dict[str, str] = {
     "redo": "I can redo",
     "done": "I have done it",
 }
-Phase = Literal[
-    "open", "closed", "over"
-]  # before the close; until the Reading Day; after it
+Phase = Literal["open", "closed", "over"]
 
-# A GitHub or GitLab page: a repository, a file and line, an issue, a pull request...
 _LINK = re.compile(r"https://(github\.com|gitlab\.com)/[\w.-]+/[\w.-]+(/\S*)?")
 
 
 class Refused(Exception):
-    """A send the rules refuse: `status` is the HTTP status the API answers."""
-
     def __init__(self, status: int, message: str):
         super().__init__(message)
         self.status = status
@@ -70,12 +43,6 @@ def is_project_link(url: str | None) -> bool:
 def clean_levels(
     levels: dict[str, dict[str, Any]], point_ids: list[str]
 ) -> dict[str, dict[str, Any]]:
-    """The levels as stored, in the review's order: `{point: {"level", "link"}}`, a link
-    only for "done".
-
-    Raises `Refused(422)` for an unknown point or level, or "done" without a GitHub or
-    GitLab link.
-    """
     unknown = [p for p in levels if p not in point_ids]
     if unknown:
         raise Refused(
@@ -109,8 +76,6 @@ def clean_levels(
 def check_move(
     previous: dict[str, dict[str, Any]], new: dict[str, dict[str, Any]], now: Phase
 ) -> None:
-    """Refuse a change the cut-offs forbid (`Refused(403)`); `previous` is the levels
-    last stored."""
     if now == "open":
         return
     if now == "over":
@@ -130,18 +95,11 @@ def check_move(
             raise Refused(
                 403, f'{point} cannot move to "{LABELS[after["level"]]}": {rule}.'
             )
-    # A point with no level yet takes its first one freely, dated like any move; once
-    # stored, it is in `previous` and the rule above holds it.
 
 
 def since(
     history: list[tuple[dict[str, dict[str, Any]], datetime]], point: str
 ) -> datetime | None:
-    """When a point took its current level and link: the first send of the latest
-    unchanged run.
-
-    `history` is every stored version's levels with its date, oldest first.
-    """
     current = history[-1][0].get(point) if history else None
     if current is None:
         return None
@@ -151,14 +109,8 @@ def since(
     return start
 
 
-# --- The Evidence Plan's draft -------------------------------------------------
-
-
 @dataclass(frozen=True)
 class Transfer:
-    """A Transfer the Student sent: the point it fills, the project, and what they
-    planned."""
-
     point: str
     project: str
     plan: str
@@ -174,7 +126,6 @@ class _Text(HTMLParser):
 
 
 def plain(html: str | None) -> str:
-    """One line of plain text from the content's HTML."""
     parser = _Text()
     parser.feed(html or "")
     return " ".join("".join(parser.parts).split())
@@ -186,8 +137,6 @@ def draft(
     transfer: Transfer | None = None,
     evidence_project: str | None = None,
 ) -> str:
-    """The Evidence Plan drafted from the levels: one block per point rated and not
-    done."""
     blocks = []
     for point in points:
         rated = levels.get(point.id)
@@ -222,5 +171,4 @@ def draft(
 
 
 def _uncapitalised(text: str) -> str:
-    """ "A README..." -> "a README...", but "README..." stays as it is."""
     return text if len(text) > 1 and text[1].isupper() else text[:1].lower() + text[1:]

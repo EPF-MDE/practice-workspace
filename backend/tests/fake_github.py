@@ -1,15 +1,3 @@
-"""GitHub's Issues and Contents APIs, faked over HTTP for the GitHub Store's tests.
-
-Only what the Store calls: list a repository's issues by label, open an issue,
-list and add an issue's comments, list every issue's comments at once; on a
-branch, list a folder, read a file (at the branch or at a commit), and create
-or update a file (one commit each, refused with 409 when the file's `sha` is
-stale). It answers like api.github.com (status codes, JSON shapes, `Link`
-pagination, server timestamps), counts the content-generating requests GitHub's
-secondary limit counts, and can be made to fail like GitHub down or
-rate-limited.
-"""
-
 from __future__ import annotations
 
 import base64
@@ -25,7 +13,7 @@ import httpx
 
 REPOSITORY = "EPF-MDE/complex-web-services"
 BOT = {"login": "epf-mde-cws-store[bot]", "type": "Bot"}
-COMMENT_LIMIT = 65_536  # GitHub refuses a longer comment body with 422
+COMMENT_LIMIT = 65_536
 
 
 class FakeGitHub:
@@ -34,63 +22,48 @@ class FakeGitHub:
         self.max_per_page = max_per_page
         self.issues: dict[int, dict[str, Any]] = {}
         self.comments: dict[int, list[dict[str, Any]]] = {}
-        self.writes = 0  # POST/PATCH/PUT/DELETE answered
+        self.writes = 0
         self.reads = 0
-        self.down: int | None = None  # a status every request gets, e.g. 503 or 403
-        # Branch -> its commits, oldest first: (commit sha, message, {path: bytes}).
+        self.down: int | None = None
         self.branches: dict[str, list[tuple[str, str, dict[str, bytes]]]] = {
             "workspace-data": []
         }
-        # The next file writes answer 409, as when another writer moved the branch.
         self.conflicts = 0
-        # Issues the label search does not list yet: GitHub's search lags
-        # seconds behind a new issue.
         self.unlisted: set[int] = set()
         self._time = datetime(2026, 12, 1, 9, 0, tzinfo=UTC)
-        self._lock = threading.Lock()  # the Store sends from several threads
+        self._lock = threading.Lock()
 
     def client(self) -> httpx.Client:
-        """A client as the Store gets in production, its transport this fake."""
         return httpx.Client(
             base_url="https://api.github.com",
             transport=httpx.MockTransport(self.handle),
         )
 
-    # --- what a test may do by hand, as a person on github.com would ---------
-
     def comment_by_hand(
         self, number: int, body: str, login: str = "the-instructor", type: str = "User"
     ) -> None:
-        """A comment by a person, or by another App (`type="Bot"`, e.g.
-        `github-actions[bot]`)."""
         with self._lock:
             self._add_comment(number, body, {"login": login, "type": type})
 
     def commit_by_hand(self, branch: str, path: str, data: bytes) -> None:
-        """Another writer (the Repository reading's batch, a person) commits on the
-        branch."""
         with self._lock:
             self._commit(branch, path, data, "by hand")
 
     def files(
         self, branch: str = "workspace-data", at: str | None = None
     ) -> dict[str, bytes]:
-        """The branch's files, at its head or at one of its commits."""
         commits = self.branches[branch]
         if at is None:
             return commits[-1][2] if commits else {}
         return next(files for sha, _, files in commits if sha == at)
 
     def history(self, path: str, branch: str = "workspace-data") -> list[bytes]:
-        """Every version of one file, in the order its commits came."""
         versions, last = [], None
         for _, _, files in self.branches[branch]:
             if files.get(path) is not None and files.get(path) != last:
                 versions.append(files[path])
             last = files.get(path)
         return versions
-
-    # --- the API -------------------------------------------------------------
 
     def _tick(self) -> str:
         self._time += timedelta(seconds=1)
@@ -200,8 +173,6 @@ class FakeGitHub:
         return httpx.Response(
             200, json=items[(page - 1) * per_page : page * per_page], headers=headers
         )
-
-    # --- Contents ----------------------------------------------------------------
 
     @staticmethod
     def _blob_sha(data: bytes) -> str:

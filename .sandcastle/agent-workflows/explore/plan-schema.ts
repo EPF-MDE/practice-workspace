@@ -1,7 +1,5 @@
 import { z } from "zod/v4";
 
-// The plan the explore run hands back. The apply job in agent-explore.yml
-// checks the whole plan, then does what it says, and it branches on `tag`.
 export const explorePlanSchema = z
   .strictObject({
     issues: z

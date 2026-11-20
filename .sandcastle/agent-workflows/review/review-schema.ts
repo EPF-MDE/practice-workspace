@@ -1,8 +1,5 @@
 import { z } from "zod/v4";
 
-// The findings the review left unfixed. The workflow posts each one as an
-// inline comment on the pull request, on its file and line, and lists it by
-// title in the verdict.
 export const reviewSchema = z
   .strictObject({
     comments: z

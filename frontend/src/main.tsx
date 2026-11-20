@@ -6,7 +6,6 @@ import { client } from "./client/client.gen";
 import "./index.css";
 import { routeTree } from "./routeTree.gen";
 
-// Same origin as the API: the session cookie goes with every request.
 client.setConfig({ baseURL: "", withCredentials: true });
 
 const queryClient = new QueryClient({

@@ -57,8 +57,6 @@ from .storage import (
 def evidence_projects(
     students: list[Student], store: Store
 ) -> tuple[list[StudentToRead], dict[str, str]]:
-    """Each Student's Evidence Project as the Reading Day reads it: the one declared,
-    else the roster's; and the GitLab projects, which cannot be read here, by login."""
     to_read: list[StudentToRead] = []
     gitlab: dict[str, str] = {}
     for student, record in zip(students, store.records(students), strict=True):
@@ -92,7 +90,7 @@ def read_all(
     for s in students:
         try:
             reading = reader.read_now(s)
-        except Exception as e:  # one repository failing must not lose the others
+        except Exception as e:
             result.failures[s.login] = f"{type(e).__name__}: {e}"
             log(f"{s.login}: FAILED {result.failures[s.login]}")
             continue
@@ -111,7 +109,6 @@ def run_batch(
     data: WorkspaceData,
     log: Callable[[str], None] = _silent,
 ) -> BatchResult:
-    """Reads every repository, then writes one file per Student in a single commit."""
     result = read_all(students, reader, log)
     if result.readings:
         data.write(

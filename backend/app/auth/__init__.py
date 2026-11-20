@@ -1,16 +1,3 @@
-"""Signing in with GitHub, checked against the roster.
-
-GitHub (through the EPF-MDE CWS Student Connector, a GitHub App asking no
-repository permission at sign-in) says who the visitor is: a numeric id and a
-login. The roster says whether they get in. The session cookie then holds the
-numeric id alone, and every request finds the Student on the current roster
-again, so removing a row from roster.csv signs that person out.
-
-The seam is `Identity`: `GitHubIdentity` in every deployed app, `FakeIdentity`
-in tests and the local Playwright path, where `/auth/login?github_id=<id>`
-signs that id in through the same callback.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -51,20 +38,12 @@ class GitHubUser:
 
 
 class Identity(Protocol):
-    """Who the visitor is, according to GitHub."""
-
     def authorize_url(self, state: str, redirect_uri: str, request: Request) -> str: ...
 
     def identify(self, code: str, redirect_uri: str) -> GitHubUser: ...
 
 
 class GitHubIdentity:
-    """GitHub's web flow, as the Student Connector App.
-
-    The user token is used once, to read `GET /user`, then revoked: the app
-    keeps no token of the Student's.
-    """
-
     def __init__(
         self, client_id: str, client_secret: str, http: httpx.Client | None = None
     ):
@@ -117,12 +96,6 @@ class GitHubIdentity:
 
 
 class FakeIdentity:
-    """GitHub stood in for: `/auth/login?github_id=<id>` is that user.
-
-    `logins` gives some ids another login than `user-<id>`, e.g. to rename an
-    account. Never used by a deployed app (app.main refuses it on Azure).
-    """
-
     def __init__(self, logins: dict[int, str] | None = None):
         self._logins = logins or {}
 
@@ -140,7 +113,7 @@ class FakeIdentity:
 
 
 class SignInFailed(Exception):
-    """GitHub did not say who the visitor is."""
+    pass
 
 
 def _roster(request: Request) -> RosterSource:
@@ -157,11 +130,6 @@ def _callback_url(request: Request) -> str:
 
 
 def _open_record(request: Request, student: Student) -> None:
-    """The Store opens the Student's record at their first sign-in (their issue, on
-    GitHub).
-
-    If GitHub fails here the Student still signs in: their first send opens it.
-    """
     try:
         request.app.state.store.open_record(student)
     except StoreUnavailable as error:
@@ -171,7 +139,6 @@ def _open_record(request: Request, student: Student) -> None:
 
 
 def current_student(request: Request) -> Student:
-    """The signed-in Student, as on the roster now; 401 otherwise."""
     github_id = request.session.get(SESSION_ID)
     student = (
         _roster(request).current().find(github_id) if github_id is not None else None
@@ -206,13 +173,11 @@ router = APIRouter()
 
 @router.get("/api/sign-in", tags=["session"])
 def sign_in_page() -> SignInPage:
-    """What the sign-in page says before the Student signs in."""
     return SignInPage(sign_in_url="/auth/login", notice=NOTICE)
 
 
 @router.get("/api/sign-in/refusal", tags=["session"])
 def refusal(request: Request) -> Refusal:
-    """Why the last sign-in was refused: not on the roster."""
     login = request.session.get(SESSION_REFUSED)
     if login is None:
         raise HTTPException(404, "No refused sign-in")
@@ -221,7 +186,6 @@ def refusal(request: Request) -> Refusal:
 
 @router.get("/api/me", tags=["session"])
 def me(student: Student = Depends(current_student)) -> Me:
-    """The signed-in Student, with their Group and Project from the roster."""
     return Me(**student.as_dict())
 
 

@@ -6,8 +6,6 @@ import { extractionPrompt } from "../shared/extraction-prompt";
 import { runWithExtraction } from "../shared/run-with-extraction";
 import { specDecompositionSchema } from "./decomposition-schema";
 
-// This loop writes tickets, not code, and the workflow step after this one is
-// what actually creates them.
 const result = await runWithExtraction({
   name: "decompose",
   agent: claudeAgent(),

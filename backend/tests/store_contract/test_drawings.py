@@ -1,5 +1,3 @@
-"""The Store's contract for drawings, on both Stores."""
-
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor

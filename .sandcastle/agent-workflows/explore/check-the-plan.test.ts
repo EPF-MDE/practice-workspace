@@ -1,6 +1,3 @@
-// The apply job's "Check the plan" step, run as the workflow runs it: its own
-// script, from agent-explore.yml, with the batch and the plan in its env.
-
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
