@@ -8,7 +8,6 @@ from app import roster
 GROUPS = {name: group.directive for name, group in roster.GROUPS.items()}
 FIELD_KINDS = ("line", "text", "choice")
 BANDS = ("Basic", "Solid", "Outstanding")
-LEVELS_BELOW_DONE = ("not-yet", "understand", "redo")
 DRAWING_DIRECTIVES = {"example-drawing", "canvas", "reference-drawing", "check-point"}
 DIRECTIVES = {
     *GROUPS.values(),

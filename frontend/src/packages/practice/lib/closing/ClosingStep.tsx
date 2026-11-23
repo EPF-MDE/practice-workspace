@@ -1,4 +1,6 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import type { CompetencyPage, PointBlock, StepOut } from "@/client";
+import { courseQuery } from "@/course";
 import { EvidenceProject } from "@/packages/evidence/EvidenceProject";
 import {
   EvidencePanelView,
@@ -21,9 +23,10 @@ type Props = DraftScope & {
 };
 
 function useClosing({ page, ...scope }: DraftScope & { page: CompetencyPage }) {
-  const levels = useLevels(scope, page);
+  const { data: course } = useSuspenseQuery(courseQuery);
+  const levels = useLevels(scope, page, course);
   const sendLevels = useSendLevels(scope, page, levels.rated);
-  const plan = usePlan(scope, page, levels.rated);
+  const plan = usePlan(scope, page, levels);
   const example = useExample(scope, plan.stored);
   const evidence = useEvidence(scope);
   const sending = useSendPlan({

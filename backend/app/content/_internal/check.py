@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Collection
 
 from .model import (
     BANDS,
@@ -9,7 +10,6 @@ from .model import (
     FIELD_KINDS,
     GROUPS,
     INSTRUCTOR_MARKERS,
-    LEVELS_BELOW_DONE,
     STEP_KINDS,
     UNVALIDATED_MARKER,
     Answer,
@@ -22,7 +22,11 @@ from .render import CompetencyContent, _step_for
 from .tree import _Directive, _RawStep, _walk
 
 
-def _check(competency: CompetencyContent, source: str) -> None:
+def _check(
+    competency: CompetencyContent,
+    source: str,
+    to_get_there_levels: Collection[str] | None,
+) -> None:
     step_ids = [s.id for s in competency._steps]
     if len(set(step_ids)) != len(step_ids):
         raise ContentError(f"{source}: two steps share an id")
@@ -108,10 +112,13 @@ def _check(competency: CompetencyContent, source: str) -> None:
                     )
             if (
                 d.name == "to-get-there"
-                and d.attrs.get("level") not in LEVELS_BELOW_DONE
+                and to_get_there_levels is not None
+                and d.attrs.get("level") not in to_get_there_levels
             ):
                 raise ContentError(
-                    f"{where}: to-get-there's level is one of {LEVELS_BELOW_DONE}"
+                    f"{where}: to-get-there's level={d.attrs.get('level', '?')} is "
+                    "not one of the Course's levels below the top: "
+                    f"{', '.join(to_get_there_levels)}"
                 )
             if d.name in ("field", "answer") and any(
                 c.name in ("field", "answer") for c in _walk(d.children)

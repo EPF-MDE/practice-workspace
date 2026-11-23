@@ -41,6 +41,7 @@ from .steps import (
     _page,
     _phase,
     _refuse_after_the_reading_day,
+    _scale,
     _store,
 )
 
@@ -53,14 +54,15 @@ def send_self_assessment(
     student: Student = Depends(current_student),
 ) -> Stored:
     page = _page(request, competency, student)
-    levels = _levels(page, sent.levels)
+    scale = _scale(request)
+    levels = _levels(page, sent.levels, scale)
     settings: Settings = request.app.state.settings
     phase = _phase(settings)
     _refuse_after_the_reading_day(settings, "your Self-assessment")
     store = _store(request)
     record = store.record(student)
     try:
-        closing.check_move(_levels_now(record, competency), levels, phase)
+        closing.check_move(_levels_now(record, competency), levels, phase, scale)
     except closing.Refused as refused:
         raise HTTPException(refused.status, refused.message) from refused
     ticks = _ticks(page, record, sent.missed_check_points or {}, phase)
@@ -80,8 +82,9 @@ def draft_evidence_plan(
     student: Student = Depends(current_student),
 ) -> Draft:
     page = _page(request, competency, student)
-    levels = _levels(page, sent.levels) if sent.levels else {}
-    return Draft(text=_draft(page, _store(request).record(student), levels))
+    scale = _scale(request)
+    levels = _levels(page, sent.levels, scale) if sent.levels else {}
+    return Draft(text=_draft(page, _store(request).record(student), levels, scale))
 
 
 @router.post("/api/competencies/{competency}/evidence-plan", tags=["practice"])
@@ -101,7 +104,7 @@ def send_evidence_plan(
         competency,
         EvidencePlanPayload(
             text=sent.text,
-            drafted=_drafted(page, record, sent.text, sent.drafted),
+            drafted=_drafted(page, record, sent.text, sent.drafted, _scale(request)),
             example=latest.payload.example if latest else None,
             confirmed=latest.payload.confirmed if latest else False,
         ),
@@ -149,7 +152,7 @@ def close_competency(
         text=sent.text,
         example=sent.example.strip(),
         confirmed=True,
-        drafted=_drafted(page, record, sent.text, sent.drafted),
+        drafted=_drafted(page, record, sent.text, sent.drafted, _scale(request)),
         declaration=changed,
         evidence_panel_snapshot=evidence_panel.snapshot(panel),
     )

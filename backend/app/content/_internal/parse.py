@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from typing import Any, cast
 
 from .check import _check
@@ -78,7 +78,10 @@ def _no_drawings(src: str) -> dict[str, Any]:
 
 
 def parse_competency(
-    text: str, source: str = "content", drawings: Drawings = _no_drawings
+    text: str,
+    source: str = "content",
+    drawings: Drawings = _no_drawings,
+    to_get_there_levels: Collection[str] | None = None,
 ) -> CompetencyContent:
     text = text.replace("\r\n", "\n")
     front = _FRONT_MATTER.match(text)
@@ -124,7 +127,7 @@ def parse_competency(
         "\n".join(cast(list[str], intro_nodes)),
         raw_steps,
     )
-    _check(result, source)
+    _check(result, source, to_get_there_levels)
     return result
 
 

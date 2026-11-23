@@ -1,0 +1,13 @@
+name = "Three-level course"
+
+[[levels]]
+id = "seen"
+label = "Seen it"
+
+[[levels]]
+id = "tried"
+label = "Tried it"
+
+[[levels]]
+id = "shipped"
+label = "Shipped it"

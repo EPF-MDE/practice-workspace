@@ -249,6 +249,10 @@ export type CourseOut = {
      * Competencies
      */
     competencies: Array<CompetencyOut>;
+    /**
+     * Levels
+     */
+    levels: Array<LevelOut>;
 };
 
 /**
@@ -603,6 +607,20 @@ export type HtmlBlock = {
      * Html
      */
     html: string;
+};
+
+/**
+ * LevelOut
+ */
+export type LevelOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label: string;
 };
 
 /**

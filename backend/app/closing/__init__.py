@@ -9,17 +9,37 @@ from typing import Any, Literal
 from app.content import Point
 from app.store import PointLevelPayload
 
-Level = Literal["not-yet", "understand", "redo", "done"]
-LEVELS: tuple[Level, ...] = ("not-yet", "understand", "redo", "done")
-LABELS: dict[str, str] = {
-    "not-yet": "Not yet",
-    "understand": "I understand",
-    "redo": "I can redo",
-    "done": "I have done it",
-}
 Phase = Literal["open", "closed", "over"]
 
 _LINK = re.compile(r"https://(github\.com|gitlab\.com)/[\w.-]+/[\w.-]+(/\S*)?")
+
+
+@dataclass(frozen=True)
+class Level:
+    id: str
+    label: str
+
+
+@dataclass(frozen=True)
+class Scale:
+    levels: tuple[Level, ...]
+
+    @property
+    def top(self) -> Level:
+        return self.levels[-1]
+
+    @property
+    def below_top(self) -> tuple[str, ...]:
+        return tuple(level.id for level in self.levels[:-1])
+
+    def holds(self, level: str) -> bool:
+        return any(known.id == level for known in self.levels)
+
+    def label(self, level: str) -> str:
+        return next(known.label for known in self.levels if known.id == level)
+
+    def just_below_top(self, level: str) -> bool:
+        return len(self.levels) > 1 and self.levels[-2].id == level
 
 
 class Refused(Exception):
@@ -42,7 +62,7 @@ def is_project_link(url: str | None) -> bool:
 
 
 def clean_levels(
-    levels: dict[str, dict[str, Any]], point_ids: list[str]
+    levels: dict[str, dict[str, Any]], point_ids: list[str], scale: Scale
 ) -> dict[str, PointLevelPayload]:
     unknown = [p for p in levels if p not in point_ids]
     if unknown:
@@ -55,18 +75,17 @@ def clean_levels(
     for point in point_ids:
         if point not in levels:
             continue
-        level = levels[point].get("level")
-        if level not in LEVELS:
-            raise Refused(
-                422, f"{point}: the level is one of {', '.join(LABELS.values())}"
-            )
+        level: str = levels[point]["level"]
+        if not scale.holds(level):
+            labels = ", ".join(known.label for known in scale.levels)
+            raise Refused(422, f"{point}: the level is one of {labels}")
         link = (levels[point].get("link") or "").strip() or None
-        if level == "done":
+        if level == scale.top.id:
             if not is_project_link(link):
                 raise Refused(
                     422,
-                    f'{point}: "I have done it" needs a link to your work on GitHub or '
-                    "GitLab (https://...)",
+                    f'{point}: "{scale.top.label}" needs a link to your work on '
+                    "GitHub or GitLab (https://...)",
                 )
         else:
             link = None
@@ -78,6 +97,7 @@ def check_move(
     previous: dict[str, PointLevelPayload],
     new: dict[str, PointLevelPayload],
     now: Phase,
+    scale: Scale,
 ) -> None:
     if now == "open":
         return
@@ -88,15 +108,15 @@ def check_move(
         )
     rule = (
         "after the workspace closed, a level already given can only move up to "
-        '"I have done it", with a link'
+        f'"{scale.top.label}", with a link'
     )
     for point, before in previous.items():
         after = new.get(point)
         if after is None:
             raise Refused(403, f"{point} is missing: {rule}.")
-        if after != before and after.level != "done":
+        if after != before and after.level != scale.top.id:
             raise Refused(
-                403, f'{point} cannot move to "{LABELS[after.level]}": {rule}.'
+                403, f'{point} cannot move to "{scale.label(after.level)}": {rule}.'
             )
 
 
@@ -137,17 +157,19 @@ def plain(html: str | None) -> str:
 def draft(
     points: list[Point],
     levels: dict[str, PointLevelPayload],
+    scale: Scale,
     transfer: Transfer | None = None,
     evidence_project: str | None = None,
 ) -> str:
     blocks = []
     for point in points:
         rated = levels.get(point.id)
-        if rated is None or rated.level == "done":
+        if rated is None or rated.level == scale.top.id:
             continue
         level = rated.level
         lines = [
-            f"{point.id} ({point.band}), {LABELS[level]}: {plain(point.statement_html)}"
+            f"{point.id} ({point.band}), {scale.label(level)}: "
+            f"{plain(point.statement_html)}"
         ]
         if point.proof_html:
             lines.append(
@@ -160,7 +182,7 @@ def draft(
             )
         elif point.to_get_there_html.get(level):
             lines.append(f"To get there: {plain(point.to_get_there_html[level])}")
-        if level == "redo":
+        if scale.just_below_top(level):
             lines.append(
                 "Where: my Evidence "
                 f"Project{f' ({evidence_project})' if evidence_project else ''}."

@@ -48,6 +48,7 @@ from .steps import (
     _phase,
     _reference,
     _refuse_if_closed,
+    _scale,
     _step,
     _step_out,
     _store,
@@ -75,7 +76,12 @@ def competency_page(
         reading_day_passed=_phase(settings) == "over",
         self_assessment=_self_assessment(record, page.competency),
         evidence_plan=_evidence_plan(record, page.competency),
-        evidence_plan_draft=_draft(page, record, _levels_now(record, page.competency)),
+        evidence_plan_draft=_draft(
+            page,
+            record,
+            _levels_now(record, page.competency),
+            _scale(request),
+        ),
         evidence_project=_evidence_project(record),
         tldraw_license_key=settings.tldraw_license_key,
     )

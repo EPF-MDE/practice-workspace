@@ -125,25 +125,36 @@ def _transfer(page: Page, record: Record) -> closing.Transfer | None:
     return None
 
 
-def _draft(page: Page, record: Record, levels: dict[str, PointLevelPayload]) -> str:
+def _draft(
+    page: Page,
+    record: Record,
+    levels: dict[str, PointLevelPayload],
+    scale: closing.Scale,
+) -> str:
     return closing.draft(
         _points(page),
         levels,
+        scale,
         _transfer(page, record),
         _evidence_project(record),
     )
 
 
-def _drafted(page: Page, record: Record, text: str, flagged: bool) -> bool:
+def _drafted(
+    page: Page, record: Record, text: str, flagged: bool, scale: closing.Scale
+) -> bool:
     levels = _levels_now(record, page.competency)
-    return flagged or text.strip() == _draft(page, record, levels).strip()
+    return flagged or text.strip() == _draft(page, record, levels, scale).strip()
 
 
-def _levels(page: Page, levels: dict[str, PointLevel]) -> dict[str, PointLevelPayload]:
+def _levels(
+    page: Page, levels: dict[str, PointLevel], scale: closing.Scale
+) -> dict[str, PointLevelPayload]:
     try:
         return closing.clean_levels(
             {p: v.model_dump() for p, v in levels.items()},
             [p.id for p in _points(page)],
+            scale,
         )
     except closing.Refused as refused:
         raise HTTPException(refused.status, refused.message) from refused

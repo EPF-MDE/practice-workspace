@@ -2,12 +2,7 @@ import type { CheckPointOut, CompetencyPage, PointBlock } from "@/client";
 import { Button } from "@/components/ui/button";
 import { Html } from "@/packages/shared/Html";
 import { errorMessage } from "@/packages/shared/errorMessage";
-import {
-  DONE,
-  LEVELS,
-  type Levels,
-  type useSendLevels,
-} from "./useSelfAssessment";
+import type { Levels, useSendLevels } from "./useSelfAssessment";
 
 type Point = PointBlock & { type: "point" };
 
@@ -27,7 +22,7 @@ function LevelChoices({ point, levels, closed, over }: PointProps) {
       role="radiogroup"
       aria-label={`Your level on ${point.id}`}
     >
-      {LEVELS.map((level) => (
+      {levels.scale.map((level) => (
         <label key={level.id} className="flex items-center gap-1">
           <input
             type="radio"
@@ -38,7 +33,7 @@ function LevelChoices({ point, levels, closed, over }: PointProps) {
               over ||
               (closed &&
                 before !== undefined &&
-                level.id !== DONE &&
+                level.id !== levels.top.id &&
                 level.id !== before)
             }
             onChange={() => levels.rate(point.id, { level: level.id })}
@@ -124,7 +119,7 @@ function PointFieldset(props: PointProps & { checks: CheckPointOut[] }) {
       </legend>
       <Html html={point.statement_html} />
       <LevelChoices {...props} />
-      {mine?.level === DONE && (
+      {mine?.level === levels.top.id && (
         <DoneLink
           point={point}
           link={mine.link}
@@ -139,7 +134,7 @@ function PointFieldset(props: PointProps & { checks: CheckPointOut[] }) {
 
 function LevelsSendBar({
   page,
-  levels: { changed, missingLink },
+  levels: { changed, missingLink, top },
   over,
   sendLevels,
 }: {
@@ -162,8 +157,8 @@ function LevelsSendBar({
       </Button>
       {missingLink && (
         <span className="text-sm text-destructive">
-          {missingLink[0]}: "I have done it" needs a link to your work on GitHub
-          or GitLab.
+          {missingLink[0]}: "{top.label}" needs a link to your work on GitHub or
+          GitLab.
         </span>
       )}
       {page.self_assessment && (
@@ -202,8 +197,8 @@ export function SelfAssessmentForm({
       {closed && !over && (
         <output className="block rounded-md border p-3 text-sm">
           The workspace has closed. Until the Reading Day, a point you have not
-          rated yet can still take its first level, any of the four. A point you
-          have rated can only move up to "I have done it", with a link.
+          rated yet can still take its first level, any of them. A point you
+          have rated can only move up to "{levels.top.label}", with a link.
         </output>
       )}
       {points.map((point) => (
