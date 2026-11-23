@@ -69,7 +69,9 @@ def test_the_first_sign_in_opens_the_students_issue_and_later_ones_do_not(
     make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = FakeGitHub()
-    client = make_client(store=GitHubStore(github.client(), github.repository))
+    client = make_client(
+        store=GitHubStore(github.client(), github.repository, github.store_app_slug)
+    )
 
     sign_in(client, student.github_id)
     sign_in(client, student.github_id)
@@ -82,13 +84,17 @@ def test_sends_through_the_github_store_are_read_back_after_a_restart(
     make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = FakeGitHub()
-    client = make_client(store=GitHubStore(github.client(), github.repository))
+    client = make_client(
+        store=GitHubStore(github.client(), github.repository, github.store_app_slug)
+    )
     sign_in(client, student.github_id)
     client.post(
         f"{PAGE}/steps/the-number-changes/answer", json={"fields": {"what-moves": "D"}}
     )
 
-    restarted = make_client(store=GitHubStore(github.client(), github.repository))
+    restarted = make_client(
+        store=GitHubStore(github.client(), github.repository, github.store_app_slug)
+    )
     sign_in(restarted, student.github_id)
     step = next(
         s
@@ -103,11 +109,15 @@ def test_a_drawing_sent_through_the_github_store_is_read_back_after_a_restart(
     make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = FakeGitHub()
-    client = make_client(store=GitHubStore(github.client(), github.repository))
+    client = make_client(
+        store=GitHubStore(github.client(), github.repository, github.store_app_slug)
+    )
     sign_in(client, student.github_id)
     client.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
 
-    restarted = make_client(store=GitHubStore(github.client(), github.repository))
+    restarted = make_client(
+        store=GitHubStore(github.client(), github.repository, github.store_app_slug)
+    )
     sign_in(restarted, student.github_id)
 
     assert (
@@ -124,7 +134,9 @@ def test_when_github_fails_a_drawing_send_gets_a_clear_503(
     make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = FakeGitHub()
-    client = make_client(store=GitHubStore(github.client(), github.repository))
+    client = make_client(
+        store=GitHubStore(github.client(), github.repository, github.store_app_slug)
+    )
     sign_in(client, student.github_id)
     github.fail_every_request_with = 502
 
@@ -138,7 +150,9 @@ def test_when_github_fails_a_send_gets_a_clear_503(
     make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = FakeGitHub()
-    client = make_client(store=GitHubStore(github.client(), github.repository))
+    client = make_client(
+        store=GitHubStore(github.client(), github.repository, github.store_app_slug)
+    )
     sign_in(client, student.github_id)
     github.fail_every_request_with = 502
 
@@ -155,7 +169,9 @@ def test_when_github_fails_a_page_needing_the_record_gets_a_clear_503(
 ) -> None:
     github = FakeGitHub()
     github.fail_every_request_with = 503
-    client = make_client(store=GitHubStore(github.client(), github.repository))
+    client = make_client(
+        store=GitHubStore(github.client(), github.repository, github.store_app_slug)
+    )
     sign_in(client, student.github_id)
 
     response = client.get(PAGE)
@@ -169,7 +185,9 @@ def test_when_github_fails_at_sign_in_the_student_still_signs_in(
 ) -> None:
     github = FakeGitHub()
     github.fail_every_request_with = 503
-    client = make_client(store=GitHubStore(github.client(), github.repository))
+    client = make_client(
+        store=GitHubStore(github.client(), github.repository, github.store_app_slug)
+    )
 
     sign_in(client, student.github_id)
     github.fail_every_request_with = None
@@ -183,6 +201,8 @@ def test_the_store_is_a_setting(test_settings: Settings) -> None:
         test_settings.model_copy(
             update={
                 "store": "github",
+                "repository": "demo-school/demo-course",
+                "store_app_slug": "demo-store",
                 "store_label": "practice-staging",
                 "store_app_id": "1",
                 "store_app_private_key_base64": "LS0t",

@@ -64,7 +64,7 @@ def signed_in(
     repositories = OfflineRepositoryReading()
     repositories.put(a_repository_with_very_many_files(student))
     client = make_client(
-        store=GitHubStore(github.client(), github.repository),
+        store=GitHubStore(github.client(), github.repository, github.store_app_slug),
         repository_reading=repositories,
         access_check=FakeAccessCheck(),
     )

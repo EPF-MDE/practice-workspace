@@ -198,7 +198,7 @@ def test_writing_to_workspace_data_is_one_commit_retried_when_the_branch_moved()
         return httpx.Response(404)
 
     data = GitHubWorkspaceData(
-        "EPF-MDE/complex-web-services",
+        "demo-school/demo-course",
         lambda: "token",
         client=httpx.Client(
             base_url="https://api.github.com", transport=httpx.MockTransport(handle)
@@ -211,11 +211,11 @@ def test_writing_to_workspace_data_is_one_commit_retried_when_the_branch_moved()
 
     assert (
         calls.count(
-            "PATCH /repos/EPF-MDE/complex-web-services/git/refs/heads/workspace-data"
+            "PATCH /repos/demo-school/demo-course/git/refs/heads/workspace-data"
         )
         == 2
     )
-    assert calls.count("POST /repos/EPF-MDE/complex-web-services/git/trees") == 2
+    assert calls.count("POST /repos/demo-school/demo-course/git/trees") == 2
 
 
 def test_reading_a_file_from_workspace_data() -> None:
@@ -230,7 +230,7 @@ def test_reading_a_file_from_workspace_data() -> None:
         return httpx.Response(404)
 
     data = GitHubWorkspaceData(
-        "EPF-MDE/complex-web-services",
+        "demo-school/demo-course",
         lambda: "token",
         client=httpx.Client(
             base_url="https://api.github.com", transport=httpx.MockTransport(handle)

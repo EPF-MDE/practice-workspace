@@ -4,13 +4,18 @@ from datetime import datetime
 from typing import Any
 
 import pytest
-from conftest import MakeClient, c1_levels, sign_in
+from conftest import (
+    AFTER_THE_CLOSE,
+    AFTER_THE_READING_DAY,
+    BEFORE_THE_CLOSE,
+    MakeClient,
+    c1_levels,
+    sign_in,
+)
 from courses_under_test import CourseFolder, OnTheRoster, on_the_two_group_fixture
 from fastapi.testclient import TestClient
 
-from app.settings import Settings
-
-At = Callable[[datetime, datetime], TestClient]
+At = Callable[[datetime], TestClient]
 PAGE = "/api/competencies/C1"
 SELF = f"{PAGE}/self-assessment"
 LINK = "https://github.com/ada/notes/blob/main/README.md#L3"
@@ -33,15 +38,9 @@ def redraw(page: dict[str, Any]) -> dict[str, Any]:
 
 
 @pytest.fixture
-def at(
-    make_client: MakeClient, test_settings: Settings, student: OnTheRoster
-) -> Callable[[datetime, datetime], TestClient]:
-    def signed_in_at(closes_at: datetime, reading_day_at: datetime) -> TestClient:
-        client = make_client(
-            settings=test_settings.model_copy(
-                update={"closes_at": closes_at, "reading_day_at": reading_day_at}
-            )
-        )
+def at(make_client: MakeClient, student: OnTheRoster) -> At:
+    def signed_in_at(now: datetime) -> TestClient:
+        client = make_client(now=now)
         sign_in(client, student.github_id)
         return client
 
@@ -212,11 +211,11 @@ def test_a_self_assessment_without_ticks_leaves_the_last_ticks(
 
 
 def test_after_the_close_a_level_can_only_move_up_to_i_have_done_it_with_a_link(
-    at: At, past: datetime, future: datetime
+    at: At,
 ) -> None:
-    before = at(future, future)
+    before = at(BEFORE_THE_CLOSE)
     before.post(SELF, json=c1_levels(a="understand", b="redo"))
-    after = at(past, future)
+    after = at(AFTER_THE_CLOSE)
 
     down = after.post(SELF, json=c1_levels(a="not-yet", b="redo"))
     sideways = after.post(SELF, json=c1_levels(a="redo", b="redo"))
@@ -238,13 +237,11 @@ def test_after_the_close_a_level_can_only_move_up_to_i_have_done_it_with_a_link(
 @pytest.mark.parametrize("first", ["not-yet", "understand", "redo", ("done", LINK)])
 def test_after_the_close_a_point_never_rated_takes_its_first_level_freely(
     at: At,
-    past: datetime,
-    future: datetime,
     first: str | tuple[str, str],
 ) -> None:
-    before = at(future, future)
+    before = at(BEFORE_THE_CLOSE)
     before.post(SELF, json=c1_levels(a="understand"))
-    after = at(past, future)
+    after = at(AFTER_THE_CLOSE)
 
     rated = after.post(SELF, json=c1_levels(a="understand", e=first))
 
@@ -259,17 +256,17 @@ def test_after_the_close_a_point_never_rated_takes_its_first_level_freely(
 
 
 def test_after_the_close_a_first_level_still_needs_its_link_for_i_have_done_it(
-    at: At, past: datetime, future: datetime
+    at: At,
 ) -> None:
-    after = at(past, future)
+    after = at(AFTER_THE_CLOSE)
 
     assert after.post(SELF, json=c1_levels(e="done")).status_code == 422
 
 
 def test_after_the_close_a_student_who_never_rated_can_rate_every_point(
-    at: At, past: datetime, future: datetime
+    at: At,
 ) -> None:
-    after = at(past, future)
+    after = at(AFTER_THE_CLOSE)
 
     response = after.post(SELF, json=c1_levels(a="not-yet", b="redo", e=("done", LINK)))
 
@@ -277,9 +274,9 @@ def test_after_the_close_a_student_who_never_rated_can_rate_every_point(
 
 
 def test_after_the_close_a_point_rated_in_the_window_only_moves_up_to_i_have_done_it(
-    at: At, past: datetime, future: datetime
+    at: At,
 ) -> None:
-    after = at(past, future)
+    after = at(AFTER_THE_CLOSE)
     after.post(SELF, json=c1_levels(e="understand"))
 
     down = after.post(SELF, json=c1_levels(e="not-yet"))
@@ -295,23 +292,23 @@ def test_after_the_close_a_point_rated_in_the_window_only_moves_up_to_i_have_don
 
 
 def test_after_the_close_a_rated_point_cannot_be_dropped(
-    at: At, past: datetime, future: datetime
+    at: At,
 ) -> None:
-    before = at(future, future)
+    before = at(BEFORE_THE_CLOSE)
     before.post(SELF, json=c1_levels(a="understand", b="redo"))
-    after = at(past, future)
+    after = at(AFTER_THE_CLOSE)
 
     assert after.post(SELF, json=c1_levels(b=("done", LINK))).status_code == 403
 
 
 def test_after_the_close_the_ticks_no_longer_change(
-    at: At, past: datetime, future: datetime, student: OnTheRoster
+    at: At, student: OnTheRoster
 ) -> None:
     missed = {"missed_check_points": {"redraw": [student.check_point(1)]}}
-    before = at(future, future)
+    before = at(BEFORE_THE_CLOSE)
     before.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
     before.post(SELF, json=c1_levels(a="understand") | missed)
-    after = at(past, future)
+    after = at(AFTER_THE_CLOSE)
 
     same = after.post(SELF, json=c1_levels(a=("done", LINK)) | missed)
     other = after.post(
@@ -323,11 +320,11 @@ def test_after_the_close_the_ticks_no_longer_change(
 
 
 def test_each_move_is_dated_and_the_levels_unchanged_keep_their_date(
-    at: At, past: datetime, future: datetime
+    at: At,
 ) -> None:
-    before = at(future, future)
+    before = at(BEFORE_THE_CLOSE)
     first = before.post(SELF, json=c1_levels(a="understand", b="redo")).json()
-    after = at(past, future)
+    after = at(AFTER_THE_CLOSE)
     moved = after.post(SELF, json=c1_levels(a="understand", b=("done", LINK))).json()
 
     mine = after.get(PAGE).json()["self_assessment"]
@@ -336,8 +333,8 @@ def test_each_move_is_dated_and_the_levels_unchanged_keep_their_date(
     assert [v["version"] for v in mine["history"]] == [1, 2]
 
 
-def test_after_the_reading_day_nothing_changes(at: At, past: datetime) -> None:
-    after = at(past, past)
+def test_after_the_reading_day_nothing_changes(at: At) -> None:
+    after = at(AFTER_THE_READING_DAY)
 
     first = after.post(SELF, json=c1_levels(a="understand"))
     done = after.post(SELF, json=c1_levels(a=("done", LINK)))
@@ -347,8 +344,8 @@ def test_after_the_reading_day_nothing_changes(at: At, past: datetime) -> None:
     assert "Reading Day" in done.json()["detail"]
 
 
-def test_the_page_says_both_cut_offs(at: At, past: datetime, future: datetime) -> None:
-    page = at(past, future).get(PAGE).json()
+def test_the_page_says_both_cut_offs(at: At) -> None:
+    page = at(AFTER_THE_CLOSE).get(PAGE).json()
 
     assert page["closed"] is True
     assert page["reading_day_passed"] is False

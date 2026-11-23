@@ -1,10 +1,9 @@
 import base64
 import json
-from datetime import datetime
 from typing import Any
 
 import pytest
-from conftest import MakeClient, sign_in
+from conftest import AFTER_THE_CLOSE, MakeClient, sign_in
 from courses_under_test import CourseFolder, OnTheRoster, on_the_two_group_fixture
 from fastapi.testclient import TestClient
 
@@ -199,11 +198,9 @@ def test_a_drawing_too_large_is_refused(signed_in: TestClient) -> None:
 
 def test_after_the_close_no_drawing_and_no_tick_is_sent(
     make_client: MakeClient,
-    test_settings: Settings,
-    past: datetime,
     student: OnTheRoster,
 ) -> None:
-    client = make_client(settings=test_settings.model_copy(update={"closes_at": past}))
+    client = make_client(now=AFTER_THE_CLOSE)
     sign_in(client, student.github_id)
 
     drawing = client.post(DRAWING, json=SEND)

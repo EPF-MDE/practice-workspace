@@ -12,6 +12,11 @@ A_SCALE = (
     '\n[[levels]]\nid = "done"\nlabel = "I have done it"\n'
 )
 
+CALENDAR = (
+    '\n[calendar]\ntime_zone = "Europe/Paris"\n'
+    "close = 2030-06-14T23:59:00\nreading_day = 2030-07-04T23:59:00\n"
+)
+
 
 def front_matter(competency: str) -> str:
     return f"---\ncompetency: {competency}\n---\n\n"
@@ -31,7 +36,8 @@ def write_course_folder(
             f'\n[competencies.{c}]\ntitle = "{title}"\nminutes = {minutes}\n'
             for c, (title, minutes) in titled.items()
         )
-        + A_SCALE,
+        + A_SCALE
+        + CALENDAR,
         encoding="utf-8",
     )
     for competency, body in content.items():

@@ -39,7 +39,11 @@ def github() -> FakeGitHub:
 
 def github_store(github: FakeGitHub, label: str = "practice") -> GitHubStore:
     return GitHubStore(
-        github.client(), github.repository, label=label, sleep=lambda seconds: None
+        github.client(),
+        github.repository,
+        github.store_app_slug,
+        label=label,
+        sleep=lambda seconds: None,
     )
 
 

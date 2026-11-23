@@ -11,8 +11,9 @@ from urllib.parse import urlencode
 
 import httpx
 
-REPOSITORY = "EPF-MDE/complex-web-services"
-BOT = {"login": "epf-mde-cws-store[bot]", "type": "Bot"}
+REPOSITORY = "demo-school/demo-course"
+STORE_APP_SLUG = "demo-store"
+BOT = {"login": f"{STORE_APP_SLUG}[bot]", "type": "Bot"}
 COMMENT_LIMIT = 65_536
 
 
@@ -25,6 +26,7 @@ class Commit(NamedTuple):
 class FakeGitHub:
     def __init__(self, repository: str = REPOSITORY, max_per_page: int = 100):
         self.repository = repository
+        self.store_app_slug = STORE_APP_SLUG
         self.max_per_page = max_per_page
         self.issues: dict[int, dict[str, Any]] = {}
         self.comments: dict[int, list[dict[str, Any]]] = {}

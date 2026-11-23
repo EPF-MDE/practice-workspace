@@ -37,3 +37,8 @@ label = "I can redo"
 [[levels]]
 id = "done"
 label = "I have done it"
+
+[calendar]
+time_zone = "Europe/Paris"
+close = 2099-06-14T23:59:00
+reading_day = 2099-07-04T23:59:00

@@ -31,3 +31,8 @@ label = "Tried it"
 [[levels]]
 id = "shipped"
 label = "Shipped it"
+
+[calendar]
+time_zone = "Europe/Paris"
+close = 2030-06-14T23:59:00
+reading_day = 2030-07-04T23:59:00

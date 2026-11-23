@@ -47,7 +47,6 @@ from app.store._internal.payloads import (
     WithdrawalPayload,
 )
 
-STORE_BOT = "epf-mde-cws-store[bot]"
 PER_PAGE = 100
 DATA_RETRIES = 5
 
@@ -68,34 +67,29 @@ class GitHubStore:
             settings.store_app_private_key_base64,
             settings.store_app_installation_id,
         )
-        bot: dict[str, Any] = (
-            {"bot_login": f"{settings.store_app_slug}[bot]"}
-            if settings.store_app_slug
-            else {}
-        )
         return cls(
             client,
             settings.repository,
+            settings.store_app_slug,
             label=settings.store_label,
             data_branch=settings.data_branch,
-            **bot,
         )
 
     def __init__(
         self,
         http: httpx.Client,
         repository: str,
+        store_app_slug: str,
         label: str = "practice",
         data_branch: str = "workspace-data",
         sleep: Callable[[float], None] = time.sleep,
-        bot_login: str = STORE_BOT,
     ):
         self._http = http
         self._repository = repository
         self._label = label
         self._data_branch = data_branch
         self._sleep = sleep
-        self._bot_login = bot_login
+        self._bot_login = f"{store_app_slug}[bot]"
         self._lock = threading.Lock()
         self._data_lock = data_branch_lock(repository, data_branch)
         self._issues: dict[int, list[int]] | None = None

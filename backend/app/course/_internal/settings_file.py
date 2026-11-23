@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import tomllib
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import (
     BaseModel,
@@ -11,6 +13,7 @@ from pydantic import (
     PositiveInt,
     ValidationError,
     field_validator,
+    model_validator,
 )
 from pydantic_core import ErrorDetails
 
@@ -43,6 +46,45 @@ class LevelSettings(BaseModel):
     label: str = Field(min_length=1)
 
 
+class CalendarSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    time_zone: str
+    close: datetime
+    reading_day: datetime
+
+    @field_validator("time_zone")
+    @classmethod
+    def _a_known_time_zone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError) as error:
+            raise ValueError(f"'{value}' is no IANA time zone") from error
+        return value
+
+    @property
+    def zone(self) -> ZoneInfo:
+        return ZoneInfo(self.time_zone)
+
+    @property
+    def closes_at(self) -> datetime:
+        return _in(self.close, self.zone)
+
+    @property
+    def reading_day_at(self) -> datetime:
+        return _in(self.reading_day, self.zone)
+
+    @model_validator(mode="after")
+    def _the_reading_day_is_not_before_the_close(self) -> CalendarSettings:
+        if self.reading_day_at < self.closes_at:
+            raise ValueError("the Reading Day comes before the Close")
+        return self
+
+
+def _in(instant: datetime, zone: ZoneInfo) -> datetime:
+    return instant if instant.tzinfo else instant.replace(tzinfo=zone)
+
+
 class CourseSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -50,6 +92,7 @@ class CourseSettings(BaseModel):
     groups: tuple[GroupSettings, ...] = Field(min_length=1)
     competencies: dict[str, CompetencySettings] = {}
     levels: tuple[LevelSettings, ...]
+    calendar: CalendarSettings
 
     @field_validator("levels")
     @classmethod
@@ -103,4 +146,5 @@ def _problem(error: ErrorDetails) -> str:
         return f"{SETTINGS_FILE}: '{where}' is missing"
     if kind == "extra_forbidden":
         return f"{SETTINGS_FILE}: '{where}' is no setting of a Course"
-    return f"{SETTINGS_FILE}: '{where}': {error['msg']}"
+    message = error["ctx"]["error"] if kind == "value_error" else error["msg"]
+    return f"{SETTINGS_FILE}: '{where}': {message}"

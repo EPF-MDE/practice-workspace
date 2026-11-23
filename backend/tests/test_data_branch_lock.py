@@ -18,11 +18,11 @@ def test_every_writer_of_one_branch_gets_the_same_lock_and_other_branches_their_
     None
 ):
     assert data_branch_lock(
-        "EPF-MDE/complex-web-services", "workspace-data"
-    ) is data_branch_lock("EPF-MDE/complex-web-services", "workspace-data")
+        "demo-school/demo-course", "workspace-data"
+    ) is data_branch_lock("demo-school/demo-course", "workspace-data")
     assert data_branch_lock(
-        "EPF-MDE/complex-web-services", "workspace-data"
-    ) is not data_branch_lock("EPF-MDE/complex-web-services", "other")
+        "demo-school/demo-course", "workspace-data"
+    ) is not data_branch_lock("demo-school/demo-course", "other")
 
 
 def is_git_data_api_call(request: httpx.Request) -> bool:
@@ -53,7 +53,9 @@ def test_a_drawing_and_a_repository_reading_write_one_at_a_time() -> None:
     client = httpx.Client(
         base_url="https://api.github.com", transport=httpx.MockTransport(handle)
     )
-    store = GitHubStore(client, github.repository, sleep=lambda seconds: None)
+    store = GitHubStore(
+        client, github.repository, github.store_app_slug, sleep=lambda seconds: None
+    )
     data = GitHubWorkspaceData(github.repository, lambda: "token", client=client)
     store.open_record(STUDENT)
 

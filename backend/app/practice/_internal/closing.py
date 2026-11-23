@@ -5,7 +5,6 @@ from fastapi import Depends, HTTPException, Request
 from app import closing, evidence_panel
 from app.auth import current_student
 from app.roster import Student
-from app.settings import Settings
 from app.store import (
     EvidencePlanPayload,
     SelfAssessmentPayload,
@@ -56,9 +55,8 @@ def send_self_assessment(
     page = _page(request, competency, student)
     scale = _scale(request)
     levels = _levels(page, sent.levels, scale)
-    settings: Settings = request.app.state.settings
-    phase = _phase(settings)
-    _refuse_after_the_reading_day(settings, "your Self-assessment")
+    phase = _phase(request)
+    _refuse_after_the_reading_day(request, "your Self-assessment")
     store = _store(request)
     record = store.record(student)
     try:
@@ -95,7 +93,7 @@ def send_evidence_plan(
     student: Student = Depends(current_student),
 ) -> EvidencePlanVersion:
     page = _page(request, competency, student)
-    _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Plan")
+    _refuse_after_the_reading_day(request, "your Evidence Plan")
     store = _store(request)
     record = store.record(student)
     latest = record.latest(EvidencePlanPayload, competency)
@@ -127,7 +125,7 @@ def close_competency(
         if sent.declaration
         else None
     )
-    _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Plan")
+    _refuse_after_the_reading_day(request, "your Evidence Plan")
     store = _store(request)
     record = store.record(student)
     if record.latest(SelfAssessmentPayload, competency) is None:
@@ -141,7 +139,7 @@ def close_competency(
         else None
     )
     if changed:
-        current = StoredDeclaration.from_payload(changed, _now())
+        current = StoredDeclaration.from_payload(changed, _now(request))
     panel = evidence_panel.read_panel(
         competency,
         request.app.state.repository_reading,

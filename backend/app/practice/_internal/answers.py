@@ -40,6 +40,7 @@ from .review import (
 )
 from .router import router
 from .steps import (
+    _calendar,
     _closed,
     _competency,
     _drawing_sent,
@@ -64,16 +65,17 @@ def competency_page(
     page = course_competency.content.for_group(student.group)
     record = _store(request).record(student)
     settings: Settings = request.app.state.settings
+    calendar = _calendar(request)
     hints = _hints(page, record)
     return CompetencyPage(
         competency=page.competency,
         title=course_competency.title,
         intro_html=page.intro_html,
         steps=[_step_out(step, page, record, hints) for step in page.steps],
-        closes_at=settings.closes_at,
-        closed=_closed(settings),
-        reading_day_at=settings.reading_day_at,
-        reading_day_passed=_phase(settings) == "over",
+        closes_at=calendar.closes_at,
+        closed=_closed(request),
+        reading_day_at=calendar.reading_day_at,
+        reading_day_passed=_phase(request) == "over",
         self_assessment=_self_assessment(record, page.competency),
         evidence_plan=_evidence_plan(record, page.competency),
         evidence_plan_draft=_draft(
@@ -116,7 +118,7 @@ def send_answer(
         raise HTTPException(
             422, f"Pick one of the options offered: {', '.join(not_an_option)}"
         )
-    _refuse_if_closed(request.app.state.settings, "answers")
+    _refuse_if_closed(request, "answers")
     waits_for = _waits_for(step, page, _store(request).record(student))
     if waits_for:
         raise HTTPException(
@@ -144,7 +146,7 @@ def ask_question(
     _step(_page(request, competency, student), step_id)
     if not question.text.strip():
         raise HTTPException(422, "Write your question before sending it")
-    _refuse_if_closed(request.app.state.settings, "questions")
+    _refuse_if_closed(request, "questions")
     entry = _store(request).send_question(
         student, competency, step_id, question.text.strip()
     )
@@ -194,7 +196,7 @@ def send_drawing(
             "This drawing is too large to send: remove an image pasted into it, then "
             "try again",
         )
-    _refuse_if_closed(request.app.state.settings, "drawings")
+    _refuse_if_closed(request, "drawings")
     entry = _store(request).send_drawing(
         student, competency, step_id, png, drawing.snapshot
     )
@@ -240,7 +242,7 @@ def tick_missed_check_points(
         raise HTTPException(
             422, f"Not a check point of this drawing: {', '.join(sorted(unknown))}"
         )
-    _refuse_if_closed(request.app.state.settings, "check points")
+    _refuse_if_closed(request, "check points")
     store = _store(request)
     if store.record(student).latest(DrawingPayload, competency, step_id) is None:
         raise HTTPException(

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
@@ -15,6 +17,7 @@ from ._internal.settings_file import read_settings
 
 __all__ = [
     "COMPETENCIES",
+    "Calendar",
     "Competency",
     "Course",
     "Group",
@@ -40,11 +43,23 @@ class Group:
 
 
 @dataclass(frozen=True)
+class Calendar:
+    closes_at: datetime
+    reading_day_at: datetime
+    time_zone: ZoneInfo
+
+    def when(self, instant: datetime) -> str:
+        when = instant.astimezone(self.time_zone).strftime("%-d %B %Y at %H:%M")
+        return f"{when}, {self.time_zone.key} time"
+
+
+@dataclass(frozen=True)
 class Course:
     name: str
     groups: dict[str, Group]
     competencies: dict[str, Competency]
     scale: Scale
+    calendar: Calendar
 
 
 @dataclass(frozen=True)
@@ -96,7 +111,12 @@ def load_course(folder: str | Path) -> Loading:
         )
         for id in COMPETENCIES
     }
-    return Loading(Course(settings.name, groups, competencies, scale), [])
+    calendar = Calendar(
+        settings.calendar.closes_at,
+        settings.calendar.reading_day_at,
+        settings.calendar.zone,
+    )
+    return Loading(Course(settings.name, groups, competencies, scale, calendar), [])
 
 
 class LevelOut(BaseModel):

@@ -5,6 +5,7 @@ import os
 import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -125,6 +126,18 @@ def default_store(settings: Settings) -> Store:
                 "WORKSPACE_STORE=memory: every send is lost when the app restarts"
             )
         return InMemoryStore()
+    missing = [
+        variable
+        for variable, value in (
+            ("WORKSPACE_REPOSITORY", settings.repository),
+            ("WORKSPACE_STORE_APP_SLUG", settings.store_app_slug),
+        )
+        if not value
+    ]
+    if missing:
+        raise ConfigurationError(
+            f"The GitHub Store needs the Instance setting {' and '.join(missing)}"
+        )
     return GitHubStore.from_settings(settings)
 
 
@@ -179,6 +192,7 @@ def create_app(
     store: Store | None = None,
     repository_reading: RepositoryReadingSource | None = None,
     access_check: AccessCheck | None = None,
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> FastAPI:
     settings = settings or get_settings()
     if _on_azure():
@@ -226,6 +240,7 @@ def create_app(
     app.state.access_check = (
         access_check if access_check is not None else default_access_check(settings)
     )
+    app.state.clock = clock
     app.state.signals = observability.Signals()
 
     @app.middleware("http")

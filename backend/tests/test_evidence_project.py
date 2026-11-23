@@ -5,7 +5,13 @@ from typing import Any
 
 import httpx
 import pytest
-from conftest import Counted, MakeClient, sign_in
+from conftest import (
+    AFTER_THE_CLOSE,
+    AFTER_THE_READING_DAY,
+    Counted,
+    MakeClient,
+    sign_in,
+)
 from courses_under_test import OnTheRoster
 from fastapi.testclient import TestClient
 
@@ -222,26 +228,21 @@ def test_a_declaration_can_be_changed_then_withdrawn_back_to_the_rosters(
 
 def test_a_declaration_changes_until_the_reading_day_and_no_later(
     make_client: MakeClient,
-    test_settings: Settings,
-    past: datetime,
-    future: datetime,
     student: OnTheRoster,
 ) -> None:
-    def client(reading_day: datetime) -> TestClient:
+    def client(now: datetime) -> TestClient:
         c = make_client(
-            settings=test_settings.model_copy(
-                update={"closes_at": past, "reading_day_at": reading_day}
-            ),
+            now=now,
             repository_reading=OfflineRepositoryReading(),
             access_check=FakeAccessCheck(),
         )
         sign_in(c, student.github_id)
         return c
 
-    open_until_reading_day = client(future)
+    open_until_reading_day = client(AFTER_THE_CLOSE)
     assert open_until_reading_day.post(DECLARATION, json=BAKERY).status_code == 200
 
-    over = client(past)
+    over = client(AFTER_THE_READING_DAY)
     assert over.post(DECLARATION, json=BAKERY).status_code == 403
     assert over.delete(DECLARATION).status_code == 403
 

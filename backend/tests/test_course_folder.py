@@ -6,6 +6,7 @@ import pytest
 from conftest import MakeClient, sign_in
 from course_folders import (
     A_SCALE,
+    CALENDAR,
     ONE_STEP,
     TWO_GROUPS,
     front_matter,
@@ -181,7 +182,8 @@ def test_verify_names_each_competency_when_the_settings_hold_none(
 ) -> None:
     folder = write_course_folder(tmp_path, with_every_competency())
     (folder / "course.toml").write_text(
-        'name = "Fixture course"\n' + TWO_GROUPS + A_SCALE, encoding="utf-8"
+        'name = "Fixture course"\n' + TWO_GROUPS + A_SCALE + CALENDAR,
+        encoding="utf-8",
     )
 
     result = verify(folder)
@@ -291,3 +293,28 @@ def test_the_app_refuses_to_start_on_a_group_block_the_settings_do_not_hold(
 
     with pytest.raises(ConfigurationError, match="quay"):
         make_client(settings=on(test_settings, folder))
+
+
+def test_verify_reports_a_reading_day_before_the_close() -> None:
+    result = verify(COURSES / "reading-day-before-the-close")
+
+    assert result.returncode != 0
+    assert "the Reading Day comes before the Close" in result.stdout
+
+
+def test_the_app_refuses_to_start_on_a_reading_day_before_the_close(
+    make_client: MakeClient, test_settings: Settings
+) -> None:
+    with pytest.raises(ConfigurationError, match="Reading Day comes before the Close"):
+        make_client(
+            settings=on(test_settings, COURSES / "reading-day-before-the-close")
+        )
+
+
+def test_the_close_and_the_reading_day_are_the_courses_in_its_time_zone(
+    signed_in: TestClient,
+) -> None:
+    page = signed_in.get("/api/competencies/C1").json()
+
+    assert page["closes_at"] == "2030-06-14T23:59:00+02:00"
+    assert page["reading_day_at"] == "2030-07-04T23:59:00+02:00"
