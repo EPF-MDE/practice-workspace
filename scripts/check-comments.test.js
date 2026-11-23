@@ -1,29 +1,21 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { repositoryWith as writtenRepository } from "./repository-with.js";
 
 const repository = join(import.meta.dirname, "..");
 const pythonCheck = join(repository, "scripts", "check-comments.py");
 const oxlint = join(repository, "node_modules", ".bin", "oxlint");
 
-const repositoryWith = (files, baseline) => {
-  const root = mkdtempSync(join(tmpdir(), "check-comments-"));
-  const all = {
+const repositoryWith = (files, baseline) =>
+  writtenRepository({
     ...files,
     "lint-rules/comments-baseline.json": JSON.stringify(baseline),
     ".oxlintrc.json": JSON.stringify({
       jsPlugins: [join(repository, "lint-rules", "comments.js")],
       rules: { "comments/no-comments": "error" },
     }),
-  };
-  for (const [file, contents] of Object.entries(all)) {
-    mkdirSync(join(root, dirname(file)), { recursive: true });
-    writeFileSync(join(root, file), contents);
-  }
-  return root;
-};
+  });
 
 const lint = (files, baseline = {}) =>
   spawnSync(oxlint, ["-c", ".oxlintrc.json", ...Object.keys(files)], {

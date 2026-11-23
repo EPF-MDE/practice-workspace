@@ -18,7 +18,7 @@ from app.repository_reading import (
 from app.store import GitHubStore
 
 C1 = "/api/competencies/C1"
-READ_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
+FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 
 
 def a_repository_with_very_many_files() -> RepositoryReading:
@@ -36,8 +36,8 @@ def a_repository_with_very_many_files() -> RepositoryReading:
     return RepositoryReading(
         student=StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS"),
         default_branch="main",
-        read_at=READ_AT,
-        checked_at=READ_AT,
+        facts_computed_at=FRESH_READING_AT,
+        last_checked_at=FRESH_READING_AT,
         branches_read=3,
         pull_requests_read=2,
         empty=False,
@@ -104,6 +104,33 @@ def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_
             "note",
         ),
         (
+            "/api/evidence-project/declaration",
+            {"url": "https://github.com/ada/" + "b" * 500, "note": "n"},
+            "URL",
+        ),
+        (
+            f"{C1}/close",
+            {
+                "text": "p",
+                "example": "e",
+                "declaration": {
+                    "url": "https://github.com/ada/bakery",
+                    "note": "x" * 2_001,
+                },
+            },
+            "note",
+        ),
+        (
+            "/api/evidence-project/check",
+            {"url": "https://github.com/ada/" + "b" * 500},
+            "URL",
+        ),
+        (
+            f"{C1}/steps/guided-calculation/questions",
+            {"text": "x" * 4_001},
+            "question",
+        ),
+        (
             f"{C1}/self-assessment",
             {
                 "levels": {
@@ -142,4 +169,18 @@ def test_a_send_within_each_limit_but_too_large_once_stored_gets_a_422_not_a_503
     assert refused.status_code == 422
     assert "too long to store" in refused.json()["detail"]
     assert "Retry-After" not in refused.headers
+    assert github.write_requests == before
+
+
+def test_a_send_missing_a_field_and_no_text_too_long_gets_the_usual_422(
+    ada: TestClient, github: FakeGitHub
+) -> None:
+    before = github.write_requests
+
+    refused = ada.post(f"{C1}/close", json={"text": "My plan."})
+
+    assert refused.status_code == 422
+    detail = refused.json()["detail"]
+    assert isinstance(detail, list)
+    assert [error["loc"] for error in detail] == [["body", "example"]]
     assert github.write_requests == before

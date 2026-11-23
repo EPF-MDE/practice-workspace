@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from fastapi import HTTPException
-from pydantic import BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field
+from pydantic_core import PydanticCustomError
 
 
 class HtmlBlock(BaseModel):
@@ -169,8 +170,65 @@ class CompetencyPage(BaseModel):
     tldraw_license_key: str
 
 
+MAX_FIELD_CHARS = 4_000
+MAX_QUESTION_CHARS = 4_000
+MAX_PLAN_CHARS = 12_000
+MAX_EXAMPLE_CHARS = 2_000
+MAX_NOTE_CHARS = 2_000
+MAX_URL_CHARS = 500
+
+TOO_LONG = "too_long"
+
+
+def _refuse_over(text: str | None, limit: int, what: str) -> None:
+    if text is not None and len(text) > limit:
+        raise PydanticCustomError(
+            TOO_LONG,
+            "{what} is too long: at most {limit} characters, it has {length}",
+            {"what": what, "limit": f"{limit:,}", "length": f"{len(text):,}"},
+        )
+
+
+def _at_most(limit: int, what: str) -> AfterValidator:
+    def check(text: str) -> str:
+        _refuse_over(text, limit, what)
+        return text
+
+    return AfterValidator(check)
+
+
+def _each_at_most[V](
+    limit: int, what: str, text: Callable[[V], str | None]
+) -> AfterValidator:
+    def check(values: dict[str, V]) -> dict[str, V]:
+        for key, value in values.items():
+            _refuse_over(text(value), limit, what.format(key=key))
+        return values
+
+    return AfterValidator(check)
+
+
+QuestionText = Annotated[
+    str, Field(min_length=1), _at_most(MAX_QUESTION_CHARS, "Your question")
+]
+PlanText = Annotated[str, _at_most(MAX_PLAN_CHARS, "Your Evidence Plan")]
+ExampleText = Annotated[str, _at_most(MAX_EXAMPLE_CHARS, "Your example for the Eval")]
+NoteText = Annotated[str, _at_most(MAX_NOTE_CHARS, "Your note on what to read")]
+EvidenceProjectUrl = Annotated[
+    str, _at_most(MAX_URL_CHARS, "The Evidence Project's URL")
+]
+AnswerFields = Annotated[
+    dict[str, str],
+    _each_at_most(MAX_FIELD_CHARS, "Your answer in '{key}'", lambda text: text),
+]
+PointLevels = Annotated[
+    dict[str, PointLevel],
+    _each_at_most(MAX_URL_CHARS, "The link for {key}", lambda level: level.link),
+]
+
+
 class AnswerIn(BaseModel):
-    fields: dict[str, str]
+    fields: AnswerFields
 
 
 class AnswerSent(BaseModel):
@@ -180,22 +238,7 @@ class AnswerSent(BaseModel):
 
 
 class QuestionIn(BaseModel):
-    text: str = Field(min_length=1, max_length=4000)
-
-
-MAX_FIELD_CHARS = 4_000
-MAX_PLAN_CHARS = 12_000
-MAX_EXAMPLE_CHARS = 2_000
-MAX_NOTE_CHARS = 2_000
-MAX_URL_CHARS = 500
-
-
-def _at_most(text: str | None, limit: int, what: str) -> None:
-    if text is not None and len(text) > limit:
-        raise HTTPException(
-            422,
-            f"{what} is too long: at most {limit:,} characters, it has {len(text):,}",
-        )
+    text: QuestionText
 
 
 MAX_PNG_BYTES = 5_000_000
@@ -230,7 +273,7 @@ class CheckPointsSent(BaseModel):
 
 
 class SelfAssessmentIn(BaseModel):
-    levels: dict[str, PointLevel]
+    levels: PointLevels
     missed_check_points: dict[str, list[str]] | None = None
 
 
@@ -240,7 +283,7 @@ class Stored(BaseModel):
 
 
 class LevelsIn(BaseModel):
-    levels: dict[str, PointLevel]
+    levels: PointLevels
 
 
 class Draft(BaseModel):
@@ -248,21 +291,21 @@ class Draft(BaseModel):
 
 
 class EvidencePlanIn(BaseModel):
-    text: str
+    text: PlanText
     drafted: bool = False
 
 
 class DeclarationIn(BaseModel):
-    url: str
-    note: str
+    url: EvidenceProjectUrl
+    note: NoteText
 
 
 class ProjectIn(BaseModel):
-    url: str = Field(max_length=500)
+    url: EvidenceProjectUrl
 
 
 class ClosingIn(BaseModel):
-    text: str
-    example: str
+    text: PlanText
+    example: ExampleText
     drafted: bool = False
     declaration: DeclarationIn | None = None

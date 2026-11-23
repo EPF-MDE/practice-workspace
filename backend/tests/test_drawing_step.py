@@ -87,7 +87,9 @@ def test_once_sent_the_page_shows_the_reference_and_the_drawing_sent(
 
     assert block(page, "reference-drawing")["locked"] is False
     assert step(page)["drawing"]["version"] == 1
-    assert block(page, "reference-drawing", "redraw-more")["locked"] is True
+    assert block(page, "reference-drawing", "redraw-more")["locked"] is True, (
+        "another drawing step stays locked"
+    )
 
 
 def test_a_student_receives_their_groups_reference(client: TestClient) -> None:
@@ -144,9 +146,18 @@ def test_only_the_references_check_points_can_be_ticked(ada: TestClient) -> None
 @pytest.mark.parametrize(
     "body",
     [
-        {**SEND, "png_base64": base64.b64encode(b"GIF89a").decode()},
-        {**SEND, "png_base64": "not base64!"},
-        {**SEND, "snapshot": {"shapes": []}},
+        pytest.param(
+            {**SEND, "png_base64": base64.b64encode(b"GIF89a").decode()},
+            id="not a PNG",
+        ),
+        pytest.param(
+            {**SEND, "png_base64": "not base64!"},
+            id="not base64",
+        ),
+        pytest.param(
+            {**SEND, "snapshot": {"shapes": []}},
+            id="not a tldraw snapshot",
+        ),
     ],
 )
 def test_a_drawing_that_is_not_one_is_refused(

@@ -16,7 +16,7 @@ from app.repository_reading import (
 from app.settings import Settings
 from app.store import InMemoryStore
 
-READ_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
+FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 ADA_REPOSITORY = StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS")
 
 
@@ -61,8 +61,8 @@ def reading(
     return RepositoryReading(
         student=student,
         default_branch="main",
-        read_at=READ_AT,
-        checked_at=READ_AT,
+        facts_computed_at=FRESH_READING_AT,
+        last_checked_at=FRESH_READING_AT,
         branches_read=branches,
         pull_requests_read=pulls,
         empty=empty,
@@ -187,9 +187,11 @@ def test_the_panel_shows_when_the_repository_was_read_and_a_refresh_writes_nothi
     shown = panel_client.get("/api/competencies/C2/evidence-panel").json()
     refreshed = panel_client.post("/api/competencies/C2/evidence-panel/refresh").json()
 
-    assert shown["read_at"] == shown["checked_at"] == "2026-11-01T08:00:00Z"
-    assert refreshed["read_at"] == shown["read_at"]
-    assert refreshed["checked_at"] > shown["checked_at"]
+    assert (
+        shown["facts_computed_at"] == shown["last_checked_at"] == "2026-11-01T08:00:00Z"
+    )
+    assert refreshed["facts_computed_at"] == shown["facts_computed_at"]
+    assert refreshed["last_checked_at"] > shown["last_checked_at"]
     assert repositories.refreshes == 1
     assert store.writes == before
 

@@ -2,15 +2,18 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 import { closing } from "./helpers/closing";
 import { path, signIn } from "./helpers/path";
 
-const ALAN = 1041;
-const HEDY = 1042;
+const READS_A_BRANCH = 1041;
+const READS_EMPTY = 1042;
+
+const notReadable = (repository: string) => `${repository}-private`;
+const onGitHub = (repository: string) => `https://github.com/${repository}`;
 
 const sidebar = (page: Page) => path(page).getByTestId("evidence-panel");
 
 test("the Evidence panel says what the Reading Day would find, then the closing step declares an Evidence Project for every Competency", async ({
   page,
 }) => {
-  await signIn(page, ALAN);
+  await signIn(page, READS_A_BRANCH);
   await page.goto("/competencies/C1");
   await readThePanel(page);
 
@@ -71,12 +74,12 @@ async function readThePanel(page: Page) {
   );
 
   const checked = await panel
-    .getByTestId("evidence-panel-checked-at")
+    .getByTestId("evidence-panel-last-checked-at")
     .textContent();
   await panel.getByRole("button", { name: "Refresh" }).click();
-  await expect(panel.getByTestId("evidence-panel-checked-at")).not.toHaveText(
-    checked ?? ""
-  );
+  await expect(
+    panel.getByTestId("evidence-panel-last-checked-at")
+  ).not.toHaveText(checked ?? "");
 
   await panel
     .getByRole("button", { name: "My work doesn't show here" })
@@ -98,7 +101,7 @@ async function checkAccess(evidence: Locator) {
   );
 
   const url = evidence.getByRole("textbox", { name: /its address on GitHub/ });
-  await url.fill("https://github.com/alan/bakery-private");
+  await url.fill(onGitHub(notReadable("alan/bakery")));
   await evidence.getByRole("button", { name: "Check access" }).click();
   await expect(evidence.getByTestId("access")).toContainText(
     "Not readable yet: grant read-only access."
@@ -114,7 +117,7 @@ async function checkAccess(evidence: Locator) {
 test("an empty repository reads as a provisional reading; a GitLab project and a repository the App cannot read are said as such", async ({
   page,
 }) => {
-  await signIn(page, HEDY);
+  await signIn(page, READS_EMPTY);
   await page.goto("/competencies/C1");
 
   await expect(sidebar(page).getByTestId("evidence-panel-empty")).toContainText(
@@ -135,19 +138,16 @@ test("an empty repository reads as a provisional reading; a GitLab project and a
   await close.confirm.click();
   await expectNotRead(sidebar(page), "hedy/radio");
 
-  await close.declare(
-    "https://github.com/hedy/radio-private",
-    "The README first."
-  );
+  await close.declare(onGitHub(notReadable("hedy/radio")), "The README first.");
   await close.evidence
     .getByRole("button", { name: "Change my Evidence Project" })
     .click();
   await expect(
     close.evidence.getByTestId("declared").getByTestId("access")
   ).toHaveAttribute("data-status", "not-readable");
-  await expectNotRead(sidebar(page), "hedy/radio-private");
+  await expectNotRead(sidebar(page), notReadable("hedy/radio"));
   await page.goto("/competencies/C3");
-  await expectNotRead(sidebar(page), "hedy/radio-private");
+  await expectNotRead(sidebar(page), notReadable("hedy/radio"));
 });
 
 async function expectNotRead(panel: Locator, repository: string) {

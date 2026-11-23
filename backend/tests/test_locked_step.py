@@ -146,21 +146,35 @@ def test_one_students_answer_unlocks_nothing_for_another(client: TestClient) -> 
 
 
 def test_an_answer_names_only_the_steps_fields(ada: TestClient) -> None:
-    assert ada.post(ANSWER, json={"fields": {"nope": "x"}}).status_code == 422
-    assert ada.post(ANSWER, json={"fields": {"sentence": "  "}}).status_code == 422
+    assert ada.post(ANSWER, json={"fields": {"nope": "x"}}).status_code == 422, (
+        "a field no step has"
+    )
+    assert ada.post(ANSWER, json={"fields": {"sentence": "  "}}).status_code == 422, (
+        "a blank field"
+    )
     assert (
         ada.post(
             "/api/competencies/C1/steps/read-the-chain/answer",
             json={"fields": {"sentence": "x"}},
         ).status_code
         == 422
-    )
+    ), "a field of another step"
     assert (
         ada.post(
             "/api/competencies/C1/steps/nowhere/answer", json={"fields": {"x": "y"}}
         ).status_code
         == 404
-    )
+    ), "a step that does not exist"
+
+
+def test_a_field_of_the_other_groups_block_is_not_one_of_the_students(
+    client: TestClient,
+) -> None:
+    sign_in(client, GRACE_OF_MATHUTRICE)
+
+    sent = client.post(ANSWER, json={"fields": {"sentence": "x", "step-1": "y"}})
+
+    assert sent.status_code == 422
 
 
 def test_no_response_contains_instructor_notes(ada: TestClient) -> None:

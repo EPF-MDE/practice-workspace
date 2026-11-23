@@ -242,10 +242,10 @@ def test_confirming_the_untouched_draft_keeps_it_a_draft_that_follows_later_leve
     assert closed.json()["drafted"] is True
     ada.post(SELF, json=c1_levels(a="understand", b="redo"))
     page = ada.get(PAGE).json()
-    assert page["evidence_plan"]["drafted"] is True
+    assert page["evidence_plan"]["drafted"] is True, "not the Student's text"
     assert (
         page["evidence_plan_draft"] != draft and "C1.b" in page["evidence_plan_draft"]
-    )
+    ), "the page offers the new draft"
     assert page["evidence_plan"]["confirmed"] is True
 
 
