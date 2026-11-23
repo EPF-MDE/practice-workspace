@@ -7,6 +7,7 @@ import { ClosingStep } from "./closing/ClosingStep";
 import { type DraftScope, drafts, errorMessage, readSteps } from "./progress";
 import { QuestionField } from "./QuestionField";
 import { StepBlock } from "./StepBlock";
+import { pathKey } from "./pathKeys";
 
 type Props = DraftScope & {
   step: StepOut;
@@ -34,7 +35,7 @@ function useAnswer({ studentId, competency, step }: Props) {
         })
       ).data,
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["competency", competency] }),
+      queryClient.invalidateQueries({ queryKey: pathKey(competency) }),
   });
   const update = (id: string, value: string) => {
     const next = { ...fields, [id]: value };

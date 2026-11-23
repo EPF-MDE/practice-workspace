@@ -8,6 +8,7 @@ import {
   Sentence,
   useEvidencePanel,
 } from "./EvidencePanel";
+import { pathsKey } from "../pathKeys";
 
 function AccessView({ access }: { access: Access }) {
   return (
@@ -33,7 +34,7 @@ function useEvidenceRequests({ draft, onDraft }: Props) {
   const changed = () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: evidencePanelsKey }),
-      queryClient.invalidateQueries({ queryKey: ["competency"] }),
+      queryClient.invalidateQueries({ queryKey: pathsKey }),
     ]);
   const check = useMutation({
     mutationFn: async () =>

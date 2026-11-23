@@ -12,6 +12,7 @@ import {
 } from "./lib/progress";
 import { Sidebar } from "./lib/Sidebar";
 import { StepSection } from "./lib/StepSection";
+import { pathKey } from "./lib/pathKeys";
 
 function progressOf(page: CompetencyPage, read: string[]) {
   const { steps } = page;
@@ -98,7 +99,7 @@ export function Path({
   competency: string;
 }) {
   const page = useQuery({
-    queryKey: ["competency", competency],
+    queryKey: pathKey(competency),
     queryFn: async () =>
       (await PracticeService.competencyPage({ path: { competency } })).data,
   });

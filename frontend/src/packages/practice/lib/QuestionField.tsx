@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PracticeService, type StepOut } from "@/client";
 import { Button } from "@/components/ui/button";
 import { type DraftScope, drafts, errorMessage } from "./progress";
+import { pathKey } from "./pathKeys";
 
 type Props = DraftScope & { step: StepOut; closed: boolean };
 
@@ -25,7 +26,7 @@ function useQuestion({ studentId, competency, step }: Props) {
     onSuccess: () => {
       type("");
       return queryClient.invalidateQueries({
-        queryKey: ["competency", competency],
+        queryKey: pathKey(competency),
       });
     },
   });

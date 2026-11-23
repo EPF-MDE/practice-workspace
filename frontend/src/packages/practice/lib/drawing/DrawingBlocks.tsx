@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Html } from "../Html";
 import { closingDrafts, drafts, errorMessage } from "../progress";
 import type { Snapshot } from "./views";
+import { pathKey } from "../pathKeys";
 
 const views = () => import("./views");
 const ReadOnlyDrawing = lazy(() =>
@@ -134,7 +135,7 @@ function useSendDrawing(
       ).data;
     },
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["competency", competency] }),
+      queryClient.invalidateQueries({ queryKey: pathKey(competency) }),
   });
   return { send, empty };
 }

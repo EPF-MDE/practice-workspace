@@ -9,6 +9,7 @@ import {
   evidenceDrafts,
 } from "../progress";
 import { DONE, type Levels } from "./useSelfAssessment";
+import { pathKey, pathsKey } from "../pathKeys";
 
 export function usePlan(
   scope: DraftScope,
@@ -20,7 +21,7 @@ export function usePlan(
     Object.entries(rated).filter(([, v]) => v.level !== DONE)
   );
   const draft = useQuery({
-    queryKey: ["competency", competency, "draft", forDraft],
+    queryKey: [...pathKey(competency), "draft", forDraft],
     queryFn: async () =>
       (
         await PracticeService.draftEvidencePlan({
@@ -134,7 +135,7 @@ export function useSendPlan({
       plan.edit(null);
       if (declaring) draftEvidence(null);
       void queryClient.invalidateQueries({ queryKey: evidencePanelsKey });
-      return queryClient.invalidateQueries({ queryKey: ["competency"] });
+      return queryClient.invalidateQueries({ queryKey: pathsKey });
     },
   });
   return { send, confirming, planChanged };
