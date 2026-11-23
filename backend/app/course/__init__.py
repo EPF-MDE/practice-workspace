@@ -6,25 +6,30 @@ from pathlib import Path
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
-from app.content import COMPETENCIES, Competency, ContentError, load_content
+from app.content import (
+    COMPETENCIES,
+    CompetencyContent,
+    ContentError,
+    load_content,
+)
 
 from ._internal.settings_file import competency_problems, read_settings
 
-__all__ = ["CompetencyOfCourse", "Course", "Loading", "load_course", "router"]
+__all__ = ["Competency", "Course", "Loading", "load_course", "router"]
 
 
 @dataclass(frozen=True)
-class CompetencyOfCourse:
+class Competency:
     id: str
     title: str
     minutes: int
-    content: Competency
+    content: CompetencyContent
 
 
 @dataclass(frozen=True)
 class Course:
     name: str
-    competencies: dict[str, CompetencyOfCourse]
+    competencies: dict[str, Competency]
 
 
 @dataclass(frozen=True)
@@ -51,7 +56,7 @@ def load_course(folder: str | Path) -> Loading:
     if settings is None or problems:
         return Loading(None, problems)
     competencies = {
-        id: CompetencyOfCourse(
+        id: Competency(
             id,
             settings.competencies[id].title,
             settings.competencies[id].minutes,

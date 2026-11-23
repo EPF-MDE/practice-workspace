@@ -9,7 +9,7 @@ from .model import (
     DIRECTIVES,
     ContentError,
 )
-from .render import Competency
+from .render import CompetencyContent
 from .tree import _Directive, _Node, _RawStep, _walk
 
 _FRONT_MATTER = re.compile(r"\A---\n(.*?)\n---\n", re.S)
@@ -79,7 +79,7 @@ def _no_drawings(src: str) -> dict[str, Any]:
 
 def parse_competency(
     text: str, source: str = "content", drawings: Drawings = _no_drawings
-) -> Competency:
+) -> CompetencyContent:
     text = text.replace("\r\n", "\n")
     front = _FRONT_MATTER.match(text)
     if not front:
@@ -119,7 +119,7 @@ def parse_competency(
         for d in _walk(step.nodes):
             if d.name in ("example-drawing", "reference-drawing"):
                 d.snapshot = _snapshot(d, drawings, f"{source}, step '{step.id}'")
-    result = Competency(
+    result = CompetencyContent(
         competency,
         "\n".join(cast(list[str], intro_nodes)),
         raw_steps,

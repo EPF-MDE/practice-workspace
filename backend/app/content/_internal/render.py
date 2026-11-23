@@ -25,7 +25,7 @@ from .tree import _Directive, _Node, _RawStep
 
 
 @dataclass(frozen=True)
-class Competency:
+class CompetencyContent:
     id: str
     intro: str
     _steps: tuple[_RawStep, ...]
