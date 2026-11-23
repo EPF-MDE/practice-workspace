@@ -10,6 +10,10 @@ export type Level =
 export function closing(page: Page) {
   const section = step(page, "closing");
   const evidence = section.getByTestId("evidence-project");
+  const url = evidence.getByRole("textbox", { name: /its address on GitHub/ });
+  const whatToRead = evidence.getByRole("textbox", {
+    name: /A note saying what to read/,
+  });
   return {
     section,
     plan: section.getByRole("textbox", { name: "Your Evidence Plan" }),
@@ -28,18 +32,13 @@ export function closing(page: Page) {
     example: section.getByRole("textbox", {
       name: "One example you will show at the Eval",
     }),
-    whatToRead: evidence.getByRole("textbox", {
-      name: /A note saying what to read/,
-    }),
+    url,
+    whatToRead,
     confirm: section.getByRole("button", { name: "Confirm my Evidence Plan" }),
     evidence,
-    declare: async (url: string, whatToRead: string) => {
-      await evidence
-        .getByRole("textbox", { name: /its address on GitHub/ })
-        .fill(url);
-      await evidence
-        .getByRole("textbox", { name: /A note saying what to read/ })
-        .fill(whatToRead);
+    declare: async (address: string, toRead: string) => {
+      await url.fill(address);
+      await whatToRead.fill(toRead);
       await evidence.getByRole("button", { name: "Check access" }).click();
       return evidence.getByTestId("access");
     },

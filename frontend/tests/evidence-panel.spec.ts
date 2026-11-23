@@ -165,9 +165,7 @@ test("a draft of an Evidence Project kept before its note was named what to read
   await page.goto("/competencies/C2");
 
   const close = closing(page);
-  await expect(
-    close.evidence.getByRole("textbox", { name: /its address on GitHub/ })
-  ).toHaveValue("https://github.com/grace/compiler");
+  await expect(close.url).toHaveValue("https://github.com/grace/compiler");
   await expect(close.whatToRead).toHaveValue("The README first.");
 });
 
