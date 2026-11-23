@@ -214,7 +214,9 @@ QuestionText = Annotated[
 PlanText = Annotated[str, _at_most(MAX_PLAN_CHARS, "Your Evidence Plan")]
 ExampleText = Annotated[str, _at_most(MAX_EXAMPLE_CHARS, "Your example for the Eval")]
 NoteText = Annotated[str, _at_most(MAX_NOTE_CHARS, "Your note on what to read")]
-ProjectUrl = Annotated[str, _at_most(MAX_URL_CHARS, "The project's URL")]
+EvidenceProjectUrl = Annotated[
+    str, _at_most(MAX_URL_CHARS, "The Evidence Project's URL")
+]
 AnswerFields = Annotated[
     dict[str, str],
     _each_at_most(MAX_FIELD_CHARS, "Your answer in '{key}'", lambda text: text),
@@ -294,12 +296,12 @@ class EvidencePlanIn(BaseModel):
 
 
 class DeclarationIn(BaseModel):
-    url: ProjectUrl
+    url: EvidenceProjectUrl
     note: NoteText
 
 
 class ProjectIn(BaseModel):
-    url: ProjectUrl
+    url: EvidenceProjectUrl
 
 
 class ClosingIn(BaseModel):
