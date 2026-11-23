@@ -22,10 +22,12 @@ from app.settings import Settings
 from app.store import GitHubStore, InMemoryStore, Store
 
 
-FIXTURE_COURSE_TIME = ZoneInfo("Europe/Paris")
-BEFORE_THE_CLOSE = datetime(2030, 6, 1, tzinfo=FIXTURE_COURSE_TIME)
-AFTER_THE_CLOSE = datetime(2030, 6, 20, tzinfo=FIXTURE_COURSE_TIME)
-AFTER_THE_READING_DAY = datetime(2030, 7, 10, tzinfo=FIXTURE_COURSE_TIME)
+FIXTURE_TIME_ZONE = ZoneInfo("Europe/Paris")
+FIXTURE_CLOSE = datetime(2030, 6, 14, 23, 59, tzinfo=FIXTURE_TIME_ZONE)
+FIXTURE_READING_DAY = datetime(2030, 7, 4, 23, 59, tzinfo=FIXTURE_TIME_ZONE)
+BEFORE_THE_CLOSE = datetime(2030, 6, 1, tzinfo=FIXTURE_TIME_ZONE)
+AFTER_THE_CLOSE = datetime(2030, 6, 20, tzinfo=FIXTURE_TIME_ZONE)
+AFTER_THE_READING_DAY = datetime(2030, 7, 10, tzinfo=FIXTURE_TIME_ZONE)
 
 
 @pytest.fixture(params=EVERY_FIXTURE, ids=lambda course: course.label)

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from conftest import AFTER_THE_CLOSE, FIXTURE_COURSE_TIME, MakeClient, sign_in
+from conftest import AFTER_THE_CLOSE, FIXTURE_CLOSE, MakeClient, sign_in
 from courses_under_test import CourseFolder, OnTheRoster, on_the_two_group_fixture
 from fastapi.testclient import TestClient
 
@@ -231,6 +231,4 @@ def test_the_page_says_when_the_workspace_closes(signed_in: TestClient) -> None:
     page = signed_in.get(PAGE).json()
 
     assert page["closed"] is False
-    assert datetime.fromisoformat(page["closes_at"]) == datetime(
-        2030, 6, 14, 23, 59, tzinfo=FIXTURE_COURSE_TIME
-    )
+    assert datetime.fromisoformat(page["closes_at"]) == FIXTURE_CLOSE

@@ -1,9 +1,10 @@
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pytest
-from conftest import MakeClient, sign_in
+from conftest import FIXTURE_CLOSE, FIXTURE_READING_DAY, MakeClient, sign_in
 from course_folders import (
     A_SCALE,
     CALENDAR,
@@ -315,5 +316,5 @@ def test_the_close_and_the_reading_day_are_the_courses_in_its_time_zone(
 ) -> None:
     page = signed_in.get("/api/competencies/C1").json()
 
-    assert page["closes_at"] == "2030-06-14T23:59:00+02:00"
-    assert page["reading_day_at"] == "2030-07-04T23:59:00+02:00"
+    assert datetime.fromisoformat(page["closes_at"]) == FIXTURE_CLOSE
+    assert datetime.fromisoformat(page["reading_day_at"]) == FIXTURE_READING_DAY
