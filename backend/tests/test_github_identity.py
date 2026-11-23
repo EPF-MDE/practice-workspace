@@ -1,10 +1,10 @@
 import json
 
 import httpx
-from conftest import ADA_OF_OCEENS, MakeClient
+from conftest import ADA_OF_OCEENS, MakeClient, fixture_roster
 
 from app.auth import GitHubIdentity
-from app.roster import StaticRoster, parse_roster
+from app.roster import StaticRoster
 
 
 def fake_github(seen: list[tuple[str, str]]) -> httpx.Client:
@@ -32,7 +32,7 @@ def test_github_sign_in_finds_the_student_by_id_and_revokes_the_token(
     seen: list[tuple[str, str]] = []
     identity = GitHubIdentity("client-id", "client-secret", http=fake_github(seen))
     client = make_client(
-        identity=identity, roster=StaticRoster(parse_roster(roster_csv))
+        identity=identity, roster=StaticRoster(fixture_roster(roster_csv))
     )
 
     to_github = client.get("/auth/login", follow_redirects=False)

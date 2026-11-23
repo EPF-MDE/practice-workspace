@@ -21,18 +21,12 @@ from app.store import (
 )
 
 ADA_OF_OCEENS = Student(
-    1001,
-    "ada-oceens",
-    "Ada Lovelace",
-    "OcéENS",
-    "OcéENS",
-    Repository("ada-oceens/OceENS"),
+    1001, "ada-oceens", "Ada Lovelace", "OcéENS", Repository("ada-oceens/OceENS")
 )
 GRACE_OF_MATHUTRICE = Student(
     1002,
     "grace-math",
     "Grace Hopper",
-    "MATHutrice",
     "MATHutrice",
     Repository("grace-math/MATHutrice"),
 )

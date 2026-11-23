@@ -157,6 +157,9 @@ class _Analysis(_ReadingState):
         return _date(commits[-1]["commit"]["committer"]["date"])
 
     def _fallback_on(self, sha: str) -> str | None:
+        upstream = self.s.upstream
+        if upstream is None:
+            return None
         for i in range(len(FALLBACK_CHAIN) - 1, 0, -1):
             name, parent = FALLBACK_CHAIN[i], FALLBACK_CHAIN[i - 1]
             if name not in self.upstream or parent not in self.upstream:
@@ -169,7 +172,7 @@ class _Analysis(_ReadingState):
             mb = (c.get("merge_base_commit") or {}).get("sha")
             if not mb:
                 continue
-            p = self.github.compare(self.s.upstream, self.upstream[parent], mb)
+            p = self.github.compare(upstream, self.upstream[parent], mb)
             if p is not None and p["ahead_by"] > 0:
                 return name
         return None

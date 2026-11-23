@@ -8,11 +8,20 @@ from pydantic import BaseModel
 
 from app.closing import Level, Scale
 from app.content import CompetencyContent, ContentError, load_content
+from app.roster import Repository
 
 from ._internal.competencies import COMPETENCIES, competency_problems
 from ._internal.settings_file import read_settings
 
-__all__ = ["COMPETENCIES", "Competency", "Course", "Loading", "load_course", "router"]
+__all__ = [
+    "COMPETENCIES",
+    "Competency",
+    "Course",
+    "Group",
+    "Loading",
+    "load_course",
+    "router",
+]
 
 
 @dataclass(frozen=True)
@@ -24,8 +33,16 @@ class Competency:
 
 
 @dataclass(frozen=True)
+class Group:
+    name: str
+    block: str
+    upstream: Repository | None
+
+
+@dataclass(frozen=True)
 class Course:
     name: str
+    groups: dict[str, Group]
     competencies: dict[str, Competency]
     scale: Scale
 
@@ -46,9 +63,19 @@ def load_course(folder: str | Path) -> Loading:
         if settings is None
         else Scale(tuple(Level(level.id, level.label) for level in settings.levels))
     )
+    groups = {
+        group.name: Group(
+            group.name,
+            group.block,
+            Repository(group.upstream) if group.upstream else None,
+        )
+        for group in (settings.groups if settings else ())
+    }
     try:
         content = load_content(
-            folder, to_get_there_levels=None if scale is None else scale.below_top
+            folder,
+            {name: group.block for name, group in groups.items()},
+            to_get_there_levels=None if scale is None else scale.below_top,
         )
     except ContentError as error:
         problems.append(str(error))
@@ -69,7 +96,7 @@ def load_course(folder: str | Path) -> Loading:
         )
         for id in COMPETENCIES
     }
-    return Loading(Course(settings.name, competencies, scale), [])
+    return Loading(Course(settings.name, groups, competencies, scale), [])
 
 
 class LevelOut(BaseModel):

@@ -207,3 +207,81 @@ def test_verify_reports_a_content_problem_beside_a_settings_problem(
     assert result.returncode != 0
     assert "course.toml" in result.stdout
     assert "c1.md" in result.stdout
+
+
+TWO_GROUPS = (
+    'name = "Two-Group course"\n'
+    '[[groups]]\nname = "Harbour"\nblock = "harbour"\n'
+    '[[groups]]\nname = "Lighthouse"\nblock = "lighthouse"\n'
+)
+
+
+def course_folder(folder: Path, settings: str, step: str) -> Path:
+    (folder / "course.toml").write_text(settings, encoding="utf-8")
+    (folder / "c1.md").write_text(
+        f"---\ncompetency: C1\ntitle: T\n---\n\n## S {{#s minutes=5}}\n\n{step}",
+        encoding="utf-8",
+    )
+    return folder
+
+
+def test_verify_reports_a_group_block_for_a_group_the_settings_do_not_hold(
+    tmp_path: Path,
+) -> None:
+    folder = course_folder(tmp_path, TWO_GROUPS, "::: quay\nx\n:::\n")
+
+    result = verify(folder)
+
+    assert result.returncode != 0
+    assert "'::: quay'" in result.stdout
+
+
+def test_verify_reports_a_step_with_one_groups_block_and_not_anothers(
+    tmp_path: Path,
+) -> None:
+    folder = course_folder(tmp_path, TWO_GROUPS, "::: harbour\nx\n:::\n")
+
+    result = verify(folder)
+
+    assert result.returncode != 0
+    assert "step 's'" in result.stdout
+    assert "Lighthouse" in result.stdout
+
+
+def test_verify_passes_a_step_with_every_groups_block(tmp_path: Path) -> None:
+    folder = course_folder(
+        tmp_path, TWO_GROUPS, "::: harbour\nx\n:::\n\n::: lighthouse\ny\n:::\n"
+    )
+
+    result = verify(folder)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize(
+    "settings",
+    [
+        pytest.param(
+            TWO_GROUPS.replace('"Lighthouse"', '"Harbour"'), id="two Groups, one name"
+        ),
+        pytest.param(
+            TWO_GROUPS.replace('"lighthouse"', '"harbour"'), id="two Groups, one block"
+        ),
+    ],
+)
+def test_verify_reports_two_groups_sharing_an_id(tmp_path: Path, settings: str) -> None:
+    folder = course_folder(tmp_path, settings, "x\n")
+
+    result = verify(folder)
+
+    assert result.returncode != 0
+    assert "'harbour'" in result.stdout.lower()
+
+
+def test_the_app_refuses_to_start_on_a_group_block_the_settings_do_not_hold(
+    make_client: MakeClient, test_settings: Settings, tmp_path: Path
+) -> None:
+    folder = course_folder(tmp_path, TWO_GROUPS, "::: quay\nx\n:::\n")
+
+    with pytest.raises(ConfigurationError, match="quay"):
+        make_client(settings=on(test_settings, folder))

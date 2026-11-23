@@ -1,0 +1,6 @@
+name = "One-Group course"
+
+[[groups]]
+name = "Lighthouse"
+block = "lighthouse"
+upstream = "fictional-org/Lighthouse"

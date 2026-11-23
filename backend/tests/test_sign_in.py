@@ -1,7 +1,18 @@
-from conftest import ADA_OF_OCEENS, GRACE_OF_MATHUTRICE, MakeClient, sign_in
+from pathlib import Path
+
+import pytest
+from conftest import (
+    ADA_OF_OCEENS,
+    GRACE_OF_MATHUTRICE,
+    MakeClient,
+    fixture_roster,
+    sign_in,
+)
 from fastapi.testclient import TestClient
 
 from app.auth import FakeIdentity
+from app.main import ConfigurationError
+from app.settings import Settings
 
 
 def test_a_visitor_is_not_signed_in(client: TestClient) -> None:
@@ -20,15 +31,14 @@ def test_a_student_on_the_roster_signs_in_and_lands_on_the_opening(
         "github_login": "ada-oceens",
         "name": "Ada Lovelace",
         "group": "OcéENS",
-        "project": "OcéENS",
         "evidence_project": "ada-oceens/OceENS",
     }
 
 
-def test_the_project_is_the_one_on_the_roster(client: TestClient) -> None:
+def test_the_group_is_the_one_on_the_roster(client: TestClient) -> None:
     sign_in(client, GRACE_OF_MATHUTRICE)
 
-    assert client.get("/api/me").json()["project"] == "MATHutrice"
+    assert client.get("/api/me").json()["group"] == "MATHutrice"
 
 
 def test_a_renamed_account_still_gets_in(make_client: MakeClient) -> None:
@@ -83,14 +93,14 @@ def test_signing_out_ends_the_session(client: TestClient) -> None:
 def test_a_student_removed_from_the_roster_is_signed_out(
     make_client: MakeClient, roster_csv: str
 ) -> None:
-    from app.roster import StaticRoster, parse_roster
+    from app.roster import StaticRoster
 
-    roster = StaticRoster(parse_roster(roster_csv))
+    roster = StaticRoster(fixture_roster(roster_csv))
     client = make_client(roster=roster)
     sign_in(client, ADA_OF_OCEENS)
 
     roster.replace(
-        parse_roster(roster_csv.replace("ada-oceens,1001", "ada-oceens,7777"))
+        fixture_roster(roster_csv.replace("ada-oceens,1001", "ada-oceens,7777"))
     )
 
     assert client.get("/api/me").status_code == 401
@@ -120,10 +130,16 @@ def test_the_sign_in_page_says_what_is_stored_where_who_reads_it(
         assert words in notice
 
 
-def test_a_roster_with_a_group_spelt_otherwise_is_refused(roster_csv: str) -> None:
-    import pytest
+def test_a_roster_naming_a_group_the_course_does_not_hold_refuses_start(
+    make_client: MakeClient, test_settings: Settings, roster_csv: str, tmp_path: Path
+) -> None:
+    roster = tmp_path / "roster.csv"
+    roster.write_text(
+        roster_csv.replace("Ada Lovelace,OcéENS,", "Ada Lovelace,OceENS,"),
+        encoding="utf-8",
+    )
 
-    from app.roster import RosterError, parse_roster
-
-    with pytest.raises(RosterError, match="OceENS"):
-        parse_roster(roster_csv.replace("Ada Lovelace,OcéENS,", "Ada Lovelace,OceENS,"))
+    with pytest.raises(ConfigurationError, match="OceENS"):
+        make_client(
+            settings=test_settings.model_copy(update={"roster_file": str(roster)})
+        )

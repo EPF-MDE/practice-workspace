@@ -9,6 +9,7 @@ from fake_github import FakeGitHub
 from fastapi.testclient import TestClient
 
 from app.auth import FakeIdentity, Identity
+from app.course import load_course
 from app.evidence_panel import (
     AccessCheck,
     FakeAccessCheck,
@@ -16,7 +17,7 @@ from app.evidence_panel import (
     RepositoryReadingSource,
 )
 from app.main import create_app
-from app.roster import RosterSource, StaticRoster, parse_roster
+from app.roster import Roster, RosterSource, parse_roster
 from app.settings import PARIS, Settings
 from app.store import GitHubStore, InMemoryStore, Store
 
@@ -24,6 +25,12 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 ADA_OF_OCEENS = 1001
 GRACE_OF_MATHUTRICE = 1002
+
+
+def fixture_roster(csv_text: str) -> Roster:
+    course = load_course(FIXTURES / "content").course
+    assert course is not None
+    return parse_roster(csv_text, course.groups)
 
 
 @pytest.fixture
@@ -39,6 +46,7 @@ def test_settings() -> Settings:
         sign_in="fake",
         public_url="http://testserver",
         course_folder=str(FIXTURES / "content"),
+        roster_file=str(FIXTURES / "roster.csv"),
     )
 
 
@@ -70,9 +78,7 @@ class MakeClient(Protocol):
 
 
 @pytest.fixture
-def make_client(
-    roster_csv: str, test_settings: Settings, store: InMemoryStore
-) -> MakeClient:
+def make_client(test_settings: Settings, store: InMemoryStore) -> MakeClient:
     def make(
         settings: Settings | None = None,
         roster: RosterSource | None = None,
@@ -83,7 +89,7 @@ def make_client(
     ) -> TestClient:
         app = create_app(
             settings=settings or test_settings,
-            roster=roster or StaticRoster(parse_roster(roster_csv)),
+            roster=roster,
             identity=identity or FakeIdentity(),
             store=store,
             repository_reading=repository_reading,

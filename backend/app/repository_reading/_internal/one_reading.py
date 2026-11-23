@@ -40,6 +40,7 @@ class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
         self.default = answer.default_branch
         self.linked_to_upstream = (
             answer.source is not None
+            and s.upstream is not None
             and answer.source.full_name.lower() == s.upstream.lower()
         )
         branch_list, pull_list = self.github.list_refs(s)
@@ -51,7 +52,7 @@ class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
             self.ref_names.setdefault(p["head"]["sha"], []).append(
                 f"pull request #{p['number']}"
             )
-        self.upstream = self.github.upstream_branches(s.upstream)
+        self.upstream = self.github.upstream_branches(s.upstream) if s.upstream else {}
         reusable = self._reusable_analyses()
         default_sha = branches_by_name.get(self.default)
         self.analyses = {

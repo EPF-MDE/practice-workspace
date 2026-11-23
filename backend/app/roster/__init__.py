@@ -5,7 +5,7 @@ import io
 import logging
 import threading
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Collection, Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, NewType, Protocol
@@ -17,28 +17,11 @@ Repository = NewType("Repository", str)
 
 
 @dataclass(frozen=True)
-class Group:
-    name: str
-    directive: str
-    upstream: Repository
-
-
-GROUPS: dict[str, Group] = {
-    g.name: g
-    for g in (
-        Group("OcéENS", "oceens", Repository("EPF-MDE/OceENS")),
-        Group("MATHutrice", "mathutrice", Repository("EPF-MDE/MATHutrice")),
-    )
-}
-
-
-@dataclass(frozen=True)
 class Student:
     github_id: int
     github_login: str
     name: str
     group: str
-    project: str
     evidence_project: Repository
 
     def as_dict(self) -> dict[str, Any]:
@@ -68,12 +51,11 @@ COLUMNS = (
     "github_id",
     "name",
     "group",
-    "project",
     "evidence_project",
 )
 
 
-def parse_roster(text: str) -> Roster:
+def parse_roster(text: str, groups: Collection[str]) -> Roster:
     reader = csv.DictReader(io.StringIO(text.lstrip("﻿")))
     missing = set(COLUMNS) - set(reader.fieldnames or ())
     if missing:
@@ -86,19 +68,18 @@ def parse_roster(text: str) -> Roster:
             raise RosterError(
                 f"roster.csv line {line}: github_id is not a number"
             ) from None
-        for column in ("group", "project"):
-            if row[column].strip() not in GROUPS:
-                raise RosterError(
-                    f"roster.csv line {line}: {column} {row[column].strip()!r} is not "
-                    f"one of {sorted(GROUPS)}"
-                )
+        group = row["group"].strip()
+        if group not in groups:
+            raise RosterError(
+                f"roster.csv line {line}: the Group {group!r} is not one of the "
+                f"Course's {sorted(groups)}"
+            )
         students.append(
             Student(
                 github_id=github_id,
                 github_login=row["github_login"].strip(),
                 name=row["name"].strip(),
-                group=row["group"].strip(),
-                project=row["project"].strip(),
+                group=group,
                 evidence_project=Repository(row["evidence_project"].strip()),
             )
         )
@@ -120,18 +101,20 @@ class StaticRoster:
         self._roster = roster
 
     @classmethod
-    def from_file(cls, path: str | Path) -> StaticRoster:
-        return cls(parse_roster(Path(path).read_text(encoding="utf-8")))
+    def from_file(cls, path: str | Path, groups: Collection[str]) -> StaticRoster:
+        return cls(parse_roster(Path(path).read_text(encoding="utf-8"), groups))
 
 
 class RefreshingRoster:
     def __init__(
         self,
         read: Callable[[], str],
+        groups: Collection[str],
         max_age: float = 300,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._read = read
+        self._groups = groups
         self._max_age = max_age
         self._clock = clock
         self._lock = threading.Lock()
@@ -143,7 +126,7 @@ class RefreshingRoster:
             now = self._clock()
             if self._roster is None or now - self._read_at >= self._max_age:
                 try:
-                    self._roster = parse_roster(self._read())
+                    self._roster = parse_roster(self._read(), self._groups)
                     self._read_at = now
                 except Exception:
                     if self._roster is None:

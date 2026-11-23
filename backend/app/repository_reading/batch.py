@@ -11,7 +11,8 @@ Project, one file per Student.
     # the roster's Evidence Projects only, without reading the Store
     uv run python -m app.repository_reading.batch --roster-only ...
 
-Settings come from `app.settings` (this repository's `.env`, or the environment).
+Settings come from `app.settings` (this repository's `.env`, or the environment), and
+each Group's upstream repository from the Course folder they name.
 Repositories are read with the Student Connector App's installation on each one, else
 its installation `WORKSPACE_GITHUB_APP_INSTALLATION_ID` (`WORKSPACE_GITHUB_APP_*`), or
 with `gh auth token` given `--gh-token`. The roster is read from, and the readings
@@ -27,10 +28,11 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from app.course import load_course
 from app.roster import Repository, Student, parse_roster
 from app.settings import Settings
 from app.store import GITLAB, GitHubStore, Store
@@ -53,15 +55,17 @@ from .storage import (
     reading_path,
 )
 
+Upstreams = Mapping[str, Repository | None]
+
 
 def evidence_projects(
-    students: list[Student], store: Store
+    students: list[Student], store: Store, upstreams: Upstreams
 ) -> tuple[list[StudentToRead], dict[str, Repository]]:
     to_read: list[StudentToRead] = []
     gitlab: dict[str, Repository] = {}
     for student, record in zip(students, store.records(students), strict=True):
         declared = record.declaration()
-        roster = StudentToRead.from_roster(student)
+        roster = StudentToRead.from_roster(student, upstreams[student.group])
         if declared is None:
             to_read.append(roster)
         elif declared.host == GITLAB:
@@ -143,6 +147,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = p.parse_args(argv)
     settings = Settings()
+    loading = load_course(settings.course_folder)
+    if loading.course is None:
+        print("\n".join(loading.problems), file=sys.stderr)
+        return 1
+    upstreams = {name: g.upstream for name, g in loading.course.groups.items()}
 
     if args.gh_token:
         token: TokenFor = static_token(
@@ -175,16 +184,18 @@ def main(argv: list[str] | None = None) -> int:
         raw = store.read("roster.csv")
         assert raw is not None
         roster = raw.decode("utf-8")
-    roster_rows = list(parse_roster(roster))
+    roster_rows = list(parse_roster(roster, upstreams))
     if args.only:
         wanted = set(args.only.split(","))
         roster_rows = [s for s in roster_rows if s.github_login in wanted]
     gitlab: dict[str, Repository] = {}
     if args.roster_only:
-        students = [StudentToRead.from_roster(s) for s in roster_rows]
+        students = [
+            StudentToRead.from_roster(s, upstreams[s.group]) for s in roster_rows
+        ]
     else:
         students, gitlab = evidence_projects(
-            roster_rows, GitHubStore.from_settings(settings)
+            roster_rows, GitHubStore.from_settings(settings), upstreams
         )
 
     github = HttpGitHub(token)

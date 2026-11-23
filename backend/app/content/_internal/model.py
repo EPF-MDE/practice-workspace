@@ -3,14 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from app import roster
-
-GROUPS = {name: group.directive for name, group in roster.GROUPS.items()}
 FIELD_KINDS = ("line", "text", "choice")
 BANDS = ("Basic", "Solid", "Outstanding")
 DRAWING_DIRECTIVES = {"example-drawing", "canvas", "reference-drawing", "check-point"}
 DIRECTIVES = {
-    *GROUPS.values(),
     "field",
     "answer",
     "point",

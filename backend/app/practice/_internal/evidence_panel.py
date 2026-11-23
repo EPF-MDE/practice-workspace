@@ -5,7 +5,6 @@ from fastapi import Depends, HTTPException, Request
 from app import evidence_panel
 from app.auth import current_student
 from app.evidence_panel import Declaration, EvidencePanel, NotAProject
-from app.repository_reading import StudentToRead
 from app.roster import Student
 from app.settings import Settings
 from app.store import StoredDeclaration
@@ -23,6 +22,7 @@ from .router import router
 from .steps import (
     _refuse_after_the_reading_day,
     _store,
+    _student_to_read,
 )
 
 
@@ -48,7 +48,7 @@ def _read_panel(
     return evidence_panel.read_panel(
         c,
         request.app.state.repository_reading,
-        StudentToRead.from_roster(student),
+        _student_to_read(request, student),
         None if declared is None else _declared(declared, request, student),
         refresh,
     )

@@ -656,10 +656,6 @@ export type Me = {
      */
     group: string;
     /**
-     * Project
-     */
-    project: string;
-    /**
      * Evidence Project
      */
     evidence_project: string;

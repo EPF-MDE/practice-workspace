@@ -7,7 +7,7 @@ from typing import Any, NewType
 
 from pydantic import BaseModel
 
-from app.roster import GROUPS, Repository, Student
+from app.roster import Repository, Student
 
 
 class PointId(StrEnum):
@@ -58,14 +58,15 @@ class StudentToRead:
     login: str
     project: str
     evidence_project: Repository
+    upstream: Repository | None = field(default=None, compare=False)
 
     @classmethod
-    def from_roster(cls, student: Student) -> StudentToRead:
-        return cls(student.github_login, student.project, student.evidence_project)
-
-    @property
-    def upstream(self) -> Repository:
-        return GROUPS[self.project].upstream
+    def from_roster(
+        cls, student: Student, upstream: Repository | None
+    ) -> StudentToRead:
+        return cls(
+            student.github_login, student.group, student.evidence_project, upstream
+        )
 
     @property
     def key(self) -> tuple[str, str]:
@@ -120,6 +121,7 @@ class RepositoryReading:
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
+        del d["student"]["upstream"]
         d["facts_computed_at"] = self.facts_computed_at.isoformat()
         d["last_checked_at"] = self.last_checked_at.isoformat()
         return d

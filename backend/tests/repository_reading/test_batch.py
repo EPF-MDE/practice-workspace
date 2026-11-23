@@ -15,14 +15,15 @@ from app.repository_reading.recorded import RecordedGitHub
 from app.roster import parse_roster
 from app.store import DeclarationPayload, InMemoryStore
 
-from .conftest import FIXTURES, NOW, REPOSITORIES
+from .conftest import FIXTURES, MATHUTRICE, NOW, OCEENS, REPOSITORIES
 
 ROSTER = (
-    "github_login,github_id,name,group,project,evidence_project\r\n"
-    "dorothy-math,1,A,MATHutrice,MATHutrice,dorothy-math/MATHutrice\r\n"
-    "radia-oceens,2,B,OcéENS,OcéENS,radia-oceens/OceENS\r\n"
-    "barbara-oceens,3,C,OcéENS,OcéENS,barbara-oceens/OceENS\r\n"
+    "github_login,github_id,name,group,evidence_project\r\n"
+    "dorothy-math,1,A,MATHutrice,dorothy-math/MATHutrice\r\n"
+    "radia-oceens,2,B,OcéENS,radia-oceens/OceENS\r\n"
+    "barbara-oceens,3,C,OcéENS,barbara-oceens/OceENS\r\n"
 )
+UPSTREAMS = {"OcéENS": OCEENS, "MATHutrice": MATHUTRICE}
 
 
 class WorkspaceDataInMemory:
@@ -43,7 +44,9 @@ def recorded_github(*names: str) -> RecordedGitHub:
 
 
 def roster_students(csv_text: str) -> list[StudentToRead]:
-    to_read, _ = evidence_projects(list(parse_roster(csv_text)), InMemoryStore())
+    to_read, _ = evidence_projects(
+        list(parse_roster(csv_text, UPSTREAMS)), InMemoryStore(), UPSTREAMS
+    )
     return to_read
 
 
@@ -60,7 +63,7 @@ def test_the_roster_gives_each_students_evidence_project() -> None:
 def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named() -> (
     None
 ):
-    dorothy, radia, barbara = parse_roster(ROSTER)
+    dorothy, radia, barbara = parse_roster(ROSTER, UPSTREAMS)
     store = InMemoryStore()
     store.send_declaration(
         radia,
@@ -83,7 +86,7 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
         ),
     )
 
-    to_read, gitlab = evidence_projects([dorothy, radia, barbara], store)
+    to_read, gitlab = evidence_projects([dorothy, radia, barbara], store, UPSTREAMS)
 
     assert [(s.login, s.evidence_project) for s in to_read] == [
         ("dorothy-math", "dorothy-math/MATHutrice"),
@@ -92,7 +95,7 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
     assert gitlab == {"barbara-oceens": "b/api"}
 
     store.withdraw_declaration(radia)
-    to_read, _ = evidence_projects([radia], store)
+    to_read, _ = evidence_projects([radia], store, UPSTREAMS)
     assert to_read[0].evidence_project == "radia-oceens/OceENS"
 
 

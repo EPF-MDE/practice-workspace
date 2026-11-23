@@ -1,7 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
-const ADA = { id: 1001, name: "Ada Lovelace", project: "OcéENS" };
-const GRACE = { id: 1002, name: "Grace Hopper", project: "MATHutrice" };
+const ADA = { id: 1001, name: "Ada Lovelace", group: "OcéENS" };
+const GRACE = { id: 1002, name: "Grace Hopper", group: "MATHutrice" };
 
 async function signIn(page: Page, githubId: number) {
   await page.goto("/sign-in");
@@ -25,13 +25,13 @@ test("the sign-in page says what is stored, where, who reads it, and until when"
 });
 
 for (const student of [ADA, GRACE]) {
-  test(`${student.name} lands on the annotated slide with their Group's Project`, async ({
+  test(`${student.name} lands on the annotated slide with their Group`, async ({
     page,
   }) => {
     await signIn(page, student.id);
 
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByTestId("project")).toHaveText(student.project);
+    await expect(page.getByTestId("group")).toHaveText(student.group);
     const slide = page.getByRole("img", {
       name: "A Software Factory Circa 2022, annotated with C1, C2 and C3",
     });
@@ -46,7 +46,7 @@ for (const student of [ADA, GRACE]) {
     await expect(page.getByText(/Watch 3:40 to 5:45/)).toBeVisible();
 
     await page.reload();
-    await expect(page.getByTestId("project")).toHaveText(student.project);
+    await expect(page.getByTestId("group")).toHaveText(student.group);
   });
 }
 

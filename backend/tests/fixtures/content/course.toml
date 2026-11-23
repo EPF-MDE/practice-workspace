@@ -1,5 +1,15 @@
 name = "Fixture course"
 
+[[groups]]
+name = "OcéENS"
+block = "oceens"
+upstream = "EPF-MDE/OceENS"
+
+[[groups]]
+name = "MATHutrice"
+block = "mathutrice"
+upstream = "EPF-MDE/MATHutrice"
+
 [competencies.C1]
 title = "Design a resilient web architecture under non-functional constraints"
 minutes = 40

@@ -49,14 +49,7 @@ def test_a_new_drawing_version_replaces_the_files_and_the_record_keeps_both(
 
 def test_concurrent_drawing_sends_from_many_students_all_land(store: Store) -> None:
     students = [
-        Student(
-            3000 + n,
-            f"d{n}",
-            f"Student {n}",
-            "OcéENS",
-            "OcéENS",
-            Repository(f"d{n}/OceENS"),
-        )
+        Student(3000 + n, f"d{n}", f"Student {n}", "OcéENS", Repository(f"d{n}/OceENS"))
         for n in range(19)
     ]
 

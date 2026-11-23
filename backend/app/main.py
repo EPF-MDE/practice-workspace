@@ -35,7 +35,7 @@ from app.repository_reading import (
     installation_token,
     repository_tokens,
 )
-from app.roster import RefreshingRoster, RosterSource, StaticRoster
+from app.roster import RefreshingRoster, RosterError, RosterSource, StaticRoster
 from app.settings import Settings, get_settings
 from app.store import GitHubStore, InMemoryStore, SendTooLarge, Store, StoreUnavailable
 
@@ -70,9 +70,15 @@ def _revision() -> str:
     return REVISION_FILE.read_text().strip() if REVISION_FILE.exists() else "unknown"
 
 
-def default_roster(settings: Settings) -> RosterSource:
+def default_roster(settings: Settings, course: Course) -> RosterSource:
+    groups = set(course.groups)
     if settings.roster_file:
-        return StaticRoster.from_file(settings.roster_file)
+        try:
+            return StaticRoster.from_file(settings.roster_file, groups)
+        except RosterError as error:
+            raise ConfigurationError(
+                f"The Roster {settings.roster_file} cannot be served: {error}"
+            ) from error
     client = installation_client(
         settings.store_app_id,
         settings.store_app_private_key_base64,
@@ -81,7 +87,8 @@ def default_roster(settings: Settings) -> RosterSource:
     return RefreshingRoster(
         lambda: read_file(
             client, settings.repository, settings.data_branch, "roster.csv"
-        )
+        ),
+        groups,
     )
 
 
@@ -201,7 +208,8 @@ def create_app(
         ),
     )
     app.state.settings = settings
-    app.state.roster = roster or default_roster(settings)
+    app.state.course = default_course(settings)
+    app.state.roster = roster or default_roster(settings, app.state.course)
     app.state.identity = identity or default_identity(settings)
     app.state.store = store if store is not None else default_store(settings)
     app.state.repository_reading = (
@@ -212,7 +220,6 @@ def create_app(
     app.state.access_check = (
         access_check if access_check is not None else default_access_check(settings)
     )
-    app.state.course = default_course(settings)
     app.state.signals = observability.Signals()
 
     @app.middleware("http")

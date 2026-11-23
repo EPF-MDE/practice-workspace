@@ -164,7 +164,6 @@ class Me(BaseModel):
     github_login: str
     name: str
     group: str
-    project: str
     evidence_project: str
 
 
