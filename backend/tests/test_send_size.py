@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from conftest import ADA, MakeClient, sign_in
+from conftest import ADA_OF_OCEENS, MakeClient, sign_in
 from fake_github import FakeGitHub
 from fastapi.testclient import TestClient
 
@@ -20,7 +20,7 @@ from app.roster import Repository
 from app.store import GitHubStore
 
 C1 = "/api/competencies/C1"
-READ_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
+FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 
 
 def a_repository_with_very_many_files() -> RepositoryReading:
@@ -38,8 +38,8 @@ def a_repository_with_very_many_files() -> RepositoryReading:
     return RepositoryReading(
         student=StudentToRead("ada-oceens", "OcéENS", Repository("ada-oceens/OceENS")),
         default_branch="main",
-        read_at=READ_AT,
-        checked_at=READ_AT,
+        facts_computed_at=FRESH_READING_AT,
+        last_checked_at=FRESH_READING_AT,
         branches_read=3,
         pull_requests_read=2,
         empty=False,
@@ -67,7 +67,7 @@ def ada(make_client: MakeClient, github: FakeGitHub) -> TestClient:
         repository_reading=repositories,
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     client.post(
         f"{C1}/self-assessment",
         json={"levels": {"C1.a": {"level": "understand", "link": None}}},
@@ -78,8 +78,11 @@ def ada(make_client: MakeClient, github: FakeGitHub) -> TestClient:
 def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_comment(
     ada: TestClient, github: FakeGitHub
 ) -> None:
-    before = github.writes
-    declaration = {"url": "https://github.com/ada/" + "b" * 400, "note": "n" * 2_000}
+    before = github.write_requests
+    declaration = {
+        "url": "https://github.com/ada/" + "b" * 400,
+        "what_to_read": "n" * 2_000,
+    }
 
     closed = ada.post(
         f"{C1}/close",
@@ -87,7 +90,7 @@ def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_
     )
 
     assert closed.status_code == 200
-    assert github.writes == before + 1
+    assert github.write_requests == before + 1
     assert ada.get(C1).json()["evidence_plan"]["text"] == "p" * 12_000
 
 
@@ -104,8 +107,35 @@ def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_
         (f"{C1}/close", {"text": "p", "example": "x" * 2_001}, "example"),
         (
             "/api/evidence-project/declaration",
-            {"url": "https://github.com/ada/bakery", "note": "x" * 2_001},
+            {"url": "https://github.com/ada/bakery", "what_to_read": "x" * 2_001},
             "note",
+        ),
+        (
+            "/api/evidence-project/declaration",
+            {"url": "https://github.com/ada/" + "b" * 500, "what_to_read": "n"},
+            "URL",
+        ),
+        (
+            f"{C1}/close",
+            {
+                "text": "p",
+                "example": "e",
+                "declaration": {
+                    "url": "https://github.com/ada/bakery",
+                    "what_to_read": "x" * 2_001,
+                },
+            },
+            "note",
+        ),
+        (
+            "/api/evidence-project/check",
+            {"url": "https://github.com/ada/" + "b" * 500},
+            "URL",
+        ),
+        (
+            f"{C1}/steps/guided-calculation/questions",
+            {"text": "x" * 4_001},
+            "question",
         ),
         (
             f"{C1}/self-assessment",
@@ -124,7 +154,7 @@ def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_
 def test_a_text_over_its_limit_gets_a_clear_422_and_nothing_is_stored(
     ada: TestClient, github: FakeGitHub, path: str, body: dict[str, Any], what: str
 ) -> None:
-    before = github.writes
+    before = github.write_requests
 
     refused = ada.post(path, json=body)
 
@@ -132,13 +162,13 @@ def test_a_text_over_its_limit_gets_a_clear_422_and_nothing_is_stored(
     detail = refused.json()["detail"]
     assert isinstance(detail, str)
     assert what in detail and "too long" in detail
-    assert github.writes == before
+    assert github.write_requests == before
 
 
 def test_a_send_within_each_limit_but_too_large_once_stored_gets_a_422_not_a_503(
     ada: TestClient, github: FakeGitHub
 ) -> None:
-    before = github.writes
+    before = github.write_requests
     body = {"text": "\x01" * 12_000, "example": "My README."}
 
     refused = ada.post(f"{C1}/close", json=body)
@@ -146,4 +176,18 @@ def test_a_send_within_each_limit_but_too_large_once_stored_gets_a_422_not_a_503
     assert refused.status_code == 422
     assert "too long to store" in refused.json()["detail"]
     assert "Retry-After" not in refused.headers
-    assert github.writes == before
+    assert github.write_requests == before
+
+
+def test_a_send_missing_a_field_and_no_text_too_long_gets_the_usual_422(
+    ada: TestClient, github: FakeGitHub
+) -> None:
+    before = github.write_requests
+
+    refused = ada.post(f"{C1}/close", json={"text": "My plan."})
+
+    assert refused.status_code == 422
+    detail = refused.json()["detail"]
+    assert isinstance(detail, list)
+    assert [error["loc"] for error in detail] == [["body", "example"]]
+    assert github.write_requests == before

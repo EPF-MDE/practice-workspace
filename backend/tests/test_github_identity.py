@@ -1,7 +1,7 @@
 import json
 
 import httpx
-from conftest import ADA, MakeClient
+from conftest import ADA_OF_OCEENS, MakeClient
 
 from app.auth import GitHubIdentity
 from app.roster import StaticRoster, parse_roster
@@ -15,7 +15,9 @@ def fake_github(seen: list[tuple[str, str]]) -> httpx.Client:
             return httpx.Response(200, json={"access_token": "ghu_student"})
         if request.url.path == "/user":
             assert request.headers["Authorization"] == "Bearer ghu_student"
-            return httpx.Response(200, json={"id": ADA, "login": "ada-renamed"})
+            return httpx.Response(
+                200, json={"id": ADA_OF_OCEENS, "login": "ada-renamed"}
+            )
         if request.method == "DELETE":
             assert json.loads(request.content) == {"access_token": "ghu_student"}
             return httpx.Response(204)

@@ -13,14 +13,12 @@ from app.content import (
 from app.store import Entry, Kind, Record
 
 from .models import (
-    MAX_URL_CHARS,
     EvidencePlan,
     EvidencePlanVersion,
     PointLevel,
     PointLevelNow,
     SelfAssessment,
     SelfAssessmentVersion,
-    _at_most,
 )
 
 
@@ -128,8 +126,6 @@ def _drafted(page: Page, record: Record, text: str, flagged: bool) -> dict[str, 
 
 
 def _levels(page: Page, levels: dict[str, PointLevel]) -> dict[str, dict[str, Any]]:
-    for point, level in levels.items():
-        _at_most(level.link, MAX_URL_CHARS, f"The link for {point}")
     try:
         return closing.clean_levels(
             {p: v.model_dump() for p, v in levels.items()},

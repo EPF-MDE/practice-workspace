@@ -40,7 +40,7 @@ def read_panel(
     declaration: Declaration | None,
     refresh: bool = False,
 ) -> EvidencePanel:
-    if declaration is not None and not declaration.is_roster_evidence_project:
+    if declaration is not None and not declaration.declares_roster_evidence_project:
         if declaration.access.status != READABLE_ACCESS:
             return unavailable_panel(
                 competency,
@@ -81,7 +81,7 @@ class OfflineRepositoryReading:
 
     def refresh(self, student: StudentToRead) -> RepositoryReading:
         self.refreshes += 1
-        fresh = replace(self.read(student), checked_at=self._now())
+        fresh = replace(self.read(student), last_checked_at=self._now())
         self._readings[student.key] = fresh
         return fresh
 
@@ -90,8 +90,8 @@ class OfflineRepositoryReading:
         return RepositoryReading(
             student=student,
             default_branch="main",
-            read_at=now,
-            checked_at=now,
+            facts_computed_at=now,
+            last_checked_at=now,
             branches_read=1,
             pull_requests_read=0,
             empty=True,

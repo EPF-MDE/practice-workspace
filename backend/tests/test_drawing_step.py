@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 
 import pytest
-from conftest import ADA, GRACE, MakeClient, sign_in
+from conftest import ADA_OF_OCEENS, GRACE_OF_MATHUTRICE, MakeClient, sign_in
 from fastapi.testclient import TestClient
 
 from app.settings import Settings
@@ -30,7 +30,7 @@ def block(page: dict[str, Any], kind: str, step_id: str = "redraw") -> dict[str,
 
 @pytest.fixture
 def ada(client: TestClient) -> TestClient:
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     return client
 
 
@@ -87,11 +87,13 @@ def test_once_sent_the_page_shows_the_reference_and_the_drawing_sent(
 
     assert block(page, "reference-drawing")["locked"] is False
     assert step(page)["drawing"]["version"] == 1
-    assert block(page, "reference-drawing", "redraw-more")["locked"] is True
+    assert block(page, "reference-drawing", "redraw-more")["locked"] is True, (
+        "another drawing step stays locked"
+    )
 
 
 def test_a_student_receives_their_groups_reference(client: TestClient) -> None:
-    sign_in(client, GRACE)
+    sign_in(client, GRACE_OF_MATHUTRICE)
 
     reference = client.post(DRAWING, json=SEND).json()["reference"]
 
@@ -144,9 +146,18 @@ def test_only_the_references_check_points_can_be_ticked(ada: TestClient) -> None
 @pytest.mark.parametrize(
     "body",
     [
-        {**SEND, "png_base64": base64.b64encode(b"GIF89a").decode()},
-        {**SEND, "png_base64": "not base64!"},
-        {**SEND, "snapshot": {"shapes": []}},
+        pytest.param(
+            {**SEND, "png_base64": base64.b64encode(b"GIF89a").decode()},
+            id="not a PNG",
+        ),
+        pytest.param(
+            {**SEND, "png_base64": "not base64!"},
+            id="not base64",
+        ),
+        pytest.param(
+            {**SEND, "snapshot": {"shapes": []}},
+            id="not a tldraw snapshot",
+        ),
     ],
 )
 def test_a_drawing_that_is_not_one_is_refused(
@@ -172,7 +183,7 @@ def test_after_the_close_no_drawing_and_no_tick_is_sent(
     make_client: MakeClient, test_settings: Settings, past: datetime
 ) -> None:
     client = make_client(settings=test_settings.model_copy(update={"closes_at": past}))
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     drawing = client.post(DRAWING, json=SEND)
 
@@ -193,6 +204,6 @@ def test_the_page_carries_the_tldraw_licence_key(
     client = make_client(
         settings=test_settings.model_copy(update={"tldraw_license_key": "tldraw-key"})
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     assert client.get(PAGE).json()["tldraw_license_key"] == "tldraw-key"

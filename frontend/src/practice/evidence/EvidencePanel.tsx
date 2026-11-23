@@ -222,16 +222,16 @@ function PanelBody({ panel, ...actions }: PanelBodyProps) {
             {panel.evidence_project}
           </code>
           , read{" "}
-          <span data-testid="evidence-panel-read-at">
-            {when(panel.read_at)}
+          <span data-testid="evidence-panel-facts-computed-at">
+            {when(panel.facts_computed_at)}
           </span>
           ; last checked for a push{" "}
-          <span data-testid="evidence-panel-checked-at">
-            {when(panel.checked_at)}
+          <span data-testid="evidence-panel-last-checked-at">
+            {when(panel.last_checked_at)}
           </span>
           .
         </p>
-        {!panel.available && panel.unavailable && (
+        {panel.unavailable && (
           <output data-testid="evidence-panel-unavailable" className="block">
             <Sentence text={panel.unavailable} />
           </output>

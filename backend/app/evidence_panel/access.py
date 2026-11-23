@@ -5,6 +5,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Protocol
 
 import httpx
@@ -18,25 +19,25 @@ from .panel import GITLAB_ACCESS, NOT_READABLE_ACCESS, READABLE_ACCESS, Access
 GITLAB_MESSAGE = (
     "On GitLab, the workspace cannot check access: give the Instructor Reporter access."
 )
-GITLAB_HOW = (
+GITLAB_HOW_TO_MAKE_READABLE = (
     "In your GitLab project: Manage, then Members, then Invite members. Invite the "
     "Instructor with the role "
     "Reporter (read-only). A public project needs nothing."
 )
-READABLE = (
+READABLE_MESSAGE = (
     "Readable: the course GitHub App can read `{repository}`. "
     "Only access was checked, never the contents."
 )
 YOUR_EVIDENCE_PROJECT = "Your Evidence Project: the Reading Day reads it in any case."
-NOT_READABLE = "Not readable yet: grant read-only access."
-NOT_CHECKED = (
+NOT_READABLE_MESSAGE = "Not readable yet: grant read-only access."
+NOT_CHECKED_MESSAGE = (
     "Not readable yet, as far as the workspace can tell: it could not check access "
     "just now. "
     "Grant read-only access, then press Check again."
 )
 
 
-def github_how(app_slug: str, name: str) -> str:
+def github_how_to_make_readable(app_slug: str, name: str) -> str:
     where = (
         f"https://github.com/apps/{app_slug}/installations/new"
         if app_slug
@@ -49,6 +50,16 @@ def github_how(app_slug: str, name: str) -> str:
         "read access only. "
         "Then press Check again."
     )
+
+
+class Readability(StrEnum):
+    READABLE = "readable"
+    NOT_READABLE = "not-readable"
+    NOT_CHECKED = "not-checked"
+
+
+def _readable_if(readable: bool) -> Readability:
+    return Readability.READABLE if readable else Readability.NOT_READABLE
 
 
 class NotAProject(ValueError):
@@ -93,34 +104,44 @@ def parse_project(url: str) -> Project:
 
 
 class AccessCheck(Protocol):
-    def can_read(self, repository: Repository) -> bool | None: ...
+    def can_read(self, repository: Repository) -> Readability: ...
 
 
 def access(
     project: Project, evidence_project: Repository, check: AccessCheck, app_slug: str
 ) -> Access:
     if project.host == GITLAB:
-        return Access(status=GITLAB_ACCESS, message=GITLAB_MESSAGE, how=GITLAB_HOW)
+        return Access(
+            status=GITLAB_ACCESS,
+            message=GITLAB_MESSAGE,
+            how_to_make_readable=GITLAB_HOW_TO_MAKE_READABLE,
+        )
     if project.repository.lower() == evidence_project.lower():
-        return Access(status=READABLE_ACCESS, message=YOUR_EVIDENCE_PROJECT, how=None)
-    readable = check.can_read(project.repository)
-    if readable:
         return Access(
             status=READABLE_ACCESS,
-            message=READABLE.format(repository=project.repository),
-            how=None,
+            message=YOUR_EVIDENCE_PROJECT,
+            how_to_make_readable=None,
+        )
+    readability = check.can_read(project.repository)
+    if readability == Readability.READABLE:
+        return Access(
+            status=READABLE_ACCESS,
+            message=READABLE_MESSAGE.format(repository=project.repository),
+            how_to_make_readable=None,
         )
     return Access(
         status=NOT_READABLE_ACCESS,
-        message=NOT_READABLE if readable is False else NOT_CHECKED,
-        how=github_how(app_slug, project.name),
+        message=NOT_READABLE_MESSAGE
+        if readability == Readability.NOT_READABLE
+        else NOT_CHECKED_MESSAGE,
+        how_to_make_readable=github_how_to_make_readable(app_slug, project.name),
     )
 
 
 @dataclass(frozen=True)
 class _AccessAnswer:
     asked_at: float
-    readable: bool | None
+    readability: Readability
 
 
 class AppAccessCheck:
@@ -142,19 +163,19 @@ class AppAccessCheck:
         self._seen: dict[str, _AccessAnswer] = {}
         self._lock = threading.Lock()
 
-    def can_read(self, repository: Repository) -> bool | None:
+    def can_read(self, repository: Repository) -> Readability:
         with self._lock:
             seen = self._seen.get(repository.lower())
         if seen and self._clock() - seen.asked_at < self.TTL:
-            return seen.readable
+            return seen.readability
         answer = self._ask(repository)
         with self._lock:
             self._seen[repository.lower()] = _AccessAnswer(self._clock(), answer)
         return answer
 
-    def _ask(self, repository: Repository) -> bool | None:
+    def _ask(self, repository: Repository) -> Readability:
         if not (self._app_id and self._key):
-            return None
+            return Readability.NOT_CHECKED
         try:
             app_jwt = InstallationAuth(self._app_id, self._key, "").app_jwt()
             installed = self._client.get(
@@ -162,30 +183,29 @@ class AppAccessCheck:
                 headers={"Authorization": f"Bearer {app_jwt}"},
             )
             if installed.status_code == 200:
-                return True
+                return Readability.READABLE
             if installed.status_code != 404:
-                return None
+                return Readability.NOT_CHECKED
             public = self._client.get(f"/repos/{repository}")
             if public.status_code == 200:
-                return not public.json().get("private", True)
-            return False if public.status_code == 404 else None
+                return _readable_if(not public.json().get("private", True))
+            if public.status_code == 404:
+                return Readability.NOT_READABLE
+            return Readability.NOT_CHECKED
         except (httpx.HTTPError, ValueError):
-            return None
+            return Readability.NOT_CHECKED
 
 
 class FakeAccessCheck:
-    def __init__(self, readable: set[str] | Callable[[str], bool | None] | None = None):
+    def __init__(self, readable: set[str] | None = None):
+        self.rule: Callable[[str], Readability]
         if readable is None:
-            self.rule: Callable[[str], bool | None] = lambda repo: (
-                "private" not in repo.lower()
-            )
-        elif callable(readable):
-            self.rule = readable
+            self.rule = lambda repo: _readable_if("private" not in repo.lower())
         else:
             known = {r.lower() for r in readable}
-            self.rule = lambda repo: repo.lower() in known
+            self.rule = lambda repo: _readable_if(repo.lower() in known)
         self.checked: list[str] = []
 
-    def can_read(self, repository: Repository) -> bool | None:
+    def can_read(self, repository: Repository) -> Readability:
         self.checked.append(repository)
         return self.rule(repository)

@@ -9,7 +9,7 @@ from fake_github import FakeGitHub
 from app.roster import Repository, Student
 from app.store import Entry, GitHubStore, InMemoryStore, Kind, Store
 
-ADA = Student(
+ADA_OF_OCEENS = Student(
     1001,
     "ada-oceens",
     "Ada Lovelace",
@@ -17,7 +17,7 @@ ADA = Student(
     "OcéENS",
     Repository("ada-oceens/OceENS"),
 )
-GRACE = Student(
+GRACE_OF_MATHUTRICE = Student(
     1002,
     "grace-math",
     "Grace Hopper",
@@ -45,11 +45,11 @@ def store(request: pytest.FixtureRequest, github: FakeGitHub) -> Store:
     return github_store(github)
 
 
-def declared(url: str, note: str = "n") -> dict[str, Any]:
+def declared(url: str, what_to_read: str = "n") -> dict[str, Any]:
     host, repository = url.removeprefix("https://").split(".com/")
     return {
         "url": url,
-        "note": note,
+        "what_to_read": what_to_read,
         "repository": repository,
         "host": host,
         "access": "gitlab" if host == "gitlab" else "readable",
