@@ -56,8 +56,9 @@ class Settings(BaseSettings):
     error_check_key: str = ""
 
     def require(self, needed_by: str, *names: str) -> None:
+        prefix = self.model_config.get("env_prefix", "")
         missing = [
-            f"WORKSPACE_{name.upper()}" for name in names if not getattr(self, name)
+            f"{prefix}{name}".upper() for name in names if not getattr(self, name)
         ]
         if missing:
             raise ConfigurationError(
