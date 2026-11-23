@@ -44,7 +44,7 @@ class _Analysis(_ReadingState):
                 update={
                     "read_as_default_branch": True,
                     "fallback": self._fallback_on(sha),
-                    "workflows": {**self._all_workflows(sha), **a.workflows},
+                    "default_branch_workflows": self._all_workflows(sha),
                 }
             )
         unread = {
@@ -53,7 +53,9 @@ class _Analysis(_ReadingState):
             if path not in a.workflows and (w := self._workflow(sha, path))
         }
         if unread:
-            a = a.model_copy(update={"workflows": {**a.workflows, **unread}})
+            a = a.model_copy(
+                update={"changed_workflows": {**a.changed_workflows, **unread}}
+            )
         return a
 
     def _analyse(self, sha: str) -> RefAnalysis:

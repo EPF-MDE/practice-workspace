@@ -30,7 +30,8 @@ class RefAnalysis(BaseModel, frozen=True):
     link: str | None = None
     posthog_identity: bool = False
     posthog_files: tuple[str, ...] = ()
-    workflows: dict[str, Workflow] = {}
+    changed_workflows: dict[str, Workflow] = {}
+    default_branch_workflows: dict[str, Workflow] = {}
     read_as_default_branch: bool = False
     fallback: str | None = None
 
@@ -41,6 +42,10 @@ class RefAnalysis(BaseModel, frozen=True):
     @property
     def workflow_paths(self) -> list[str]:
         return [f.path for f in self.files if f.path.startswith(WORKFLOWS_FOLDER)]
+
+    @property
+    def workflows(self) -> dict[str, Workflow]:
+        return {**self.default_branch_workflows, **self.changed_workflows}
 
     def to_dict(self) -> dict[str, Any]:
         return self.model_dump(mode="json")

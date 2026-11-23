@@ -76,7 +76,7 @@ class _C2Facts(_ReadingState):
         a = self.analyses.get(default_sha) if default_sha else None
         if not a:
             return
-        for path, w in a.workflows.items():
+        for path, w in a.default_branch_workflows.items():
             if w.architecture:
                 self.facts["C2"].append(
                     Fact(
