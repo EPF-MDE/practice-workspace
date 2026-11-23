@@ -11,7 +11,7 @@ The public engine a course runs so that each Student practises its Competencies,
 ## Layout
 
 - `backend/`: one Python package, `app`, run with `uv`. Each subpackage of `app` is a Deep Module, reached from outside only through names not starting with `_`; `tach` enforces it, and import-linter forbids cycles between them.
-- `frontend/`: the React front end, built and served by the back end. Each folder under `src/packages` is a Deep Module, reached from outside only through its root files; dependency-cruiser enforces it. Today there is one, `practice`: a Student's Path through one Competency, reached through `Path.tsx`. Outside the packages sit the routes (TanStack's generated route tree imports them where they are), the shared `components/` and `lib/`, the session and the generated client. The Playwright tests in `frontend/tests/` drive the whole app in a browser.
+- `frontend/`: the React front end, built and served by the back end. Each folder under `src/packages` is a Deep Module, reached from outside only through its root files; dependency-cruiser enforces it. Today there is one, `practice`: a Student's Path through one Competency, reached through `Path.tsx`, so no rule says which package may depend on which. Outside the packages sit the routes and their generated `routeTree.gen.ts`, which imports them where they are, the app's entry `main.tsx` and `index.css`, the shared `components/` and `lib/`, `session.ts`, `course.ts` and the generated `client/`. The Playwright tests in `frontend/tests/` drive the whole app in a browser.
 - `.sandcastle/`: the Software Factory's agent scripts, run with Sandcastle from the workflows in `.github/workflows/`. `npm run check` type-checks them.
 
 ## Verification
