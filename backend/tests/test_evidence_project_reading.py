@@ -12,7 +12,7 @@ from app.repository_reading import (
     CompetencyReading,
     Fact,
     InMemoryReadings,
-    Point,
+    PointId,
     RepositoryReader,
     RepositoryReading,
     Response,
@@ -46,11 +46,11 @@ def reading_of(repository: str, ruleset: str) -> RepositoryReading:
         pull_requests_read=0,
         empty=False,
         competencies={
-            "C1": CompetencyReading("C1", [], ["C1"], []),
+            "C1": CompetencyReading("C1", [], [PointId.CHANGED_FILES], []),
             "C2": CompetencyReading(
-                "C2", [Fact(Point("C2.c"), f"The ruleset `{ruleset}`.")], [], []
+                "C2", [Fact(PointId.C2_C, f"The ruleset `{ruleset}`.")], [], []
             ),
-            "C3": CompetencyReading("C3", [], ["C3.b", "C3.e"], []),
+            "C3": CompetencyReading("C3", [], [PointId.C3_B, PointId.C3_E], []),
         },
     )
 

@@ -7,11 +7,10 @@ from typing import Any, Literal
 from pydantic import BaseModel
 
 from app.repository_reading import (
-    CHANGED_FILES,
     ChangedFile,
     Credit,
     Fact,
-    Point,
+    PointId,
     RepositoryReading,
 )
 from app.repository_reading.reading import not_read_on_gitlab
@@ -85,7 +84,7 @@ def not_read_text(declaration: Declaration) -> str:
 
 
 class PanelFact(BaseModel):
-    point: Point
+    point: PointId
     text: str
     credited_to: Credit
     link: str | None
@@ -93,7 +92,7 @@ class PanelFact(BaseModel):
 
 
 class NotVisible(BaseModel):
-    point: str
+    point: PointId
     text: str
 
 
@@ -138,7 +137,7 @@ class EvidencePanel(BaseModel):
     empty: bool
     empty_text: str | None
     facts: list[PanelFact]
-    nothing_found: list[str]
+    nothing_found: list[PointId]
     nothing_found_text: str | None
     not_visible: list[NotVisible]
     not_judged: str | None
@@ -147,7 +146,7 @@ class EvidencePanel(BaseModel):
 
 
 def _fact(fact: Fact) -> PanelFact:
-    files = fact.detail.get("files") if fact.point == CHANGED_FILES else None
+    files = fact.detail.get("files") if fact.point == PointId.CHANGED_FILES else None
     return PanelFact(
         point=fact.point,
         text=fact.text,
@@ -163,7 +162,7 @@ def build_panel(
     competency: str, reading: RepositoryReading, declaration: Declaration | None
 ) -> EvidencePanel:
     found = reading[competency]
-    nothing = [p for p in found.nothing_found if p != CHANGED_FILES]
+    nothing = [p for p in found.nothing_found if p != PointId.CHANGED_FILES]
     looked = _looked(reading.branches_read, reading.pull_requests_read)
     return EvidencePanel(
         competency=competency,

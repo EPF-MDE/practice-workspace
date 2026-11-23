@@ -6,7 +6,7 @@ from urllib.parse import quote
 from ..reading import (
     STUDENT,
     Fact,
-    Point,
+    PointId,
 )
 from .rules import (
     CLEAN_BENCH,
@@ -60,7 +60,7 @@ class _C2Facts(_ReadingState):
             if green_after or rerun_green:
                 self.facts["C2"].append(
                     Fact(
-                        point=Point("C2.a"),
+                        point=PointId.C2_A,
                         text=f"Pull request #{p['number']} “{p['title']}”: "
                         "its check went red, then green.",
                         link=p.get("html_url"),
@@ -80,7 +80,7 @@ class _C2Facts(_ReadingState):
             if w.get("architecture"):
                 self.facts["C2"].append(
                     Fact(
-                        point=Point("C2.b"),
+                        point=PointId.C2_B,
                         text="The Architecture Check runs from "
                         f"`{path}` on `{self.default}`.",
                         credited_to=STUDENT
@@ -97,7 +97,7 @@ class _C2Facts(_ReadingState):
         ):
             self.facts["C2"].append(
                 Fact(
-                    point=Point("C2.b"),
+                    point=PointId.C2_B,
                     text=f"`{self.default}` contains the Clean Bench Fallback Branch "
                     f"(it is built on `{fallback}`).",
                     credited_to=fallback,
@@ -149,7 +149,7 @@ class _C2Facts(_ReadingState):
         text += f"; other rules: {', '.join(others)}." if others else "."
         self.facts["C2"].append(
             Fact(
-                point=Point("C2.c"),
+                point=PointId.C2_C,
                 text=text,
                 link=f"https://github.com/{self.s.evidence_project}/settings/rules",
                 detail={"source": source, "required_checks": checks, "rules": kinds},
@@ -189,7 +189,7 @@ class _C2Facts(_ReadingState):
                     waits = ", ".join(f"`{n}`" for n in needs) or "nothing"
                     self.facts["C2"].append(
                         Fact(
-                            point=Point("C2.d"),
+                            point=PointId.C2_D,
                             text=f"In `{path}`, the job `{job}` waits for {waits}.",
                             credited_to=STUDENT
                             if path in own
@@ -207,7 +207,7 @@ class _C2Facts(_ReadingState):
         conclusion = run.get("conclusion") or run.get("status")
         where = f" on `{run['head_branch']}`" if branch else ""
         return Fact(
-            point=Point("C2.d"),
+            point=PointId.C2_D,
             text=f"{label}, “{run['name']}”{where}, "
             f"ended {conclusion} on {_date(run['created_at'])}.",
             link=run.get("html_url"),
@@ -244,7 +244,7 @@ class _C2Facts(_ReadingState):
             state = status.get("state", "unknown")
             self.facts["C2"].append(
                 Fact(
-                    point=Point("C2.e"),
+                    point=PointId.C2_E,
                     text=f"The last deployment to {kind}, "
                     f"on {_date(d['created_at'])}, "
                     f"runs commit `{d['sha'][:7]}` ({state}).",

@@ -12,7 +12,7 @@ from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
 from app.repository_reading import (
     CompetencyReading,
     Fact,
-    Point,
+    PointId,
     RepositoryReading,
     StudentToRead,
 )
@@ -29,7 +29,7 @@ def a_repository_with_very_many_files() -> RepositoryReading:
         for i in range(3000)
     ]
     fact = Fact(
-        Point("C1"),
+        PointId.CHANGED_FILES,
         "`feature/cache` changes 3000 files beyond `course-2026`; "
         "last change on 2026-10-13.",
         link="https://github.com/ada-oceens/OceENS/compare/a...b",
@@ -45,8 +45,10 @@ def a_repository_with_very_many_files() -> RepositoryReading:
         empty=False,
         competencies={
             "C1": CompetencyReading("C1", [fact], [], []),
-            "C2": CompetencyReading("C2", [], ["C2.a"], ["C2.f", "C2.g"]),
-            "C3": CompetencyReading("C3", [], ["C3.b"], ["C3.a"]),
+            "C2": CompetencyReading(
+                "C2", [], [PointId.C2_A], [PointId.C2_F, PointId.C2_G]
+            ),
+            "C3": CompetencyReading("C3", [], [PointId.C3_B], [PointId.C3_A]),
         },
     )
 

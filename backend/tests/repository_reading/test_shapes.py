@@ -1,7 +1,7 @@
 import gzip
 from typing import Any
 
-from app.repository_reading import Point, RepositoryReading
+from app.repository_reading import PointId, RepositoryReading
 
 from .conftest import FIXTURES, Recorded
 
@@ -90,11 +90,11 @@ def test_a_fallback_branch_as_default_is_credited_to_it_not_to_the_student(
     assert reading.default_branch == "course-2026-fallback-clean-bench"
     assert reading.empty
     contained = [
-        f for f in reading["C2"].facts_for(Point("C2.b")) if "Clean Bench" in f.text
+        f for f in reading["C2"].facts_for(PointId.C2_B) if "Clean Bench" in f.text
     ]
     assert contained and contained[0].credited_to == "course-2026-fallback-clean-bench"
     assert all(
-        f.credited_to != "student" for f in reading["C2"].facts_for(Point("C2.b"))
+        f.credited_to != "student" for f in reading["C2"].facts_for(PointId.C2_B)
     )
 
 
@@ -102,7 +102,7 @@ def test_a_ruleset_requiring_architecture_and_test(recorded: type[Recorded]) -> 
     r = recorded("deleted-pr-branch")
     reading = r.reader.read(r.student)
 
-    (rules,) = reading["C2"].facts_for(Point("C2.c"))
+    (rules,) = reading["C2"].facts_for(PointId.C2_C)
     assert rules.detail["required_checks"] == ["architecture", "test"]
     assert "`architecture` and `test`" in rules.text
 
@@ -112,8 +112,7 @@ def test_deployments_to_both_environments(recorded: type[Recorded]) -> None:
     reading = r.reader.read(r.student)
 
     envs = {
-        f.detail["environment"]: f.detail
-        for f in reading["C2"].facts_for(Point("C2.e"))
+        f.detail["environment"]: f.detail for f in reading["C2"].facts_for(PointId.C2_E)
     }
     assert set(envs) == {"staging", "production"}
     assert all(len(d["sha"]) == 40 for d in envs.values())
@@ -141,7 +140,7 @@ def test_a_red_then_green_pull_request(recorded: type[Recorded]) -> None:
     reading = r.reader.read(r.student)
 
     assert [
-        f.detail["pull_request"] for f in reading["C2"].facts_for(Point("C2.a"))
+        f.detail["pull_request"] for f in reading["C2"].facts_for(PointId.C2_A)
     ] == [2]
 
 
@@ -151,7 +150,7 @@ def test_errors_sent_to_posthog_with_an_identity_by_the_students_code(
     r = recorded("placeholder-email")
     reading = r.reader.read(r.student)
 
-    (fact,) = reading["C3"].facts_for(Point("C3.b"))
+    (fact,) = reading["C3"].facts_for(PointId.C3_B)
     assert fact.credited_to == "student"
 
 

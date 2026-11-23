@@ -11,7 +11,7 @@ from app.repository_reading import (
     CompetencyReading,
     Credit,
     Fact,
-    Point,
+    PointId,
     RepositoryReading,
     StudentToRead,
 )
@@ -34,7 +34,7 @@ def reading(
         if empty
         else [
             Fact(
-                Point("C1"),
+                PointId.CHANGED_FILES,
                 "`feature/cache` changes 2 files beyond `course-2026`, 40 lines added; "
                 "last change on 2026-10-13.",
                 link="https://github.com/ada-oceens/OceENS/compare/a...b",
@@ -50,12 +50,12 @@ def reading(
         if empty
         else [
             Fact(
-                Point("C2.c"),
+                PointId.C2_C,
                 "The ruleset on `main` requires `architecture` and `test`.",
                 link="https://x/rules",
             ),
             Fact(
-                Point("C2.b"),
+                PointId.C2_B,
                 "`main` contains the Clean Bench Fallback Branch.",
                 credited_to=Credit("course-2026-fallback-clean-bench"),
             ),
@@ -70,12 +70,20 @@ def reading(
         pull_requests_read=pulls,
         empty=empty,
         competencies={
-            "C1": CompetencyReading("C1", c1, [] if c1 else ["C1"], []),
+            "C1": CompetencyReading(
+                "C1", c1, [] if c1 else [PointId.CHANGED_FILES], []
+            ),
             "C2": CompetencyReading(
-                "C2", c2, ["C2.a", "C2.d", "C2.e"], ["C2.f", "C2.g"]
+                "C2",
+                c2,
+                [PointId.C2_A, PointId.C2_D, PointId.C2_E],
+                [PointId.C2_F, PointId.C2_G],
             ),
             "C3": CompetencyReading(
-                "C3", [], ["C3.b", "C3.e"], ["C3.a", "C3.c", "C3.d", "C3.f"]
+                "C3",
+                [],
+                [PointId.C3_B, PointId.C3_E],
+                [PointId.C3_A, PointId.C3_C, PointId.C3_D, PointId.C3_F],
             ),
         },
     )

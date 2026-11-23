@@ -422,7 +422,7 @@ export type EvidencePanel = {
     /**
      * Nothing Found
      */
-    nothing_found: Array<string>;
+    nothing_found: Array<PointId>;
     /**
      * Nothing Found Text
      */
@@ -653,10 +653,7 @@ export type MyDrawing = {
  * NotVisible
  */
 export type NotVisible = {
-    /**
-     * Point
-     */
-    point: string;
+    point: PointId;
     /**
      * Text
      */
@@ -667,10 +664,7 @@ export type NotVisible = {
  * PanelFact
  */
 export type PanelFact = {
-    /**
-     * Point
-     */
-    point: string;
+    point: PointId;
     /**
      * Text
      */
@@ -724,6 +718,11 @@ export type PointBlock = {
      */
     missed_check_points?: Array<CheckPointOut>;
 };
+
+/**
+ * PointId
+ */
+export type PointId = 'C1' | 'C2.a' | 'C2.b' | 'C2.c' | 'C2.d' | 'C2.e' | 'C2.f' | 'C2.g' | 'C3.a' | 'C3.b' | 'C3.c' | 'C3.d' | 'C3.e' | 'C3.f';
 
 /**
  * PointLevel
