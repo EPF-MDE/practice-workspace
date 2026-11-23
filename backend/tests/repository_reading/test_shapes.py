@@ -151,3 +151,15 @@ def test_a_reading_survives_its_json_round_trip(recorded: type[Recorded]) -> Non
     reading = r.reader.read(r.student)
 
     assert RepositoryReading.from_dict(reading.to_dict()) == reading
+
+
+def test_a_reading_stored_before_its_times_were_renamed_still_reads(
+    recorded: type[Recorded],
+) -> None:
+    r = recorded("placeholder-email")
+    reading = r.reader.read(r.student)
+    stored = reading.to_dict()
+    stored["read_at"] = stored.pop("facts_computed_at")
+    stored["checked_at"] = stored.pop("last_checked_at")
+
+    assert RepositoryReading.from_dict(stored) == reading
