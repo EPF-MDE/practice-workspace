@@ -17,6 +17,10 @@ from app.store import GitHubStore, InMemoryStore, Store
 C2 = "/api/competencies/C2"
 DECLARATION = "/api/evidence-project/declaration"
 CHECK = "/api/evidence-project/check"
+BAKERY = {
+    "url": "https://github.com/ada/bakery",
+    "note": "The pipeline: .github/workflows, and pull request #4.",
+}
 
 
 def installed_meanwhile(repository: str) -> bool:
@@ -25,12 +29,6 @@ def installed_meanwhile(repository: str) -> bool:
 
 def could_not_ask(repository: str) -> None:
     return None
-
-
-BAKERY = {
-    "url": "https://github.com/ada/bakery",
-    "note": "The pipeline: .github/workflows, and pull request #4.",
-}
 
 
 @pytest.fixture
