@@ -95,14 +95,17 @@ class EvidencePanelSnapshotPayload(Payload):
 
 
 _PAYLOADS: dict[Kind, type[Payload]] = {
-    Kind.ANSWER: AnswerPayload,
-    Kind.DRAWING: DrawingPayload,
-    Kind.CHECK_POINTS: CheckPointsPayload,
-    Kind.SELF_ASSESSMENT: SelfAssessmentPayload,
-    Kind.EVIDENCE_PLAN: EvidencePlanPayload,
-    Kind.DECLARATION: DeclarationPayload,
-    Kind.QUESTION: QuestionPayload,
-    Kind.EVIDENCE_PANEL_SNAPSHOT: EvidencePanelSnapshotPayload,
+    model.KIND: model
+    for model in (
+        AnswerPayload,
+        DrawingPayload,
+        CheckPointsPayload,
+        SelfAssessmentPayload,
+        EvidencePlanPayload,
+        DeclarationPayload,
+        QuestionPayload,
+        EvidencePanelSnapshotPayload,
+    )
 }
 
 
