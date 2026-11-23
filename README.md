@@ -17,7 +17,7 @@ npm run demo
 
 Then open <http://localhost:8000/auth/login?github_id=1001> to sign in as a fictional Student (any id in [`demo-course/roster.csv`](./demo-course/roster.csv) works). Sign-in is faked and nothing is kept once the server stops.
 
-The engine reads a course at start from the folder `WORKSPACE_CONTENT_DIR` names: one Markdown file per Competency (`c1.md`…) and its drawings. [`demo-course/`](./demo-course/) is one, and shows the format; the engine refuses at start a file it cannot serve, and says why.
+The engine reads a Course folder at start from the folder `WORKSPACE_COURSE_FOLDER` names: its settings in `course.toml` (for now, the Course's `name`), one Markdown file per Competency (`c1.md`…) and its drawings. [`demo-course/`](./demo-course/) is one, and shows the format. The engine refuses to start on a Course folder it cannot serve, naming every problem it found; `uv run python -m app verify <course folder>`, run from `backend/`, loads the folder the same way and exits non-zero on any problem.
 
 ## Working on it
 

@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { healthHealthData, healthHealthResponses, practiceAskQuestionData, practiceAskQuestionErrors, practiceAskQuestionResponses, practiceCheckProjectAccessData, practiceCheckProjectAccessErrors, practiceCheckProjectAccessResponses, practiceCloseCompetencyData, practiceCloseCompetencyErrors, practiceCloseCompetencyResponses, practiceCompetencyPageData, practiceCompetencyPageErrors, practiceCompetencyPageResponses, practiceDeclareEvidenceProjectData, practiceDeclareEvidenceProjectErrors, practiceDeclareEvidenceProjectResponses, practiceDraftEvidencePlanData, practiceDraftEvidencePlanErrors, practiceDraftEvidencePlanResponses, practiceEvidencePanelViewData, practiceEvidencePanelViewErrors, practiceEvidencePanelViewResponses, practiceMyDrawingData, practiceMyDrawingErrors, practiceMyDrawingResponses, practiceRefreshEvidencePanelData, practiceRefreshEvidencePanelErrors, practiceRefreshEvidencePanelResponses, practiceSendAnswerData, practiceSendAnswerErrors, practiceSendAnswerResponses, practiceSendDrawingData, practiceSendDrawingErrors, practiceSendDrawingResponses, practiceSendEvidencePlanData, practiceSendEvidencePlanErrors, practiceSendEvidencePlanResponses, practiceSendSelfAssessmentData, practiceSendSelfAssessmentErrors, practiceSendSelfAssessmentResponses, practiceTickMissedCheckPointsData, practiceTickMissedCheckPointsErrors, practiceTickMissedCheckPointsResponses, practiceWithdrawEvidenceProjectData, practiceWithdrawEvidenceProjectResponses, sessionMeData, sessionMeResponses, sessionRefusalData, sessionRefusalResponses, sessionSignInPageData, sessionSignInPageResponses } from './types.gen';
+import type { courseCourseData, courseCourseResponses, healthHealthData, healthHealthResponses, practiceAskQuestionData, practiceAskQuestionErrors, practiceAskQuestionResponses, practiceCheckProjectAccessData, practiceCheckProjectAccessErrors, practiceCheckProjectAccessResponses, practiceCloseCompetencyData, practiceCloseCompetencyErrors, practiceCloseCompetencyResponses, practiceCompetencyPageData, practiceCompetencyPageErrors, practiceCompetencyPageResponses, practiceDeclareEvidenceProjectData, practiceDeclareEvidenceProjectErrors, practiceDeclareEvidenceProjectResponses, practiceDraftEvidencePlanData, practiceDraftEvidencePlanErrors, practiceDraftEvidencePlanResponses, practiceEvidencePanelViewData, practiceEvidencePanelViewErrors, practiceEvidencePanelViewResponses, practiceMyDrawingData, practiceMyDrawingErrors, practiceMyDrawingResponses, practiceRefreshEvidencePanelData, practiceRefreshEvidencePanelErrors, practiceRefreshEvidencePanelResponses, practiceSendAnswerData, practiceSendAnswerErrors, practiceSendAnswerResponses, practiceSendDrawingData, practiceSendDrawingErrors, practiceSendDrawingResponses, practiceSendEvidencePlanData, practiceSendEvidencePlanErrors, practiceSendEvidencePlanResponses, practiceSendSelfAssessmentData, practiceSendSelfAssessmentErrors, practiceSendSelfAssessmentResponses, practiceTickMissedCheckPointsData, practiceTickMissedCheckPointsErrors, practiceTickMissedCheckPointsResponses, practiceWithdrawEvidenceProjectData, practiceWithdrawEvidenceProjectResponses, sessionMeData, sessionMeResponses, sessionRefusalData, sessionRefusalResponses, sessionSignInPageData, sessionSignInPageResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -48,6 +48,19 @@ export class SessionService {
         return (options?.client ?? client).get<sessionMeResponses, unknown, ThrowOnError>({
             responseType: 'json',
             url: '/api/me',
+            ...options
+        });
+    }
+}
+
+export class CourseService {
+    /**
+     * Course
+     */
+    public static course<ThrowOnError extends boolean = true>(options?: Options<courseCourseData, ThrowOnError>) {
+        return (options?.client ?? client).get<courseCourseResponses, unknown, ThrowOnError>({
+            responseType: 'json',
+            url: '/api/course',
             ...options
         });
     }

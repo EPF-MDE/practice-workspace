@@ -36,6 +36,8 @@ backend() {
   step "Back end: boundaries"
   backend_boundaries
   backend_cycles
+  step "Back end: the Demo course (verify, as the Engine loads it at start)"
+  uv_backend python -m app verify ../demo-course
   step "Back end: tests"
   uv_backend pytest
 }

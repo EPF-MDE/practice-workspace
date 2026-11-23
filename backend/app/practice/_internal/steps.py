@@ -227,7 +227,7 @@ def _store(request: Request) -> Store:
 
 
 def _page(request: Request, competency: str, student: Student) -> Page:
-    content: dict[str, Competency] = request.app.state.content
+    content: dict[str, Competency] = request.app.state.course.competencies
     if competency not in content:
         raise HTTPException(404, f"No Competency {competency}")
     return content[competency].for_group(student.group)

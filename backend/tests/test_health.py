@@ -14,7 +14,7 @@ def test_the_error_check_raises_with_its_key(make_client: MakeClient) -> None:
         _env_file=None,
         sign_in="fake",
         error_check_key="k",
-        content_dir=str(FIXTURES / "content"),
+        course_folder=str(FIXTURES / "content"),
     )
     client = make_client(settings=settings)
     client = type(client)(client.app, raise_server_exceptions=False)

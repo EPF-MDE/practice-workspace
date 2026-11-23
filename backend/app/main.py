@@ -13,9 +13,9 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import auth, observability, practice
+from app import auth, course, observability, practice
 from app.auth import FakeIdentity, GitHubIdentity, Identity
-from app.content import load_content
+from app.course import Course, load_course
 from app.evidence_panel import (
     AccessCheck,
     AppAccessCheck,
@@ -92,10 +92,16 @@ def default_identity(settings: Settings) -> Identity:
     )
 
 
-def default_content_dir(settings: Settings) -> Path:
-    if not settings.content_dir:
-        raise ConfigurationError("No content folder: set WORKSPACE_CONTENT_DIR")
-    return Path(settings.content_dir)
+def default_course(settings: Settings) -> Course:
+    if not settings.course_folder:
+        raise ConfigurationError("No Course folder: set WORKSPACE_COURSE_FOLDER")
+    loading = load_course(settings.course_folder)
+    if loading.course is None:
+        raise ConfigurationError(
+            f"The Course folder {settings.course_folder} cannot be served:\n"
+            + "\n".join(f"- {problem}" for problem in loading.problems)
+        )
+    return loading.course
 
 
 def default_store(settings: Settings) -> Store:
@@ -205,7 +211,7 @@ def create_app(
     app.state.access_check = (
         access_check if access_check is not None else default_access_check(settings)
     )
-    app.state.content = load_content(default_content_dir(settings))
+    app.state.course = default_course(settings)
     app.state.signals = observability.Signals()
 
     @app.middleware("http")
@@ -250,6 +256,7 @@ def create_app(
     )
 
     app.include_router(auth.router)
+    app.include_router(course.router)
     app.include_router(practice.router)
 
     @app.get("/api/health", tags=["health"])

@@ -32,7 +32,7 @@ export default defineConfig({
     cwd: backend,
     command: `uv run --frozen uvicorn app.main:app --host 127.0.0.1 --port ${port}`,
     env: {
-      WORKSPACE_CONTENT_DIR: demoCourse,
+      WORKSPACE_COURSE_FOLDER: demoCourse,
       WORKSPACE_ROSTER_FILE: resolve(demoCourse, "roster.csv"),
       WORKSPACE_SIGN_IN: "fake",
       WORKSPACE_STORE: "memory",

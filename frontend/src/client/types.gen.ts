@@ -202,6 +202,16 @@ export type CompetencyPage = {
 };
 
 /**
+ * CourseOut
+ */
+export type CourseOut = {
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * Declaration
  */
 export type Declaration = {
@@ -1093,6 +1103,22 @@ export type sessionMeResponses = {
 };
 
 export type sessionMeResponse = sessionMeResponses[keyof sessionMeResponses];
+
+export type courseCourseData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/course';
+};
+
+export type courseCourseResponses = {
+    /**
+     * Successful Response
+     */
+    200: CourseOut;
+};
+
+export type courseCourseResponse = courseCourseResponses[keyof courseCourseResponses];
 
 export type practiceCompetencyPageData = {
     body?: never;

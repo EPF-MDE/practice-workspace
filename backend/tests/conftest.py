@@ -34,7 +34,7 @@ def test_settings() -> Settings:
         session_secret="test-secret",
         sign_in="fake",
         public_url="http://testserver",
-        content_dir=str(FIXTURES / "content"),
+        course_folder=str(FIXTURES / "content"),
     )
 
 
