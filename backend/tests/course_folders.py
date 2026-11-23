@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from app.content import COMPETENCIES
+
 ONE_STEP = "## Read {#read minutes=5}\n\nA Step to read.\n"
 
 
@@ -12,7 +14,7 @@ def write_course_folder(
     content: dict[str, str],
     settings: dict[str, tuple[str, int]] | None = None,
 ) -> Path:
-    titled = settings or {c: (f"The title of {c}", 40) for c in ("C1", "C2", "C3")}
+    titled = settings or {c: (f"The title of {c}", 40) for c in COMPETENCIES}
     (folder / "course.toml").write_text(
         'name = "Fixture course"\n'
         + "".join(
@@ -28,4 +30,4 @@ def write_course_folder(
 
 
 def with_every_competency(**content: str) -> dict[str, str]:
-    return {c: content.get(c, ONE_STEP) for c in ("C1", "C2", "C3")} | content
+    return {c: content.get(c, ONE_STEP) for c in COMPETENCIES} | content
