@@ -38,8 +38,8 @@ def reading_of(repository: str, ruleset: str) -> RepositoryReading:
     return RepositoryReading(
         student=StudentToRead("ada-oceens", "OcéENS", repository),
         default_branch="main",
-        read_at=READ_AT,
-        checked_at=READ_AT,
+        facts_computed_at=READ_AT,
+        last_checked_at=READ_AT,
         branches_read=1,
         pull_requests_read=0,
         empty=False,

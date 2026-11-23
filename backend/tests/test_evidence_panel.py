@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 from conftest import ADA, MakeClient, sign_in
@@ -9,6 +11,7 @@ from fastapi.testclient import TestClient
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
 from app.repository_reading import (
     CompetencyReading,
+    DirectoryReadings,
     Fact,
     RepositoryReading,
     StudentToRead,
@@ -61,8 +64,8 @@ def reading(
     return RepositoryReading(
         student=student,
         default_branch="main",
-        read_at=READ_AT,
-        checked_at=READ_AT,
+        facts_computed_at=READ_AT,
+        last_checked_at=READ_AT,
         branches_read=branches,
         pull_requests_read=pulls,
         empty=empty,
@@ -187,11 +190,36 @@ def test_the_panel_shows_when_the_repository_was_read_and_a_refresh_writes_nothi
     shown = panel_client.get("/api/competencies/C2/evidence-panel").json()
     refreshed = panel_client.post("/api/competencies/C2/evidence-panel/refresh").json()
 
-    assert shown["read_at"] == shown["checked_at"] == "2026-11-01T08:00:00Z"
-    assert refreshed["read_at"] == shown["read_at"]
-    assert refreshed["checked_at"] > shown["checked_at"]
+    assert (
+        shown["facts_computed_at"] == shown["last_checked_at"] == "2026-11-01T08:00:00Z"
+    )
+    assert refreshed["facts_computed_at"] == shown["facts_computed_at"]
+    assert refreshed["last_checked_at"] > shown["last_checked_at"]
     assert repositories.refreshes == 1
     assert store.writes == before
+
+
+def test_a_reading_stored_before_its_times_were_renamed_still_shows(
+    make_client: MakeClient, tmp_path: Path
+) -> None:
+    stored = reading().to_dict()
+    stored["read_at"] = stored.pop("facts_computed_at")
+    stored["checked_at"] = stored.pop("last_checked_at")
+    (tmp_path / "repository-readings").mkdir()
+    (tmp_path / "repository-readings" / "ada-oceens.json").write_text(
+        json.dumps(stored), encoding="utf-8"
+    )
+    client = make_client(
+        repository_reading=OfflineRepositoryReading(DirectoryReadings(tmp_path)),
+        access_check=FakeAccessCheck(),
+    )
+    sign_in(client, ADA)
+
+    shown = client.get("/api/competencies/C2/evidence-panel").json()
+
+    assert shown["available"]
+    assert shown["facts_computed_at"] == "2026-11-01T08:00:00Z"
+    assert shown["last_checked_at"] == "2026-11-01T08:00:00Z"
 
 
 def test_a_repository_that_cannot_be_read_now_is_said_plainly_never_a_zero(

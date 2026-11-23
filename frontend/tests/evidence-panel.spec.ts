@@ -71,12 +71,12 @@ async function readThePanel(page: Page) {
   );
 
   const checked = await panel
-    .getByTestId("evidence-panel-checked-at")
+    .getByTestId("evidence-panel-last-checked-at")
     .textContent();
   await panel.getByRole("button", { name: "Refresh" }).click();
-  await expect(panel.getByTestId("evidence-panel-checked-at")).not.toHaveText(
-    checked ?? ""
-  );
+  await expect(
+    panel.getByTestId("evidence-panel-last-checked-at")
+  ).not.toHaveText(checked ?? "");
 
   await panel
     .getByRole("button", { name: "My work doesn't show here" })

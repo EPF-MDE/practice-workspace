@@ -36,8 +36,8 @@ def a_repository_with_very_many_files() -> RepositoryReading:
     return RepositoryReading(
         student=StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS"),
         default_branch="main",
-        read_at=READ_AT,
-        checked_at=READ_AT,
+        facts_computed_at=READ_AT,
+        last_checked_at=READ_AT,
         branches_read=3,
         pull_requests_read=2,
         empty=False,

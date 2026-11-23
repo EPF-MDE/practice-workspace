@@ -24,7 +24,7 @@ def test_an_empty_repository_says_where_it_looked_never_zero(
     assert (reading.branches_read, reading.pull_requests_read) == (1, 0)
     assert reading["C1"].facts == []
     assert reading["C1"].nothing_found == ["C1"]
-    assert reading.read_at is not None
+    assert reading.facts_computed_at is not None
 
 
 def test_work_only_off_the_default_branch_is_found_on_its_branches(

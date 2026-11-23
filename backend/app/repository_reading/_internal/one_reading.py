@@ -80,8 +80,8 @@ class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
         return RepositoryReading(
             student=s,
             default_branch=self.default,
-            read_at=now,
-            checked_at=now,
+            facts_computed_at=now,
+            last_checked_at=now,
             branches_read=len(branch_list),
             pull_requests_read=len(pull_list),
             empty=not self.facts["C1"],

@@ -370,13 +370,13 @@ export type EvidencePanel = {
      */
     unavailable: string | null;
     /**
-     * Read At
+     * Facts Computed At
      */
-    read_at: string | null;
+    facts_computed_at: string | null;
     /**
-     * Checked At
+     * Last Checked At
      */
-    checked_at: string | null;
+    last_checked_at: string | null;
     /**
      * Default Branch
      */
