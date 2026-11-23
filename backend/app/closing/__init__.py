@@ -36,7 +36,7 @@ class Scale:
         return any(known.id == level for known in self.levels)
 
     def label(self, level: str) -> str:
-        return next(known.label for known in self.levels if known.id == level)
+        return next((known.label for known in self.levels if known.id == level), level)
 
     def just_below_top(self, level: str) -> bool:
         return len(self.levels) > 1 and self.levels[-2].id == level

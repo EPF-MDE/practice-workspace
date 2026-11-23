@@ -182,3 +182,24 @@ def test_the_app_refuses_to_start_on_an_empty_level_list(
         make_client(
             settings=test_settings.model_copy(update={"course_folder": str(folder)})
         )
+
+
+def test_a_stored_level_the_scale_no_longer_holds_still_serves_the_page(
+    make_client: MakeClient, test_settings: Settings, future: datetime, tmp_path: Path
+) -> None:
+    ada = on_three_levels(make_client, test_settings, future, future)
+    ada.post(SELF, json=rated(a="seen", b="tried"))
+    for name in ("course.toml", "c1.md"):
+        text = (THREE_LEVELS / name).read_text(encoding="utf-8")
+        (tmp_path / name).write_text(text.replace("seen", "glimpsed"))
+    renamed = make_client(
+        settings=test_settings.model_copy(
+            update={"course_folder": str(tmp_path), "closes_at": future}
+        )
+    )
+    sign_in(renamed, ADA_OF_OCEENS)
+
+    page = renamed.get(PAGE)
+
+    assert page.status_code == 200
+    assert page.json()["evidence_plan_draft"].startswith("C1.a (Basic), seen")
