@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 
 import pytest
-from conftest import ADA, GRACE, MakeClient, sign_in
+from conftest import ADA_OF_OCEENS, GRACE_OF_MATHUTRICE, MakeClient, sign_in
 from fastapi.testclient import TestClient
 
 from app.settings import Settings
@@ -22,7 +22,7 @@ def blocks(page: dict[str, Any], step_id: str, kind: str) -> list[dict[str, Any]
 
 @pytest.fixture
 def ada(client: TestClient) -> TestClient:
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     return client
 
 
@@ -53,12 +53,12 @@ def test_the_page_lists_the_steps_with_their_timings(ada: TestClient) -> None:
 
 
 def test_a_student_receives_their_groups_content_only(client: TestClient) -> None:
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     ada_page = client.get(PAGE).text
     assert "OCEENS-ONLY" in ada_page
     assert "MATHUTRICE-ONLY" not in ada_page
 
-    sign_in(client, GRACE)
+    sign_in(client, GRACE_OF_MATHUTRICE)
     grace_page = client.get(PAGE).text
     assert "MATHUTRICE-ONLY" in grace_page
     assert "OCEENS-ONLY" not in grace_page
@@ -135,10 +135,10 @@ def test_sending_again_stores_a_new_version_and_keeps_every_version(
 
 
 def test_one_students_answer_unlocks_nothing_for_another(client: TestClient) -> None:
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     client.post(ANSWER, json={"fields": {"sentence": "mine"}})
 
-    sign_in(client, GRACE)
+    sign_in(client, GRACE_OF_MATHUTRICE)
     response = client.get(PAGE)
 
     assert blocks(response.json(), "guided-calculation", "answer")[0]["locked"] is True
@@ -170,7 +170,7 @@ def test_an_answer_names_only_the_steps_fields(ada: TestClient) -> None:
 def test_a_field_of_the_other_groups_block_is_not_one_of_the_students(
     client: TestClient,
 ) -> None:
-    sign_in(client, GRACE)
+    sign_in(client, GRACE_OF_MATHUTRICE)
 
     sent = client.post(ANSWER, json={"fields": {"sentence": "x", "step-1": "y"}})
 
@@ -199,7 +199,7 @@ def test_links_to_the_instructors_material_are_links(ada: TestClient) -> None:
 def test_nothing_is_written_before_a_send(
     client: TestClient, store: InMemoryStore
 ) -> None:
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     client.get(PAGE)
     client.get(PAGE)
 
@@ -213,7 +213,7 @@ def test_an_answer_after_the_workspace_closed_is_refused(
     make_client: MakeClient, test_settings: Settings, past: datetime
 ) -> None:
     client = make_client(settings=test_settings.model_copy(update={"closes_at": past}))
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     response = client.post(ANSWER, json={"fields": {"sentence": "late"}})
 
