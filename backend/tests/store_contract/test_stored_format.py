@@ -22,6 +22,7 @@ from app.store.github import STORE_BOT
 from .conftest import ADA, PNG, SENDS, SNAPSHOT, github_store
 
 WRITTEN: dict[Kind, dict[str, Any]] = {
+    Kind.ANSWER: {"fields": {"sentence": "D ≤ 2 h", "unit": "h"}},
     Kind.CHECK_POINTS: {"missed": ["queue", "retry"]},
     Kind.SELF_ASSESSMENT: {
         "levels": {
@@ -91,9 +92,16 @@ def test_a_drawing_is_written_with_the_commit_holding_its_files(
 ) -> None:
     github_store(github).send_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
 
-    (written,) = _payloads(github)
-    assert set(written) == {"png", "png_bytes", "snapshot", "snapshot_bytes", "commit"}
-    assert written["commit"] == github.branches["workspace-data"][-1][0]
+    snapshot = json.dumps(SNAPSHOT, ensure_ascii=False, separators=(",", ":"))
+    assert _payloads(github) == [
+        {
+            "png": "drawings/ada-oceens/C1/redraw.png",
+            "png_bytes": len(PNG),
+            "snapshot": "drawings/ada-oceens/C1/redraw.snapshot.json",
+            "snapshot_bytes": len(snapshot.encode("utf-8")),
+            "commit": github.branches["workspace-data"][-1][0],
+        }
+    ]
 
 
 def _sent_before(github: FakeGitHub, block: dict[str, Any]) -> None:

@@ -65,6 +65,9 @@ def declared(url: str, note: str = "n") -> DeclarationPayload:
 
 
 SENDS: dict[Kind, Callable[[Store, Student], Entry[Payload]]] = {
+    Kind.ANSWER: lambda s, who: s.send_answer(
+        who, "C1", "guided-calculation", {"sentence": "D ≤ 2 h", "unit": "h"}
+    ),
     Kind.CHECK_POINTS: lambda s, who: s.send_missed_check_points(
         who, "C2", "redraw", ["queue", "retry"]
     ),
