@@ -228,8 +228,7 @@ class GitHubStore:
             version = 1 + sum(
                 1
                 for e in entries
-                if (e.kind, e.competency, e.step_or_drawing)
-                == (payload.KIND, competency, step_or_drawing)
+                if e.series == (payload.KIND, competency, step_or_drawing)
             )
             body = comment_body(competency, step_or_drawing, version, payload)
             if len(body) > GITHUB_COMMENT_LIMIT:

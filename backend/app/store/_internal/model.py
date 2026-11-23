@@ -36,6 +36,10 @@ class Entry[P: Payload]:
     def kind(self) -> Kind:
         return self.payload.KIND
 
+    @property
+    def series(self) -> tuple[Kind, str | None, str | None]:
+        return (self.kind, self.competency, self.step_or_drawing)
+
 
 @dataclass(frozen=True)
 class StoredDeclaration:

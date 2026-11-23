@@ -105,8 +105,7 @@ class InMemoryStore:
             version = 1 + sum(
                 1
                 for e in entries
-                if (e.kind, e.competency, e.step_or_drawing)
-                == (payload.KIND, competency, step_or_drawing)
+                if e.series == (payload.KIND, competency, step_or_drawing)
             )
             entry = Entry(competency, step_or_drawing, payload, version, self.clock())
             entries.append(entry)

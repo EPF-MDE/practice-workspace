@@ -140,10 +140,10 @@ def _renumbered(entries: list[Entry[Payload]]) -> list[Entry[Payload]]:
     seen: dict[tuple[Any, ...], int] = {}
     out = []
     for entry in entries:
-        same = (entry.kind, entry.competency, entry.step_or_drawing)
-        seen[same] = seen.get(same, 0) + 1
+        seen[entry.series] = seen.get(entry.series, 0) + 1
+        version = seen[entry.series]
         out.append(
-            entry if entry.version == seen[same] else replace(entry, version=seen[same])
+            entry if entry.version == version else replace(entry, version=version)
         )
     return out
 
