@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from conftest import ADA, MakeClient, sign_in
+from conftest import ADA_OF_OCEENS, MakeClient, sign_in
 from fastapi.testclient import TestClient
 
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
@@ -20,7 +20,7 @@ from app.repository_reading import (
 
 DECLARATION = "/api/evidence-project/declaration"
 COMPETENCIES = ("C1", "C2", "C3")
-READ_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
+FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 
 
 def panel(client: TestClient, competency: str) -> dict[str, Any]:
@@ -40,8 +40,8 @@ def reading_of(repository: str, ruleset: str) -> RepositoryReading:
     return RepositoryReading(
         student=StudentToRead("ada-oceens", "OcéENS", repository),
         default_branch="main",
-        read_at=READ_AT,
-        checked_at=READ_AT,
+        facts_computed_at=FRESH_READING_AT,
+        last_checked_at=FRESH_READING_AT,
         branches_read=1,
         pull_requests_read=0,
         empty=False,
@@ -79,7 +79,7 @@ def ada(make_client: MakeClient, repositories: CountedReading) -> TestClient:
         repository_reading=repositories,
         access_check=FakeAccessCheck(readable={"ada/bakery"}),
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     return client
 
 
@@ -131,9 +131,9 @@ def test_a_project_the_app_cannot_read_is_said_as_such_never_a_zero(
 UPSTREAM_BRANCHES = "repos/EPF-MDE/OceENS/branches?per_page=100"
 
 
-class OwnRepositories:
+class UnforkedRepositories:
     def __init__(
-        self, files: dict[str, list[str]], linked: tuple[str, ...] = ()
+        self, files: dict[str, list[str]], *, linked_to_upstream: tuple[str, ...] = ()
     ) -> None:
         self.answers: dict[str, Any] = {
             UPSTREAM_BRANCHES: [{"name": "course-2026", "commit": {"sha": "up"}}]
@@ -144,7 +144,7 @@ class OwnRepositories:
                 f"repos/{repository}": {
                     "default_branch": "main",
                     "source": {"full_name": "EPF-MDE/OceENS"}
-                    if repository in linked
+                    if repository in linked_to_upstream
                     else None,
                 },
                 f"repos/{repository}/branches?per_page=100": [
@@ -168,7 +168,7 @@ class OwnRepositories:
 def test_a_repository_of_its_own_history_is_read_and_a_change_reads_the_new_one(
     make_client: MakeClient,
 ) -> None:
-    github = OwnRepositories(
+    github = UnforkedRepositories(
         {
             "ada/bakery": ["README.md", "src/oven.py", "package-lock.json"],
             "ada/mill": ["README.md"],
@@ -178,7 +178,7 @@ def test_a_repository_of_its_own_history_is_read_and_a_change_reads_the_new_one(
         repository_reading=RepositoryReader(github, InMemoryReadings()),
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     declare(client, "https://github.com/ada/bakery")
     bakery = panel(client, "C1")
@@ -200,14 +200,14 @@ def test_a_repository_of_its_own_history_is_read_and_a_change_reads_the_new_one(
 def test_a_repository_linked_to_the_upstream_it_cannot_be_compared_with_shows_no_files(
     make_client: MakeClient,
 ) -> None:
-    github = OwnRepositories(
-        {"ada/OceENS": ["README.md", "src/app.py"]}, ("ada/OceENS",)
+    github = UnforkedRepositories(
+        {"ada/OceENS": ["README.md", "src/app.py"]}, linked_to_upstream=("ada/OceENS",)
     )
     client = make_client(
         repository_reading=RepositoryReader(github, InMemoryReadings()),
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     declare(client, "https://github.com/ada/OceENS")
 

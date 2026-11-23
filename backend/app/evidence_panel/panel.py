@@ -121,8 +121,8 @@ class EvidencePanel(BaseModel):
     competency: str
     evidence_project: str
     unavailable: str | None
-    read_at: datetime | None
-    checked_at: datetime | None
+    facts_computed_at: datetime | None
+    last_checked_at: datetime | None
     default_branch: str | None
     branches_read: int
     pull_requests_read: int
@@ -160,8 +160,8 @@ def build_panel(
         competency=competency,
         evidence_project=reading.student.evidence_project,
         unavailable=None,
-        read_at=reading.read_at,
-        checked_at=reading.checked_at,
+        facts_computed_at=reading.facts_computed_at,
+        last_checked_at=reading.last_checked_at,
         default_branch=reading.default_branch,
         branches_read=reading.branches_read,
         pull_requests_read=reading.pull_requests_read,
@@ -200,8 +200,8 @@ def unavailable_panel(
         competency=competency,
         evidence_project=evidence_project,
         unavailable=unavailable,
-        read_at=None,
-        checked_at=None,
+        facts_computed_at=None,
+        last_checked_at=None,
         default_branch=None,
         branches_read=0,
         pull_requests_read=0,

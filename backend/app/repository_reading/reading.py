@@ -22,6 +22,8 @@ LOOKED_FOR = {
 
 STUDENT = "student"
 
+_KEYS_BEFORE_RENAME = {"facts_computed_at": "read_at", "last_checked_at": "checked_at"}
+
 
 @dataclass(frozen=True)
 class StudentToRead:
@@ -73,8 +75,8 @@ class CompetencyReading:
 class RepositoryReading:
     student: StudentToRead
     default_branch: str
-    read_at: datetime
-    checked_at: datetime
+    facts_computed_at: datetime
+    last_checked_at: datetime
     branches_read: int
     pull_requests_read: int
     empty: bool
@@ -90,8 +92,8 @@ class RepositoryReading:
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
-        d["read_at"] = self.read_at.isoformat()
-        d["checked_at"] = self.checked_at.isoformat()
+        d["facts_computed_at"] = self.facts_computed_at.isoformat()
+        d["last_checked_at"] = self.last_checked_at.isoformat()
         return d
 
     @classmethod
@@ -99,8 +101,8 @@ class RepositoryReading:
         return cls(
             student=StudentToRead(**d["student"]),
             default_branch=d["default_branch"],
-            read_at=datetime.fromisoformat(d["read_at"]),
-            checked_at=datetime.fromisoformat(d["checked_at"]),
+            facts_computed_at=_stored_instant(d, "facts_computed_at"),
+            last_checked_at=_stored_instant(d, "last_checked_at"),
             branches_read=d["branches_read"],
             pull_requests_read=d["pull_requests_read"],
             empty=d["empty"],
@@ -116,3 +118,8 @@ class RepositoryReading:
             refs=d.get("refs", {}),
             upstream_shas=d.get("upstream_shas", {}),
         )
+
+
+def _stored_instant(d: dict[str, Any], key: str) -> datetime:
+    stored = d[key] if key in d else d[_KEYS_BEFORE_RENAME[key]]
+    return datetime.fromisoformat(stored)

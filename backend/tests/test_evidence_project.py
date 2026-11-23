@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
 import httpx
 import pytest
-from conftest import ADA, MakeClient, sign_in
-from fake_github import FakeGitHub
+from conftest import ADA_OF_OCEENS, Counted, MakeClient, sign_in
 from fastapi.testclient import TestClient
 
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading, Readability
 from app.settings import Settings
-from app.store import GitHubStore, InMemoryStore, Store
+from app.store import InMemoryStore
 
 C2 = "/api/competencies/C2"
 DECLARATION = "/api/evidence-project/declaration"
@@ -21,6 +19,14 @@ BAKERY = {
     "url": "https://github.com/ada/bakery",
     "what_to_read": "The pipeline: .github/workflows, and pull request #4.",
 }
+
+
+def installed_meanwhile(repository: str) -> Readability:
+    return Readability.READABLE
+
+
+def could_not_ask(repository: str) -> Readability:
+    return Readability.NOT_CHECKED
 
 
 @pytest.fixture
@@ -40,7 +46,7 @@ def ada(
         repository_reading=OfflineRepositoryReading(),
         access_check=access,
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     return client
 
 
@@ -105,7 +111,7 @@ def test_access_is_checked_again_on_each_view_so_a_grant_shows_without_declaring
         DECLARATION,
         json={"url": "https://github.com/ada/secret", "what_to_read": "docs"},
     )
-    access.rule = lambda repo: Readability.READABLE
+    access.rule = installed_meanwhile
 
     assert (
         ada.get(f"{C2}/evidence-panel").json()["declaration"]["access"]["status"]
@@ -116,7 +122,7 @@ def test_access_is_checked_again_on_each_view_so_a_grant_shows_without_declaring
 def test_when_access_cannot_be_checked_it_reads_not_readable_yet_and_says_why(
     ada: TestClient, access: FakeAccessCheck
 ) -> None:
-    access.rule = lambda repo: Readability.NOT_CHECKED
+    access.rule = could_not_ask
 
     checked = ada.post(CHECK, json={"url": "https://github.com/ada/secret"}).json()
 
@@ -217,7 +223,7 @@ def test_a_declaration_changes_until_the_reading_day_and_no_later(
             repository_reading=OfflineRepositoryReading(),
             access_check=FakeAccessCheck(),
         )
-        sign_in(c, ADA)
+        sign_in(c, ADA_OF_OCEENS)
         return c
 
     open_until_reading_day = client(future)
@@ -242,31 +248,10 @@ def _rate_and_close(client: TestClient, **extra: Any) -> httpx.Response:
     return response
 
 
-Counted = tuple[TestClient, Store, Callable[[], int]]
-
-
-@pytest.fixture(params=["memory", "github"])
-def counted(request: pytest.FixtureRequest, make_client: MakeClient) -> Counted:
-    store: Store
-    if request.param == "memory":
-        store = InMemoryStore()
-        writes = lambda: store.writes  # noqa: E731
-    else:
-        github = FakeGitHub()
-        store = GitHubStore(github.client(), github.repository)
-        writes = lambda: github.writes  # noqa: E731
-    repositories = OfflineRepositoryReading()
-    client = make_client(
-        store=store, repository_reading=repositories, access_check=FakeAccessCheck()
-    )
-    sign_in(client, ADA)
-    return client, store, writes
-
-
 def test_the_closing_step_stores_the_panel_and_the_declaration_in_its_one_send(
     counted: Counted,
 ) -> None:
-    client, store, writes = counted
+    client, writes = counted
     client.post(
         f"{C1}/self-assessment",
         json={"levels": {"C1.a": {"level": "understand", "link": None}}},
@@ -290,7 +275,7 @@ def test_the_closing_step_stores_the_panel_and_the_declaration_in_its_one_send(
 
 
 def test_closing_without_a_declaration_still_stores_the_panel(counted: Counted) -> None:
-    client, store, writes = counted
+    client, writes = counted
     shown = client.get(f"{C1}/evidence-panel").json()
     before = writes()
 
@@ -299,14 +284,17 @@ def test_closing_without_a_declaration_still_stores_the_panel(counted: Counted) 
     assert writes() == before + 2
     assert client.get(C1).json()["evidence_plan"]["confirmed"] is True
     assert client.get(C1).json()["evidence_project"] is None
-    assert client.get(f"{C1}/evidence-panel").json()["read_at"] == shown["read_at"]
+    assert (
+        client.get(f"{C1}/evidence-panel").json()["facts_computed_at"]
+        == shown["facts_computed_at"]
+    )
     assert client.get(f"{C1}/evidence-panel").json()["declaration"] is None
 
 
 def test_a_declaration_after_the_closing_step_is_its_own_send_and_wins(
     counted: Counted,
 ) -> None:
-    client, _, writes = counted
+    client, writes = counted
     _rate_and_close(client, declaration=BAKERY)
     before = writes()
 
@@ -320,7 +308,7 @@ def test_a_declaration_after_the_closing_step_is_its_own_send_and_wins(
 def test_the_closing_step_refuses_a_bad_declaration_and_stores_nothing(
     counted: Counted,
 ) -> None:
-    client, _, writes = counted
+    client, writes = counted
     client.post(
         f"{C1}/self-assessment",
         json={"levels": {"C1.a": {"level": "understand", "link": None}}},

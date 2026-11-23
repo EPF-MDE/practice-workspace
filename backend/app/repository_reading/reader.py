@@ -40,7 +40,7 @@ class RepositoryReader:
         if branches == stored.refs.get("branches") and pulls == stored.refs.get(
             "pulls"
         ):
-            fresh = replace(stored, checked_at=self.now())
+            fresh = replace(stored, last_checked_at=self.now())
             self.readings.save(student.login, fresh, changed=False)
             return fresh
         return self.read_now(student, previous=stored)

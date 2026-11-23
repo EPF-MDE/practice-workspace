@@ -9,10 +9,10 @@ from fake_github import FakeGitHub
 from app.roster import Student
 from app.store import Entry, GitHubStore, InMemoryStore, Kind, Store
 
-ADA = Student(
+ADA_OF_OCEENS = Student(
     1001, "ada-oceens", "Ada Lovelace", "OcéENS", "OcéENS", "ada-oceens/OceENS"
 )
-GRACE = Student(
+GRACE_OF_MATHUTRICE = Student(
     1002,
     "grace-math",
     "Grace Hopper",

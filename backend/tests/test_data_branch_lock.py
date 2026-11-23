@@ -25,13 +25,17 @@ def test_every_writer_of_one_branch_gets_the_same_lock_and_other_branches_their_
     ) is not data_branch_lock("EPF-MDE/complex-web-services", "other")
 
 
+def is_git_data_api_call(request: httpx.Request) -> bool:
+    return "/git/" in request.url.path
+
+
 def test_a_drawing_and_a_repository_reading_write_one_at_a_time() -> None:
     github = FakeGitHub()
     log: list[str] = []
 
     def handle(request: httpx.Request) -> httpx.Response:
         path = request.url.path
-        if "/git/" in path:
+        if is_git_data_api_call(request):
             log.append("reading")
             time.sleep(0.02)
             if request.method == "GET" and "/git/ref/" in path:
