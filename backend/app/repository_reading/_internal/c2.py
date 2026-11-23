@@ -23,7 +23,7 @@ class _C2Facts(_ReadingState):
         for _ in range(RUNS_PAGES):
             if not path:
                 break
-            r = self.r.github.get(path)
+            r = self.github.get(path)
             if r.status != 200:
                 break
             runs.extend(r.body.get("workflow_runs", []))
@@ -105,7 +105,7 @@ class _C2Facts(_ReadingState):
             )
 
     def _c2c(self, branch_list: list[dict[str, Any]]) -> None:
-        r = self.r.github.get(
+        r = self.github.get(
             f"repos/{self.s.evidence_project}/rules/branches/"
             f"{quote(self.default, safe='')}"
         )
@@ -124,7 +124,7 @@ class _C2Facts(_ReadingState):
             b["name"] == self.default and b.get("protected") for b in branch_list
         )
         if not rules and protected:
-            b = self.r.github.get(
+            b = self.github.get(
                 f"repos/{self.s.evidence_project}/branches/"
                 f"{quote(self.default, safe='')}"
             )
@@ -219,9 +219,7 @@ class _C2Facts(_ReadingState):
         )
 
     def _deployments(self) -> dict[str, dict[str, Any]]:
-        r = self.r.github.get(
-            f"repos/{self.s.evidence_project}/deployments?per_page=100"
-        )
+        r = self.github.get(f"repos/{self.s.evidence_project}/deployments?per_page=100")
         found = r.body if r.status == 200 and isinstance(r.body, list) else []
         latest: dict[str, dict[str, Any]] = {}
         for d in found:
@@ -238,7 +236,7 @@ class _C2Facts(_ReadingState):
             d = deployments.get(kind)
             if not d:
                 continue
-            r = self.r.github.get(
+            r = self.github.get(
                 f"repos/{self.s.evidence_project}/deployments/{d['id']}/statuses?per_page=1"
             )
             status = r.body[0] if r.status == 200 and r.body else {}
