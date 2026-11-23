@@ -52,6 +52,8 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Self-assessment**: For one Student and each Competency, where they stand on each point its Path says they can explain, on the levels the Course folder sets. It is not graded, the Instructor sees it, and the Evidence Plan is drafted from it. _Avoid_: self-evaluation, quiz
 
+**Scale**: The levels a Self-assessment rates each point on, in order, each with an id and a label, listed in the Course folder's settings. Its last is the **top level**, the one that says a point is done: a point rated at it needs a link to the work, and the Evidence Plan leaves it out. A content's _to get there_ is written for a level below the top. _Avoid_: grade, rubric
+
 **Evidence Plan**: For one Student and each Competency, for each point of their Self-assessment not yet done, the evidence they will put in their Evidence Project before the Reading Day, and what to do to get there. The Practice workspace drafts it from their Self-assessment and the Student amends it until the Reading Day. _Avoid_: Practice Plan, roadmap
 
 **Evidence Project**: The one repository a Student puts their evidence in, for every Competency: by default the one the Roster names for them, which they may change for another until the Reading Day. _Avoid_: default repository, fork, portfolio, project
