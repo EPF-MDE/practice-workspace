@@ -101,8 +101,8 @@ class RepositoryReading:
         return cls(
             student=StudentToRead(**d["student"]),
             default_branch=d["default_branch"],
-            facts_computed_at=_instant(d, "facts_computed_at"),
-            last_checked_at=_instant(d, "last_checked_at"),
+            facts_computed_at=_stored_instant(d, "facts_computed_at"),
+            last_checked_at=_stored_instant(d, "last_checked_at"),
             branches_read=d["branches_read"],
             pull_requests_read=d["pull_requests_read"],
             empty=d["empty"],
@@ -120,6 +120,6 @@ class RepositoryReading:
         )
 
 
-def _instant(d: dict[str, Any], key: str) -> datetime:
+def _stored_instant(d: dict[str, Any], key: str) -> datetime:
     stored = d[key] if key in d else d[_KEYS_BEFORE_RENAME[key]]
     return datetime.fromisoformat(stored)
