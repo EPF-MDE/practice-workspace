@@ -10,7 +10,6 @@ from app.content import (
     Answer,
     Block,
     Canvas,
-    Competency,
     ExampleDrawing,
     Html,
     Page,
@@ -20,6 +19,7 @@ from app.content import (
     Waiting,
 )
 from app.content import Field as ContentField
+from app.course import CompetencyOfCourse, Course
 from app.roster import Student
 from app.settings import PARIS, Settings
 from app.store import (
@@ -234,10 +234,14 @@ def _store(request: Request) -> Store:
 
 
 def _page(request: Request, competency: str, student: Student) -> Page:
-    content: dict[str, Competency] = request.app.state.course.competencies
-    if competency not in content:
+    return _competency_of_course(request, competency).content.for_group(student.group)
+
+
+def _competency_of_course(request: Request, competency: str) -> CompetencyOfCourse:
+    course: Course = request.app.state.course
+    if competency not in course.competencies:
         raise HTTPException(404, f"No Competency {competency}")
-    return content[competency].for_group(student.group)
+    return course.competencies[competency]
 
 
 def _step(page: Page, step_id: str) -> Step:

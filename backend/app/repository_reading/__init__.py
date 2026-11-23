@@ -8,7 +8,6 @@ from .github import (
 )
 from .reader import RepositoryReader
 from .reading import (
-    COMPETENCIES,
     ChangedFile,
     CompetencyReading,
     Credit,
@@ -26,7 +25,6 @@ from .storage import (
 )
 
 __all__ = [
-    "COMPETENCIES",
     "ChangedFile",
     "CompetencyReading",
     "Credit",

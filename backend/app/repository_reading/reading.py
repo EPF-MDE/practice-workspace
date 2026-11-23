@@ -9,8 +9,6 @@ from pydantic import BaseModel
 
 from app.roster import GROUPS, Repository, Student
 
-COMPETENCIES = ("C1", "C2", "C3")
-
 
 class PointId(StrEnum):
     CHANGED_FILES = "C1"

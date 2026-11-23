@@ -2,16 +2,12 @@ from pathlib import Path
 
 import pytest
 from conftest import ADA_OF_OCEENS, MakeClient, sign_in
+from course_folders import with_every_competency, write_course_folder
 from fastapi.testclient import TestClient
 
 from app.settings import Settings
 
-CONTENT = """---
-competency: C2
-title: Industrialize a service through a CI/CD pipeline
----
-
-## Predict the red {#predict minutes=10}
+CONTENT = """## Predict the red {#predict minutes=10}
 
 ::: field {#red kind=choice options="none|architecture|test"}
 Which job goes red?
@@ -31,8 +27,7 @@ ANSWER = f"{PAGE}/steps/predict/answer"
 
 @pytest.fixture
 def ada(make_client: MakeClient, test_settings: Settings, tmp_path: Path) -> TestClient:
-    (tmp_path / "course.toml").write_text('name = "Choice course"\n')
-    (tmp_path / "c2.md").write_text(CONTENT)
+    write_course_folder(tmp_path, with_every_competency(C2=CONTENT))
     client = make_client(
         settings=test_settings.model_copy(update={"course_folder": str(tmp_path)})
     )

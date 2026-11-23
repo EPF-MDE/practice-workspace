@@ -1,1 +1,13 @@
 name = "Fixture course"
+
+[competencies.C1]
+title = "Design a resilient web architecture under non-functional constraints"
+minutes = 40
+
+[competencies.C2]
+title = "A fixture Competency with one Step"
+minutes = 25
+
+[competencies.C3]
+title = "Another fixture Competency with one Step"
+minutes = 15

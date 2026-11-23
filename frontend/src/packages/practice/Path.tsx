@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { type CompetencyPage, PracticeService } from "@/client";
+import {
+  type CompetencyOut,
+  type CompetencyPage,
+  PracticeService,
+} from "@/client";
 import { Html } from "@/packages/shared/Html";
 import {
   type DraftScope,
@@ -48,9 +52,11 @@ function PathHeader({ page }: { page: CompetencyPage }) {
 function PathView({
   scope,
   page,
+  competencies,
 }: {
   scope: DraftScope;
   page: CompetencyPage;
+  competencies: CompetencyOut[];
 }) {
   const [read, setRead] = useState(() => readSteps.get(scope));
   const started = useMemo(
@@ -63,6 +69,7 @@ function PathView({
     <div className="mx-auto grid max-w-7xl gap-8 p-6 lg:grid-cols-[18rem_1fr]">
       <Sidebar
         competency={scope.competency}
+        competencies={competencies}
         steps={page.steps}
         finished={finished}
         greyed={greyed}
@@ -93,9 +100,11 @@ function PathView({
 export function Path({
   studentId,
   competency,
+  competencies,
 }: {
   studentId: number;
   competency: string;
+  competencies: CompetencyOut[];
 }) {
   const page = useQuery({
     queryKey: pathKey(competency),
@@ -111,5 +120,11 @@ export function Path({
         <Link to="/">Back to the workspace</Link>
       </main>
     );
-  return <PathView scope={{ studentId, competency }} page={page.data} />;
+  return (
+    <PathView
+      scope={{ studentId, competency }}
+      page={page.data}
+      competencies={competencies}
+    />
+  );
 }

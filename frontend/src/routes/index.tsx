@@ -12,19 +12,6 @@ export const Route = createFileRoute("/")({
   component: Opening,
 });
 
-const COMPETENCIES = [
-  {
-    id: "C1",
-    statement:
-      "Design a resilient web architecture under non-functional constraints",
-  },
-  { id: "C2", statement: "Industrialize a service through a CI/CD pipeline" },
-  {
-    id: "C3",
-    statement: "Observe, prioritize, and resolve errors in production",
-  },
-];
-
 function Opening() {
   const { student, course } = Route.useRouteContext();
   return (
@@ -51,10 +38,15 @@ function Opening() {
 
       <section aria-labelledby="path" className="flex flex-col gap-3">
         <h2 id="path" className="text-xl font-semibold">
-          Your path: three Competencies, 40 minutes each
+          Your path:{" "}
+          {course.competencies
+            .map(
+              (competency) => `${competency.id}, ${competency.minutes} minutes`
+            )
+            .join("; ")}
         </h2>
         <ol className="grid gap-3 md:grid-cols-3">
-          {COMPETENCIES.map((competency) => (
+          {course.competencies.map((competency) => (
             <li key={competency.id} className="rounded-lg border p-4">
               <Link
                 to="/competencies/$competency"
@@ -62,7 +54,7 @@ function Opening() {
                 className="hover:underline"
               >
                 <span className="font-semibold">{competency.id}</span>{" "}
-                {competency.statement}
+                {competency.title}
               </Link>
             </li>
           ))}

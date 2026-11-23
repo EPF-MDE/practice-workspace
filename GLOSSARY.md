@@ -32,7 +32,7 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 ### What a Student follows
 
-**Competency**: One capability a Course assesses independently, listed with its title and order in the Course folder's settings. A Course may have any number. _Avoid_: skill, criterion, learning outcome
+**Competency**: One capability a Course assesses independently. Every Course has the same three, C1, C2 and C3, in that order: the Engine's fixed set, not a setting. The Course folder gives each its title and the minutes its Path is given, in its settings, and its content in one Markdown file. _Avoid_: skill, criterion, learning outcome
 
 **Path**: The steps one Student follows through one Competency: material to read, fields to fill, systems to redraw and Checks, the Instructor's answer to a step showing only once the Student's own is stored. The Practice and the Eval follow the same kind of Path and differ only in how it ends. _Avoid_: journey, course, parcours
 

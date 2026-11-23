@@ -3,8 +3,8 @@ from __future__ import annotations
 from fastapi import HTTPException, Request
 
 from app import evidence_panel
+from app.content import COMPETENCIES
 from app.evidence_panel import Declaration, NotAProject
-from app.repository_reading import COMPETENCIES
 from app.roster import Student
 from app.settings import Settings
 from app.store import DeclarationPayload, StoredDeclaration

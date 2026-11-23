@@ -1,14 +1,11 @@
 import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { StepOut } from "@/client";
+import type { CompetencyOut, StepOut } from "@/client";
 import { cn } from "@/lib/utils";
 import {
   EvidencePanelView,
   openQuestion,
 } from "@/packages/evidence/EvidencePanel";
-
-const SESSION = ["C1", "C2", "C3"];
-const MINUTES_PER_COMPETENCY = 40;
 
 function clock(minutes: number) {
   return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
@@ -32,8 +29,26 @@ function schedule(steps: StepOut[]) {
   });
 }
 
+function session(competencies: CompetencyOut[]) {
+  return competencies.map((competency, index) => {
+    const from = competencies
+      .slice(0, index)
+      .reduce((sum, before) => sum + before.minutes, 0);
+    return { competency, from, to: from + competency.minutes };
+  });
+}
+
+type Slot = ReturnType<typeof session>[number];
+
+function slotOf(competencies: CompetencyOut[], competency: string) {
+  return session(competencies).find(
+    (slot) => slot.competency.id === competency
+  );
+}
+
 type PathProps = {
   competency: string;
+  competencies: CompetencyOut[];
   steps: StepOut[];
   finished: Set<string>;
   greyed: Set<string>;
@@ -85,8 +100,14 @@ function PathStep({
   );
 }
 
-function PathSection({ competency, steps, finished, greyed }: PathProps) {
-  const offset = SESSION.indexOf(competency) * MINUTES_PER_COMPETENCY;
+function PathSection({
+  competency,
+  competencies,
+  steps,
+  finished,
+  greyed,
+}: PathProps) {
+  const offset = slotOf(competencies, competency)?.from ?? 0;
   return (
     <section className="rounded-lg border p-4">
       <h2 className="font-semibold">Your path in {competency}</h2>
@@ -133,26 +154,32 @@ function PlanSection({
 
 function TimeSection({
   competency,
+  competencies,
   startedAt,
 }: {
   competency: string;
+  competencies: CompetencyOut[];
   startedAt: number;
 }) {
   const spent = useMinutesSince(startedAt);
+  const slots = session(competencies);
+  const total = slots.at(-1)?.to ?? 0;
   return (
     <section className="rounded-lg border p-4 text-sm">
       <h2 className="font-semibold">Time</h2>
       <p data-testid="time-spent">
         You have spent {spent} min on {competency}, out of{" "}
-        {MINUTES_PER_COMPETENCY}.
+        {slotOf(competencies, competency)?.competency.minutes}.
       </p>
       <p className="mt-2 text-muted-foreground">
         The session:{" "}
-        {SESSION.map(
-          (c, i) =>
-            `${c} ${clock(i * MINUTES_PER_COMPETENCY)}–${clock((i + 1) * MINUTES_PER_COMPETENCY)}`
-        ).join(", ")}
-        . Two hours in all.
+        {slots
+          .map(
+            (slot: Slot) =>
+              `${slot.competency.id} ${clock(slot.from)}–${clock(slot.to)}`
+          )
+          .join(", ")}
+        , {clock(total)} in all.
       </p>
     </section>
   );
@@ -168,7 +195,7 @@ export function Sidebar({
   evidencePlan: string;
   currentStep: string | undefined;
 }) {
-  const { competency } = path;
+  const { competency, competencies } = path;
   return (
     <aside
       aria-label="Your path"
@@ -180,7 +207,11 @@ export function Sidebar({
         onMyWorkMissing={() => currentStep && openQuestion(currentStep)}
       />
       <PlanSection competency={competency} evidencePlan={evidencePlan} />
-      <TimeSection competency={competency} startedAt={startedAt} />
+      <TimeSection
+        competency={competency}
+        competencies={competencies}
+        startedAt={startedAt}
+      />
     </aside>
   );
 }

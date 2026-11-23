@@ -5,6 +5,8 @@ from typing import Any
 
 from app import roster
 
+COMPETENCIES = ("C1", "C2", "C3")
+
 GROUPS = {name: group.directive for name, group in roster.GROUPS.items()}
 FIELD_KINDS = ("line", "text", "choice")
 BANDS = ("Basic", "Solid", "Outstanding")
@@ -137,7 +139,6 @@ class Step:
 @dataclass(frozen=True)
 class Page:
     competency: str
-    title: str
     intro_html: str
     steps: tuple[Step, ...]
 

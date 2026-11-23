@@ -41,6 +41,7 @@ from .review import (
 from .router import router
 from .steps import (
     _closed,
+    _competency_of_course,
     _drawing_sent,
     _hints,
     _page,
@@ -64,7 +65,7 @@ def competency_page(
     hints = _hints(page, record)
     return CompetencyPage(
         competency=page.competency,
-        title=page.title,
+        title=_competency_of_course(request, competency).title,
         intro_html=page.intro_html,
         steps=[_step_out(step, page, record, hints) for step in page.steps],
         closes_at=settings.closes_at,

@@ -4,7 +4,7 @@ import pytest
 
 from app.content import Competency, ContentError, Html, Waiting, parse_competency
 
-HEAD = "---\ncompetency: C1\ntitle: T\n---\n\n"
+HEAD = "---\ncompetency: C1\n---\n\n"
 
 
 def parse(body: str) -> Competency:

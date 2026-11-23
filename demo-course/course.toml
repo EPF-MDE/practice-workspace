@@ -1,1 +1,13 @@
 name = "Demo course"
+
+[competencies.C1]
+title = "Design a resilient web architecture under non-functional constraints"
+minutes = 40
+
+[competencies.C2]
+title = "Industrialize a service through a CI/CD pipeline"
+minutes = 40
+
+[competencies.C3]
+title = "Observe, prioritize, and resolve errors in production"
+minutes = 40
