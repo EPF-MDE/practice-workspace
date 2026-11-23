@@ -33,7 +33,7 @@ function LevelChoices({ point, levels, closed, over }: PointProps) {
               over ||
               (closed &&
                 before !== undefined &&
-                level.id !== levels.top.id &&
+                level.id !== levels.topLevel.id &&
                 level.id !== before)
             }
             onChange={() => levels.rate(point.id, { level: level.id })}
@@ -119,7 +119,7 @@ function PointFieldset(props: PointProps & { checks: CheckPointOut[] }) {
       </legend>
       <Html html={point.statement_html} />
       <LevelChoices {...props} />
-      {mine?.level === levels.top.id && (
+      {mine?.level === levels.topLevel.id && (
         <DoneLink
           point={point}
           link={mine.link}
@@ -134,7 +134,7 @@ function PointFieldset(props: PointProps & { checks: CheckPointOut[] }) {
 
 function LevelsSendBar({
   page,
-  levels: { changed, missingLink, top },
+  levels: { changed, missingLink, topLevel },
   over,
   sendLevels,
 }: {
@@ -157,8 +157,8 @@ function LevelsSendBar({
       </Button>
       {missingLink && (
         <span className="text-sm text-destructive">
-          {missingLink[0]}: "{top.label}" needs a link to your work on GitHub or
-          GitLab.
+          {missingLink[0]}: "{topLevel.label}" needs a link to your work on
+          GitHub or GitLab.
         </span>
       )}
       {page.self_assessment && (
@@ -198,7 +198,7 @@ export function SelfAssessmentForm({
         <output className="block rounded-md border p-3 text-sm">
           The workspace has closed. Until the Reading Day, a point you have not
           rated yet can still take its first level, any of them. A point you
-          have rated can only move up to "{levels.top.label}", with a link.
+          have rated can only move up to "{levels.topLevel.label}", with a link.
         </output>
       )}
       {points.map((point) => (

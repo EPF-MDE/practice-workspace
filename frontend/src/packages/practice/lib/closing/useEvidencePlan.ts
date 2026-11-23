@@ -14,11 +14,11 @@ import { pathKey, pathsKey } from "@/packages/shared/pathKeys";
 export function usePlan(
   scope: DraftScope,
   page: CompetencyPage,
-  { rated, top }: Pick<Levels, "rated" | "top">
+  { rated, topLevel }: Pick<Levels, "rated" | "topLevel">
 ) {
   const { competency } = scope;
   const forDraft = Object.fromEntries(
-    Object.entries(rated).filter(([, v]) => v.level !== top.id)
+    Object.entries(rated).filter(([, v]) => v.level !== topLevel.id)
   );
   const draft = useQuery({
     queryKey: [...pathKey(competency), "draft", forDraft],

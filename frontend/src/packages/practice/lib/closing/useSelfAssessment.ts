@@ -48,13 +48,16 @@ export function hints(
   return out;
 }
 
-function ratedLevels(levels: Record<string, LevelDraft>, top: LevelOut) {
+function ratedLevels(levels: Record<string, LevelDraft>, topLevel: LevelOut) {
   return Object.fromEntries(
     Object.entries(levels)
       .filter(([, v]) => v.level)
       .map(([p, v]) => [
         p,
-        { level: v.level, link: v.level === top.id ? v.link.trim() : null },
+        {
+          level: v.level,
+          link: v.level === topLevel.id ? v.link.trim() : null,
+        },
       ])
   );
 }
@@ -64,7 +67,7 @@ export function useLevels(
   page: CompetencyPage,
   course: Course
 ) {
-  const { levels: scale, topLevel: top } = course;
+  const { levels: scale, topLevel } = course;
   const sent = page.self_assessment?.levels ?? {};
   const [levels, setLevels] = useState<Record<string, LevelDraft>>(() => ({
     ...Object.fromEntries(
@@ -83,7 +86,7 @@ export function useLevels(
     setLevels(all);
     closingDrafts.setLevels(scope, all);
   };
-  const rated = ratedLevels(levels, top);
+  const rated = ratedLevels(levels, topLevel);
   const changed =
     Object.keys(rated).length > 0 &&
     (Object.keys(rated).length !== Object.keys(sent).length ||
@@ -93,9 +96,9 @@ export function useLevels(
       ) ||
       Object.values(ticks(scope.studentId, page)).some((t) => t.local));
   const missingLink = Object.entries(rated).find(
-    ([, v]) => v.level === top.id && !LINK.test(v.link ?? "")
+    ([, v]) => v.level === topLevel.id && !LINK.test(v.link ?? "")
   );
-  return { scale, top, levels, rate, sent, rated, changed, missingLink };
+  return { scale, topLevel, levels, rate, sent, rated, changed, missingLink };
 }
 
 export type Levels = ReturnType<typeof useLevels>;
