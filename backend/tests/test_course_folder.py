@@ -16,8 +16,7 @@ from course_folders import (
 from courses_under_test import DEMO_COURSE, FIXTURES, TWO_GROUP_FIXTURE, CourseFolder
 from fastapi.testclient import TestClient
 
-from app.main import ConfigurationError
-from app.settings import Settings
+from app.settings import ConfigurationError, Settings
 
 BACKEND = Path(__file__).resolve().parents[1]
 COURSES = FIXTURES / "courses"

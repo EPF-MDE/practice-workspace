@@ -62,6 +62,7 @@ class _OnIssue(BaseModel):
 class GitHubStore:
     @classmethod
     def from_settings(cls, settings: Settings) -> GitHubStore:
+        settings.require("The GitHub Store", "repository", "store_app_slug")
         client = installation_client(
             settings.store_app_id,
             settings.store_app_private_key_base64,

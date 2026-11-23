@@ -9,6 +9,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 _REPOSITORY_ROOT_ENV = Path(__file__).resolve().parents[3] / ".env"
 
 
+class ConfigurationError(RuntimeError):
+    pass
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="WORKSPACE_",
@@ -50,6 +54,15 @@ class Settings(BaseSettings):
     posthog_host: str = ""
     posthog_environment: str = ""
     error_check_key: str = ""
+
+    def require(self, needed_by: str, *names: str) -> None:
+        missing = [
+            f"WORKSPACE_{name.upper()}" for name in names if not getattr(self, name)
+        ]
+        if missing:
+            raise ConfigurationError(
+                f"{needed_by} needs the Instance setting {' and '.join(missing)}"
+            )
 
 
 @lru_cache

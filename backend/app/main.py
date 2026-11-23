@@ -37,7 +37,7 @@ from app.repository_reading import (
     repository_tokens,
 )
 from app.roster import RefreshingRoster, RosterError, RosterSource, StaticRoster
-from app.settings import Settings, get_settings
+from app.settings import ConfigurationError, Settings, get_settings
 from app.store import GitHubStore, InMemoryStore, SendTooLarge, Store, StoreUnavailable
 
 logger = logging.getLogger("app")
@@ -57,10 +57,6 @@ SEND_TOO_LARGE = (
     "then send again. What you typed is still in this browser."
 )
 SESSION_MAX_AGE = 60 * 60 * 24 * 60
-
-
-class ConfigurationError(RuntimeError):
-    pass
 
 
 def _on_azure() -> bool:
@@ -126,18 +122,6 @@ def default_store(settings: Settings) -> Store:
                 "WORKSPACE_STORE=memory: every send is lost when the app restarts"
             )
         return InMemoryStore()
-    missing = [
-        variable
-        for variable, value in (
-            ("WORKSPACE_REPOSITORY", settings.repository),
-            ("WORKSPACE_STORE_APP_SLUG", settings.store_app_slug),
-        )
-        if not value
-    ]
-    if missing:
-        raise ConfigurationError(
-            f"The GitHub Store needs the Instance setting {' and '.join(missing)}"
-        )
     return GitHubStore.from_settings(settings)
 
 
@@ -157,6 +141,7 @@ def default_repository_reading(settings: Settings) -> RepositoryReadingSource:
         return OfflineRepositoryReading(
             DirectoryReadings(folder) if folder.is_dir() else None
         )
+    settings.require("Reading repositories through GitHub", "repository")
 
     def build() -> RepositoryReadingSource:
         token = repository_tokens(

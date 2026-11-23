@@ -167,6 +167,7 @@ def main(argv: list[str] | None = None) -> int:
         )
     store = None
     if not (args.roster and args.out):
+        settings.require("Workspace data", "repository")
         store = GitHubWorkspaceData(
             settings.repository,
             installation_token(
