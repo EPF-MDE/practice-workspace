@@ -48,7 +48,7 @@ class Calendar:
     reading_day_at: datetime
     time_zone: ZoneInfo
 
-    def when(self, instant: datetime) -> str:
+    def in_course_time(self, instant: datetime) -> str:
         when = instant.astimezone(self.time_zone).strftime("%-d %B %Y at %H:%M")
         return f"{when}, {self.time_zone.key} time"
 

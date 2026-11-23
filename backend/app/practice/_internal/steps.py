@@ -73,20 +73,20 @@ def _phase(request: Request) -> closing.Phase:
 def _refuse_after_the_reading_day(request: Request, what: str) -> None:
     if _phase(request) == "over":
         calendar = _calendar(request)
+        when = calendar.in_course_time(calendar.reading_day_at)
         raise HTTPException(
             403,
-            f"The Reading Day passed on {calendar.when(calendar.reading_day_at)}: "
-            f"{what} can no longer change.",
+            f"The Reading Day passed on {when}: {what} can no longer change.",
         )
 
 
 def _refuse_if_closed(request: Request, what: str) -> None:
     if _closed(request):
         calendar = _calendar(request)
+        when = calendar.in_course_time(calendar.closes_at)
         raise HTTPException(
             403,
-            f"The workspace closed on {calendar.when(calendar.closes_at)}: "
-            f"{what} can no longer be sent.",
+            f"The workspace closed on {when}: {what} can no longer be sent.",
         )
 
 
