@@ -31,7 +31,9 @@ def panel(client: TestClient, competency: str) -> dict[str, Any]:
 
 
 def declare(client: TestClient, url: str) -> None:
-    assert client.post(DECLARATION, json={"url": url, "note": "README"}).is_success
+    assert client.post(
+        DECLARATION, json={"url": url, "what_to_read": "README"}
+    ).is_success
 
 
 def reading_of(repository: str, ruleset: str) -> RepositoryReading:
@@ -88,7 +90,7 @@ def test_a_declared_github_repository_is_read_for_every_competency(
 
     for competency in COMPETENCIES:
         shown = panel(ada, competency)
-        assert shown["available"] is True
+        assert shown["unavailable"] is None
         assert shown["evidence_project"] == "ada/bakery"
     assert panel(ada, "C2")["facts"][0]["text"] == "The ruleset `on the bakery`."
 
@@ -119,7 +121,6 @@ def test_a_project_the_app_cannot_read_is_said_as_such_never_a_zero(
 
     for competency in COMPETENCIES:
         shown = panel(ada, competency)
-        assert shown["available"] is False
         assert shown["unavailable"]
         assert shown["empty"] is False
         assert shown["facts"] == []
@@ -182,7 +183,7 @@ def test_a_repository_of_its_own_history_is_read_and_a_change_reads_the_new_one(
     declare(client, "https://github.com/ada/bakery")
     bakery = panel(client, "C1")
 
-    assert bakery["available"] is True
+    assert bakery["unavailable"] is None
     assert bakery["empty"] is False
     assert [f["path"] for f in bakery["facts"][0]["files"]] == [
         "README.md",

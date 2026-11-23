@@ -4,6 +4,7 @@ import { path, signIn } from "./helpers/path";
 
 const ALAN = 1041;
 const HEDY = 1042;
+const GRACE = 1002;
 
 const sidebar = (page: Page) => path(page).getByTestId("evidence-panel");
 
@@ -148,6 +149,26 @@ test("an empty repository reads as a provisional reading; a GitLab project and a
   await expectNotRead(sidebar(page), "hedy/radio-private");
   await page.goto("/competencies/C3");
   await expectNotRead(sidebar(page), "hedy/radio-private");
+});
+
+test("a draft of an Evidence Project kept before its note was named what to read still fills the closing step", async ({
+  page,
+}) => {
+  await signIn(page, GRACE);
+  await page.evaluate(({ key, draft }) => localStorage.setItem(key, draft), {
+    key: `cws:${GRACE}:C2:evidence`,
+    draft: JSON.stringify({
+      url: "https://github.com/grace/compiler",
+      note: "The README first.",
+    }),
+  });
+  await page.goto("/competencies/C2");
+
+  const close = closing(page);
+  await expect(
+    close.evidence.getByRole("textbox", { name: /its address on GitHub/ })
+  ).toHaveValue("https://github.com/grace/compiler");
+  await expect(close.whatToRead).toHaveValue("The README first.");
 });
 
 async function expectNotRead(panel: Locator, repository: string) {

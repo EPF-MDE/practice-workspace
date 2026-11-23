@@ -231,7 +231,7 @@ function PanelBody({ panel, ...actions }: PanelBodyProps) {
           </span>
           .
         </p>
-        {!panel.available && panel.unavailable && (
+        {panel.unavailable && (
           <output data-testid="evidence-panel-unavailable" className="block">
             <Sentence text={panel.unavailable} />
           </output>

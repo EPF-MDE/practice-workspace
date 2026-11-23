@@ -40,11 +40,11 @@ def store(request: pytest.FixtureRequest, github: FakeGitHub) -> Store:
     return github_store(github)
 
 
-def declared(url: str, note: str = "n") -> dict[str, Any]:
+def declared(url: str, what_to_read: str = "n") -> dict[str, Any]:
     host, repository = url.removeprefix("https://").split(".com/")
     return {
         "url": url,
-        "note": note,
+        "what_to_read": what_to_read,
         "repository": repository,
         "host": host,
         "access": "gitlab" if host == "gitlab" else "readable",

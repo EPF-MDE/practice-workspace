@@ -75,7 +75,10 @@ def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_
     ada: TestClient, github: FakeGitHub
 ) -> None:
     before = github.writes
-    declaration = {"url": "https://github.com/ada/" + "b" * 400, "note": "n" * 2_000}
+    declaration = {
+        "url": "https://github.com/ada/" + "b" * 400,
+        "what_to_read": "n" * 2_000,
+    }
 
     closed = ada.post(
         f"{C1}/close",
@@ -100,7 +103,7 @@ def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_
         (f"{C1}/close", {"text": "p", "example": "x" * 2_001}, "example"),
         (
             "/api/evidence-project/declaration",
-            {"url": "https://github.com/ada/bakery", "note": "x" * 2_001},
+            {"url": "https://github.com/ada/bakery", "what_to_read": "x" * 2_001},
             "note",
         ),
         (

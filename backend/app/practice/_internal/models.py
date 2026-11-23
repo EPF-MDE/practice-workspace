@@ -186,7 +186,7 @@ class QuestionIn(BaseModel):
 MAX_FIELD_CHARS = 4_000
 MAX_PLAN_CHARS = 12_000
 MAX_EXAMPLE_CHARS = 2_000
-MAX_NOTE_CHARS = 2_000
+MAX_WHAT_TO_READ_CHARS = 2_000
 MAX_URL_CHARS = 500
 
 
@@ -254,7 +254,7 @@ class EvidencePlanIn(BaseModel):
 
 class DeclarationIn(BaseModel):
     url: str
-    note: str
+    what_to_read: str
 
 
 class ProjectIn(BaseModel):

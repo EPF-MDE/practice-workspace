@@ -41,10 +41,19 @@ GITLAB: Host = "gitlab"
 _HOSTS: dict[str, Host] = {GITHUB: GITHUB, GITLAB: GITLAB}
 
 
+_FORMER_WHAT_TO_READ = "note"
+
+
+def _what_to_read(payload: dict[str, Any]) -> str:
+    if "what_to_read" in payload:
+        return str(payload["what_to_read"])
+    return str(payload[_FORMER_WHAT_TO_READ])
+
+
 @dataclass(frozen=True)
 class StoredDeclaration:
     url: str
-    note: str
+    what_to_read: str
     repository: str
     host: Host
     access: str
@@ -54,7 +63,7 @@ class StoredDeclaration:
     def from_payload(cls, payload: dict[str, Any], at: datetime) -> StoredDeclaration:
         return cls(
             url=payload["url"],
-            note=payload["note"],
+            what_to_read=_what_to_read(payload),
             repository=payload["repository"],
             host=_HOSTS[payload["host"]],
             access=payload["access"],

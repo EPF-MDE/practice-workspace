@@ -114,6 +114,29 @@ def test_an_empty_declaration_withdraws_the_last_one(store: Store) -> None:
     assert store.record(ADA).declaration() is None
 
 
+def test_a_declaration_stored_with_a_note_reads_back_what_to_read(
+    store: Store,
+) -> None:
+    former = declared("https://github.com/ada/a")
+    former["note"] = former.pop("what_to_read")
+    store.save_declaration(ADA, former)
+    store.save_evidence_plan(ADA, "C2", {"text": "p", "declaration": former})
+
+    declaration = store.record(ADA).declaration()
+
+    assert declaration is not None
+    assert declaration.what_to_read == "n"
+
+
+def test_a_declaration_reads_back_what_to_read(store: Store) -> None:
+    store.save_declaration(ADA, declared("https://github.com/ada/a", "the README"))
+
+    declaration = store.record(ADA).declaration()
+
+    assert declaration is not None
+    assert declaration.what_to_read == "the README"
+
+
 def test_one_declaration_per_student_the_latest_sent_alone_or_with_any_closing_step(
     store: Store,
 ) -> None:

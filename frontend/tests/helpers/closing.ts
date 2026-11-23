@@ -28,15 +28,18 @@ export function closing(page: Page) {
     example: section.getByRole("textbox", {
       name: "One example you will show at the Eval",
     }),
+    whatToRead: evidence.getByRole("textbox", {
+      name: /A note saying what to read/,
+    }),
     confirm: section.getByRole("button", { name: "Confirm my Evidence Plan" }),
     evidence,
-    declare: async (url: string, note: string) => {
+    declare: async (url: string, whatToRead: string) => {
       await evidence
         .getByRole("textbox", { name: /its address on GitHub/ })
         .fill(url);
       await evidence
         .getByRole("textbox", { name: /A note saying what to read/ })
-        .fill(note);
+        .fill(whatToRead);
       await evidence.getByRole("button", { name: "Check access" }).click();
       return evidence.getByTestId("access");
     },
