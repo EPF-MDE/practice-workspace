@@ -17,9 +17,9 @@ export type Access = {
      */
     message: string;
     /**
-     * How
+     * How To Make Readable
      */
-    how: string | null;
+    how_to_make_readable: string | null;
 };
 
 /**
@@ -82,6 +82,24 @@ export type CanvasBlock = {
      * Prompt Html
      */
     prompt_html: string;
+};
+
+/**
+ * ChangedFile
+ */
+export type ChangedFile = {
+    /**
+     * Path
+     */
+    path: string;
+    /**
+     * Additions
+     */
+    additions?: number | null;
+    /**
+     * Changes
+     */
+    changes?: number | null;
 };
 
 /**
@@ -220,9 +238,9 @@ export type Declaration = {
      */
     url: string;
     /**
-     * Note
+     * What To Read
      */
-    note: string;
+    what_to_read: string;
     /**
      * Repository
      */
@@ -232,9 +250,9 @@ export type Declaration = {
      */
     host: 'github' | 'gitlab';
     /**
-     * Is Roster Evidence Project
+     * Declares Roster Evidence Project
      */
-    is_roster_evidence_project: boolean;
+    declares_roster_evidence_project: boolean;
     /**
      * Declared At
      */
@@ -269,9 +287,9 @@ export type DeclarationIn = {
      */
     url: string;
     /**
-     * Note
+     * What To Read
      */
-    note: string;
+    what_to_read: string;
 };
 
 /**
@@ -362,21 +380,17 @@ export type EvidencePanel = {
      */
     evidence_project: string;
     /**
-     * Available
-     */
-    available: boolean;
-    /**
      * Unavailable
      */
     unavailable: string | null;
     /**
-     * Read At
+     * Facts Computed At
      */
-    read_at: string | null;
+    facts_computed_at: string | null;
     /**
-     * Checked At
+     * Last Checked At
      */
-    checked_at: string | null;
+    last_checked_at: string | null;
     /**
      * Default Branch
      */
@@ -404,7 +418,7 @@ export type EvidencePanel = {
     /**
      * Nothing Found
      */
-    nothing_found: Array<string>;
+    nothing_found: Array<PointId>;
     /**
      * Nothing Found Text
      */
@@ -635,10 +649,7 @@ export type MyDrawing = {
  * NotVisible
  */
 export type NotVisible = {
-    /**
-     * Point
-     */
-    point: string;
+    point: PointId;
     /**
      * Text
      */
@@ -649,10 +660,7 @@ export type NotVisible = {
  * PanelFact
  */
 export type PanelFact = {
-    /**
-     * Point
-     */
-    point: string;
+    point: PointId;
     /**
      * Text
      */
@@ -668,9 +676,7 @@ export type PanelFact = {
     /**
      * Files
      */
-    files?: Array<{
-        [key: string]: unknown;
-    }>;
+    files?: Array<ChangedFile>;
 };
 
 /**
@@ -708,6 +714,11 @@ export type PointBlock = {
      */
     missed_check_points?: Array<CheckPointOut>;
 };
+
+/**
+ * PointId
+ */
+export type PointId = 'C1' | 'C2.a' | 'C2.b' | 'C2.c' | 'C2.d' | 'C2.e' | 'C2.f' | 'C2.g' | 'C3.a' | 'C3.b' | 'C3.c' | 'C3.d' | 'C3.e' | 'C3.f';
 
 /**
  * PointLevel

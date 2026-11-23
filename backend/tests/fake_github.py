@@ -6,7 +6,7 @@ import json
 import re
 import threading
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, NamedTuple
 from urllib.parse import urlencode
 
 import httpx
@@ -16,19 +16,23 @@ BOT = {"login": "epf-mde-cws-store[bot]", "type": "Bot"}
 COMMENT_LIMIT = 65_536
 
 
+class Commit(NamedTuple):
+    sha: str
+    message: str
+    files: dict[str, bytes]
+
+
 class FakeGitHub:
     def __init__(self, repository: str = REPOSITORY, max_per_page: int = 100):
         self.repository = repository
         self.max_per_page = max_per_page
         self.issues: dict[int, dict[str, Any]] = {}
         self.comments: dict[int, list[dict[str, Any]]] = {}
-        self.writes = 0
+        self.write_requests = 0
         self.reads = 0
-        self.down: int | None = None
-        self.branches: dict[str, list[tuple[str, str, dict[str, bytes]]]] = {
-            "workspace-data": []
-        }
-        self.conflicts = 0
+        self.fail_every_request_with: int | None = None
+        self.branches: dict[str, list[Commit]] = {"workspace-data": []}
+        self.refuse_next_file_writes = 0
         self.unlisted: set[int] = set()
         self._time = datetime(2026, 12, 1, 9, 0, tzinfo=UTC)
         self._lock = threading.Lock()
@@ -54,12 +58,13 @@ class FakeGitHub:
     ) -> dict[str, bytes]:
         commits = self.branches[branch]
         if at is None:
-            return commits[-1][2] if commits else {}
-        return next(files for sha, _, files in commits if sha == at)
+            return commits[-1].files if commits else {}
+        return next(commit.files for commit in commits if commit.sha == at)
 
     def history(self, path: str, branch: str = "workspace-data") -> list[bytes]:
         versions, last = [], None
-        for _, _, files in self.branches[branch]:
+        for commit in self.branches[branch]:
+            files = commit.files
             if files.get(path) is not None and files.get(path) != last:
                 versions.append(files[path])
             last = files.get(path)
@@ -74,12 +79,14 @@ class FakeGitHub:
             return self._handle(request)
 
     def _handle(self, request: httpx.Request) -> httpx.Response:
-        if self.down:
-            return httpx.Response(self.down, json={"message": "Service unavailable"})
+        if self.fail_every_request_with:
+            return httpx.Response(
+                self.fail_every_request_with, json={"message": "Service unavailable"}
+            )
         if request.method == "GET":
             self.reads += 1
         else:
-            self.writes += 1
+            self.write_requests += 1
         contents = f"/repos/{self.repository}/contents/"
         if request.url.path.startswith(contents):
             return self._contents(request, request.url.path[len(contents) :])
@@ -180,11 +187,11 @@ class FakeGitHub:
 
     def _commit(self, branch: str, path: str, data: bytes, message: str) -> str:
         commits = self.branches.setdefault(branch, [])
-        files = {**(commits[-1][2] if commits else {}), path: data}
+        files = {**(commits[-1].files if commits else {}), path: data}
         sha = hashlib.sha1(
             f"{branch}{len(commits)}{message}".encode() + data
         ).hexdigest()
-        commits.append((sha, message, files))
+        commits.append(Commit(sha, message, files))
         self._tick()
         return sha
 
@@ -192,9 +199,9 @@ class FakeGitHub:
         if ref in self.branches:
             return self.files(ref)
         for commits in self.branches.values():
-            for sha, _, files in commits:
-                if sha == ref:
-                    return files
+            for commit in commits:
+                if commit.sha == ref:
+                    return commit.files
         return None
 
     def _contents(self, request: httpx.Request, path: str) -> httpx.Response:
@@ -242,8 +249,8 @@ class FakeGitHub:
             branch = body.get("branch", "main")
             if branch not in self.branches:
                 return httpx.Response(404, json={"message": "Branch not found"})
-            if self.conflicts:
-                self.conflicts -= 1
+            if self.refuse_next_file_writes:
+                self.refuse_next_file_writes -= 1
                 return httpx.Response(
                     409, json={"message": f"{branch} is at another commit"}
                 )

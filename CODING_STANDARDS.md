@@ -8,7 +8,7 @@ A test starts the app on a Course folder and asks it what a Student or the Instr
 
 ## A stored format is tested once, in the Store's contract suite
 
-How an entry is written, and read back, is the Store's business. The Store's contract suite runs the same tests on every implementation of the Store, and it is the only place a stored format is asserted. Every other test reads a Student's record back through the API.
+How an entry is written, and read back, is the Store's business. The Store's contract suite runs the same tests on every implementation of the Store, and it is the only place a stored format is asserted. Every other test reads a Student's record back through the API. `npm run check` refuses a test outside the contract suite that imports the stored format; a test that reads what the Store wrote some other way, such as the comments a fake GitHub holds, is a finding.
 
 ## A test checks behaviour, not wording
 
@@ -16,11 +16,7 @@ A test is there to fail when something stops working. A prompt, a doc, an ADR or
 
 ## One name per idea, the glossary's
 
-An idea has one name, the one in [GLOSSARY.md](./GLOSSARY.md), on the screen, in the API, in the Store's entry kinds, in the code and in the tests. A word on the glossary's _Avoid_ list is a finding. A new idea gets its glossary entry in the same change that names it.
-
-## Markdown is not hard-wrapped
-
-A paragraph or a list item is one line, as a person types it in an editor that soft-wraps. A line break inside a paragraph is a finding: it makes every edit reflow the lines after it, and the diff shows lines that did not change. Biome formats Markdown but leaves line breaks where they are, so nothing else catches them.
+An idea has one name, the one in [GLOSSARY.md](./GLOSSARY.md), on the screen, in the API, in the Store's entry kinds, in the code and in the tests. A word on the glossary's _Avoid_ list is a finding: `npm run check` refuses the names the glossary retired, and the reviewer reads for every other. A new idea gets its glossary entry in the same change that names it.
 
 ## A Deep Module: a small interface, a lot behind it
 
@@ -62,7 +58,7 @@ If a Send, an entry or anything else is referenced, or a person has a link to it
 
 ### A value the code compares against is defined once
 
-A kind or a state the code compares against, such as a Store entry's kind, is defined once on each side, in the Deep Module that owns it: an enum in the back end, a union type in the front end. It is not a literal repeated across files, where one spelt differently never matches and nothing says so.
+A kind or a state the code compares against is defined once on each side, in the Deep Module that owns it: an enum in the back end, a union type in the front end. It is not a literal repeated across files, where one spelt differently never matches and nothing says so. `npm run check` refuses a Store entry kind written as a literal where the Store is asked for one; any other repeated kind or state is a finding.
 
 ### Inject the clock
 

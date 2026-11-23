@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Protocol, cast
 
-from app.roster import Student
+from app.roster import Repository, Student
 from app.store._internal.payloads import (
     AnswerPayload,
     CheckPointsPayload,
@@ -40,8 +40,8 @@ class Entry[P: Payload]:
 @dataclass(frozen=True)
 class StoredDeclaration:
     url: str
-    note: str
-    repository: str
+    what_to_read: str
+    repository: Repository
     host: Host
     access: str
     at: datetime
@@ -52,7 +52,7 @@ class StoredDeclaration:
     ) -> StoredDeclaration:
         return cls(
             url=payload.url,
-            note=payload.note,
+            what_to_read=payload.what_to_read,
             repository=payload.repository,
             host=payload.host,
             access=payload.access,

@@ -5,6 +5,7 @@ from typing import Any
 
 from ..reading import (
     Fact,
+    PointId,
 )
 from .analysis import OWN_HISTORY
 from .rules import (
@@ -55,7 +56,7 @@ class _C1Facts(_ReadingState):
             f"last change on {a['last_change']}."
         )
         return Fact(
-            point="C1",
+            point=PointId.CHANGED_FILES,
             text=text,
             link=a.get("link"),
             detail={

@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from fake_github import FakeGitHub
 
-from app.roster import Student
+from app.roster import Repository, Student
 from app.store import (
     DeclarationPayload,
     Entry,
@@ -20,16 +20,21 @@ from app.store import (
     Store,
 )
 
-ADA = Student(
-    1001, "ada-oceens", "Ada Lovelace", "OcéENS", "OcéENS", "ada-oceens/OceENS"
+ADA_OF_OCEENS = Student(
+    1001,
+    "ada-oceens",
+    "Ada Lovelace",
+    "OcéENS",
+    "OcéENS",
+    Repository("ada-oceens/OceENS"),
 )
-GRACE = Student(
+GRACE_OF_MATHUTRICE = Student(
     1002,
     "grace-math",
     "Grace Hopper",
     "MATHutrice",
     "MATHutrice",
-    "grace-math/MATHutrice",
+    Repository("grace-math/MATHutrice"),
 )
 
 
@@ -51,12 +56,12 @@ def store(request: pytest.FixtureRequest, github: FakeGitHub) -> Store:
     return github_store(github)
 
 
-def declared(url: str, note: str = "n") -> DeclarationPayload:
+def declared(url: str, what_to_read: str = "n") -> DeclarationPayload:
     host, repository = url.removeprefix("https://").split(".com/")
     return DeclarationPayload.model_validate(
         {
             "url": url,
-            "note": note,
+            "what_to_read": what_to_read,
             "repository": repository,
             "host": host,
             "access": "gitlab" if host == "gitlab" else "readable",

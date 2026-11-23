@@ -5,6 +5,8 @@ from typing import Any, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from app.roster import Repository
+
 
 class Kind(StrEnum):
     ANSWER = "answer"
@@ -64,8 +66,8 @@ class SelfAssessmentPayload(Payload):
 class DeclarationPayload(Payload):
     KIND = Kind.DECLARATION
     url: str
-    note: str
-    repository: str
+    what_to_read: str
+    repository: Repository
     host: Host
     access: str
 

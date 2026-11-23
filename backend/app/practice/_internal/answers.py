@@ -17,7 +17,6 @@ from app.settings import Settings
 from app.store import DrawingPayload
 
 from .models import (
-    MAX_FIELD_CHARS,
     MAX_PNG_BYTES,
     MAX_SNAPSHOT_BYTES,
     PNG_SIGNATURE,
@@ -31,7 +30,6 @@ from .models import (
     MyDrawing,
     Question,
     QuestionIn,
-    _at_most,
 )
 from .review import (
     _draft,
@@ -101,8 +99,6 @@ def send_answer(
         )
     if not any(text.strip() for text in answer.fields.values()):
         raise HTTPException(422, "Write something in at least one field before sending")
-    for field_id, text in answer.fields.items():
-        _at_most(text, MAX_FIELD_CHARS, f"Your answer in '{field_id}'")
     not_an_option = sorted(
         f.id
         for f in step.fields
