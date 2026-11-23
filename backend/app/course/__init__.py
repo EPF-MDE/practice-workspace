@@ -13,7 +13,8 @@ from app.content import (
     load_content,
 )
 
-from ._internal.settings_file import competency_problems, read_settings
+from ._internal.competencies import competency_problems
+from ._internal.settings_file import read_settings
 
 __all__ = ["Competency", "Course", "Loading", "load_course", "router"]
 

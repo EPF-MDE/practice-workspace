@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import tomllib
-from collections.abc import Callable
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt, ValidationError
 from pydantic_core import ErrorDetails
 
-from app.content import COMPETENCIES
+from .competencies import competency_problems
 
 SETTINGS_FILE = "course.toml"
 
@@ -24,14 +23,6 @@ class CourseSettings(BaseModel):
 
     name: str = Field(min_length=1)
     competencies: dict[str, CompetencySettings] = {}
-
-
-def competency_problems(
-    ids: set[str], missing: Callable[[str], str], unknown: Callable[[str], str]
-) -> list[str]:
-    return [missing(c) for c in COMPETENCIES if c not in ids] + [
-        unknown(c) for c in sorted(ids - set(COMPETENCIES))
-    ]
 
 
 def read_settings(folder: Path) -> tuple[CourseSettings | None, list[str]]:
