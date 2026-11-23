@@ -117,15 +117,17 @@ def test_an_empty_declaration_withdraws_the_last_one(store: Store) -> None:
 def test_a_declaration_stored_with_a_note_reads_back_what_to_read(
     store: Store,
 ) -> None:
-    former = declared("https://github.com/ada/a")
-    former["note"] = former.pop("what_to_read")
-    store.save_declaration(ADA, former)
-    store.save_evidence_plan(ADA, "C2", {"text": "p", "declaration": former})
-
-    declaration = store.record(ADA).declaration()
-
-    assert declaration is not None
+    alone = declared("https://github.com/ada/a")
+    alone["note"] = alone.pop("what_to_read")
+    store.save_declaration(ADA, alone)
+    assert (declaration := store.record(ADA).declaration()) is not None
     assert declaration.what_to_read == "n"
+
+    in_a_plan = declared("https://github.com/ada/b", "the README")
+    in_a_plan["note"] = in_a_plan.pop("what_to_read")
+    store.save_evidence_plan(ADA, "C2", {"text": "p", "declaration": in_a_plan})
+    assert (declaration := store.record(ADA).declaration()) is not None
+    assert declaration.what_to_read == "the README"
 
 
 def test_a_declaration_reads_back_what_to_read(store: Store) -> None:
