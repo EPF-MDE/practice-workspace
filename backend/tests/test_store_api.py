@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import base64
+from datetime import datetime
 
-from conftest import Counted, MakeClient, sign_in, store_on
+from conftest import BEFORE_THE_CLOSE, Counted, MakeClient, sign_in, store_on
 from courses_under_test import OnTheRoster
 from fake_github import FakeGitHub
+from fastapi.testclient import TestClient
 
-from app.main import default_store
+from app.main import create_app, default_store
 from app.settings import Settings
 from app.store import GitHubStore, InMemoryStore
 
@@ -178,7 +180,7 @@ def test_when_github_fails_at_sign_in_the_student_still_signs_in(
 
 
 def test_the_store_is_a_setting(test_settings: Settings) -> None:
-    assert isinstance(default_store(test_settings), InMemoryStore)
+    assert isinstance(default_store(test_settings, datetime.now), InMemoryStore)
     github = default_store(
         test_settings.model_copy(
             update={
@@ -190,6 +192,23 @@ def test_the_store_is_a_setting(test_settings: Settings) -> None:
                 "store_app_private_key_base64": "LS0t",
                 "store_app_installation_id": "2",
             }
-        )
+        ),
+        datetime.now,
     )
     assert isinstance(github, GitHubStore)
+
+
+def test_the_memory_store_dates_a_send_by_the_apps_clock(
+    test_settings: Settings, student: OnTheRoster
+) -> None:
+    client = TestClient(
+        create_app(settings=test_settings, clock=lambda: BEFORE_THE_CLOSE)
+    )
+    sign_in(client, student.github_id)
+
+    client.post(f"{PAGE}/steps/read-the-chain/questions", json={"text": "Why 10?"})
+
+    step = next(
+        s for s in client.get(PAGE).json()["steps"] if s["id"] == "read-the-chain"
+    )
+    assert datetime.fromisoformat(step["questions"][0]["asked_at"]) == BEFORE_THE_CLOSE

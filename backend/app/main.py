@@ -115,13 +115,13 @@ def default_course(settings: Settings) -> Course:
     return loading.course
 
 
-def default_store(settings: Settings) -> Store:
+def default_store(settings: Settings, clock: Callable[[], datetime]) -> Store:
     if settings.store == "memory":
         if _on_azure():
             logger.warning(
                 "WORKSPACE_STORE=memory: every send is lost when the app restarts"
             )
-        return InMemoryStore()
+        return InMemoryStore(clock=clock)
     return GitHubStore.from_settings(settings)
 
 
@@ -216,7 +216,7 @@ def create_app(
     app.state.course = default_course(settings)
     app.state.roster = started_roster(roster, settings, app.state.course)
     app.state.identity = identity or default_identity(settings)
-    app.state.store = store if store is not None else default_store(settings)
+    app.state.store = store if store is not None else default_store(settings, clock)
     app.state.repository_reading = (
         repository_reading
         if repository_reading is not None
