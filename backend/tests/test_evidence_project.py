@@ -49,7 +49,7 @@ def signed_in(
     student: OnTheRoster,
 ) -> TestClient:
     settings = test_settings.model_copy(
-        update={"github_app_slug": "cws-student-connector"}
+        update={"github_app_slug": "demo-student-connector"}
     )
     client = make_client(
         settings=settings,
@@ -107,7 +107,7 @@ def test_a_private_github_project_not_readable_yet_says_how_to_grant_read_only_a
     assert access["status"] == "not-readable"
     assert access["message"] == "Not readable yet: grant read-only access."
     assert (
-        "https://github.com/apps/cws-student-connector/installations/new"
+        "https://github.com/apps/demo-student-connector/installations/new"
         in access["how_to_make_readable"]
     )
     assert "`secret`" in access["how_to_make_readable"]
