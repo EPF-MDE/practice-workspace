@@ -36,7 +36,7 @@ class RefAnalysis(BaseModel, frozen=True):
     fallback: str | None = None
 
     @property
-    def paths(self) -> set[str]:
+    def changed_paths(self) -> set[str]:
         return {f.path for f in self.files}
 
     @property

@@ -84,7 +84,7 @@ class _C2Facts(_ReadingState):
                         text="The Architecture Check runs from "
                         f"`{path}` on `{self.default}`.",
                         credited_to=STUDENT
-                        if path in a.paths
+                        if path in a.changed_paths
                         else Credit(a.closest or a.fallback or STUDENT),
                         link=f"https://github.com/{self.s.evidence_project}/blob/{self.default}/{path}",
                         detail={"workflow": path},
@@ -171,7 +171,7 @@ class _C2Facts(_ReadingState):
                 )
         seen = set()
         for a in self.analyses.values():
-            own = a.paths
+            own = a.changed_paths
             for path, w in a.workflows.items():
                 for job, needs in w.deploy_needs.items():
                     key = (path, job, tuple(needs), path in own)
