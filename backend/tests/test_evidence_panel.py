@@ -16,7 +16,7 @@ from app.repository_reading import (
 from app.settings import Settings
 from app.store import InMemoryStore
 
-READ_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
+FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 ADA_REPOSITORY = StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS")
 
 
@@ -61,8 +61,8 @@ def reading(
     return RepositoryReading(
         student=student,
         default_branch="main",
-        facts_computed_at=READ_AT,
-        last_checked_at=READ_AT,
+        facts_computed_at=FRESH_READING_AT,
+        last_checked_at=FRESH_READING_AT,
         branches_read=branches,
         pull_requests_read=pulls,
         empty=empty,

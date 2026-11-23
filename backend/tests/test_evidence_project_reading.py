@@ -20,7 +20,7 @@ from app.repository_reading import (
 
 DECLARATION = "/api/evidence-project/declaration"
 COMPETENCIES = ("C1", "C2", "C3")
-READ_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
+FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 
 
 def panel(client: TestClient, competency: str) -> dict[str, Any]:
@@ -38,8 +38,8 @@ def reading_of(repository: str, ruleset: str) -> RepositoryReading:
     return RepositoryReading(
         student=StudentToRead("ada-oceens", "OcéENS", repository),
         default_branch="main",
-        facts_computed_at=READ_AT,
-        last_checked_at=READ_AT,
+        facts_computed_at=FRESH_READING_AT,
+        last_checked_at=FRESH_READING_AT,
         branches_read=1,
         pull_requests_read=0,
         empty=False,
