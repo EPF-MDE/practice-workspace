@@ -14,15 +14,42 @@ def parse(body: str) -> Competency:
 @pytest.mark.parametrize(
     "body",
     [
-        "## S {#s minutes=5}\n\n::: answr\nx\n:::\n",
-        "## S {#s minutes=5}\n\n::: answer\nx\n",
-        "## S {#s minutes=5}\n\n:::\n",
-        "## S {#s minutes=5}\n\n::: answer\nx\n:::\n",
-        "## S {#s minutes=5}\n\n::: oceens\nx\n:::\n",
-        "## S {#s minutes=5}\n\nRead the Banding Anchors.\n",
-        "## S {#s}\n\nx\n",
-        "## S {#s minutes=5}\n\n## T {#s minutes=5}\n",
-        "## S {#s minutes=5}\n\n::: point {#C1.a band=Great}\nx\n:::\n",
+        pytest.param(
+            "## S {#s minutes=5}\n\n::: answr\nx\n:::\n",
+            id="a typo would serve the answer as text",
+        ),
+        pytest.param(
+            "## S {#s minutes=5}\n\n::: answer\nx\n",
+            id="never closed",
+        ),
+        pytest.param(
+            "## S {#s minutes=5}\n\n:::\n",
+            id="closes nothing",
+        ),
+        pytest.param(
+            "## S {#s minutes=5}\n\n::: answer\nx\n:::\n",
+            id="an answer with no field to unlock it",
+        ),
+        pytest.param(
+            "## S {#s minutes=5}\n\n::: oceens\nx\n:::\n",
+            id="one Group's block only",
+        ),
+        pytest.param(
+            "## S {#s minutes=5}\n\nRead the Banding Anchors.\n",
+            id="a banding anchor, meant for the Instructor alone",
+        ),
+        pytest.param(
+            "## S {#s}\n\nx\n",
+            id="no timing",
+        ),
+        pytest.param(
+            "## S {#s minutes=5}\n\n## T {#s minutes=5}\n",
+            id="two steps, one id",
+        ),
+        pytest.param(
+            "## S {#s minutes=5}\n\n::: point {#C1.a band=Great}\nx\n:::\n",
+            id="a band no point can have",
+        ),
     ],
 )
 def test_the_loader_refuses(body: str) -> None:
@@ -166,17 +193,43 @@ def test_one_redraw_per_competency_may_be_optional() -> None:
 @pytest.mark.parametrize(
     "body",
     [
-        drawing_step(oceens_points=2) + CLOSING,
-        drawing_step(oceens_points=6) + CLOSING,
-        drawing_step(point="C1.z") + CLOSING,
-        drawing_step().replace("kind=drawing", "kind=answer") + CLOSING,
-        drawing_step().replace("::: canvas\nFrom the click to the summary.\n:::\n", "")
-        + CLOSING,
-        drawing_step().replace("src=example.json", "src=missing.json") + CLOSING,
-        drawing_step(head="{#a minutes=0 kind=drawing optional=yes}")
-        + drawing_step(head="{#b minutes=0 kind=drawing optional=yes}")
-        + CLOSING,
-        "## S {#s minutes=5 optional=yes}\n\n::: field {#f}\nx\n:::\n" + CLOSING,
+        pytest.param(
+            drawing_step(oceens_points=2) + CLOSING,
+            id="fewer than 3 check points",
+        ),
+        pytest.param(
+            drawing_step(oceens_points=6) + CLOSING,
+            id="more than 5",
+        ),
+        pytest.param(
+            drawing_step(point="C1.z") + CLOSING,
+            id="a check point beside no point of the review",
+        ),
+        pytest.param(
+            drawing_step().replace("kind=drawing", "kind=answer") + CLOSING,
+            id="a canvas outside a drawing step",
+        ),
+        pytest.param(
+            drawing_step().replace(
+                "::: canvas\nFrom the click to the summary.\n:::\n", ""
+            )
+            + CLOSING,
+            id="no canvas",
+        ),
+        pytest.param(
+            drawing_step().replace("src=example.json", "src=missing.json") + CLOSING,
+            id="a drawing that isn't there",
+        ),
+        pytest.param(
+            drawing_step(head="{#a minutes=0 kind=drawing optional=yes}")
+            + drawing_step(head="{#b minutes=0 kind=drawing optional=yes}")
+            + CLOSING,
+            id="two optional redraws",
+        ),
+        pytest.param(
+            "## S {#s minutes=5 optional=yes}\n\n::: field {#f}\nx\n:::\n" + CLOSING,
+            id="optional, but not a redraw",
+        ),
     ],
 )
 def test_the_loader_refuses_a_drawing_step(body: str) -> None:
@@ -224,14 +277,29 @@ def test_a_transfer_names_the_point_whose_to_get_there_it_fills() -> None:
 @pytest.mark.parametrize(
     "body",
     [
-        TRANSFER.replace(" fills=C1.a", "") + CLOSING,
-        TRANSFER.replace("fills=C1.a", "fills=C1.z") + CLOSING,
-        TRANSFER.replace("{#project}", "{#where}") + CLOSING,
-        "## S {#s minutes=5 kind=closng}\n\nx\n",
-        CLOSING.replace(
-            "::: point {#C1.a band=Basic}\nA.\n",
-            "::: point {#C1.a band=Basic}\nA.\n\n"
-            "::: proof\nOne.\n:::\n\n::: proof\nTwo.\n:::\n",
+        pytest.param(
+            TRANSFER.replace(" fills=C1.a", "") + CLOSING,
+            id="fills no point",
+        ),
+        pytest.param(
+            TRANSFER.replace("fills=C1.a", "fills=C1.z") + CLOSING,
+            id="fills a point the review doesn't have",
+        ),
+        pytest.param(
+            TRANSFER.replace("{#project}", "{#where}") + CLOSING,
+            id="no project field: the Evidence Project is its default",
+        ),
+        pytest.param(
+            "## S {#s minutes=5 kind=closng}\n\nx\n",
+            id="a kind no step has",
+        ),
+        pytest.param(
+            CLOSING.replace(
+                "::: point {#C1.a band=Basic}\nA.\n",
+                "::: point {#C1.a band=Basic}\nA.\n\n"
+                "::: proof\nOne.\n:::\n\n::: proof\nTwo.\n:::\n",
+            ),
+            id="two proof sentences",
         ),
     ],
 )
@@ -255,9 +323,18 @@ def test_a_choice_field_offers_its_options_in_order() -> None:
 @pytest.mark.parametrize(
     "attrs",
     [
-        "kind=choice",
-        'kind=choice options="only"',
-        'kind=line options="a|b"',
+        pytest.param(
+            "kind=choice",
+            id="no options to choose from",
+        ),
+        pytest.param(
+            'kind=choice options="only"',
+            id="one option is no choice",
+        ),
+        pytest.param(
+            'kind=line options="a|b"',
+            id="options on a field that cannot show them",
+        ),
     ],
 )
 def test_the_loader_refuses_a_choice_field_without_two_options(attrs: str) -> None:
@@ -296,13 +373,32 @@ def test_a_step_that_waits_serves_its_shared_part_and_the_marker_until_then() ->
 @pytest.mark.parametrize(
     "body",
     [
-        RANK + "## Fix {#fix minutes=5 after=nowhere}\n\n" + GROUP_FIELDS,
-        "## Fix {#fix minutes=5 after=rank}\n\n" + GROUP_FIELDS + "\n" + RANK,
-        RANK + "## Fix {#fix minutes=5 after=fix}\n\n" + GROUP_FIELDS,
-        "## Rank {#rank minutes=5}\n\nRead.\n\n## Fix {#fix minutes=5 after=rank}\n\n"
-        + GROUP_FIELDS,
-        RANK + "## Fix {#fix minutes=5 after=rank}\n\n::: field {#f}\nShared.\n:::\n",
-        RANK + "## Fix {#fix minutes=5}\n\n::: waiting\nx\n:::\n\n" + GROUP_FIELDS,
+        pytest.param(
+            RANK + "## Fix {#fix minutes=5 after=nowhere}\n\n" + GROUP_FIELDS,
+            id="an unknown step",
+        ),
+        pytest.param(
+            "## Fix {#fix minutes=5 after=rank}\n\n" + GROUP_FIELDS + "\n" + RANK,
+            id="a later step",
+        ),
+        pytest.param(
+            RANK + "## Fix {#fix minutes=5 after=fix}\n\n" + GROUP_FIELDS,
+            id="itself",
+        ),
+        pytest.param(
+            "## Rank {#rank minutes=5}\n\nRead.\n\n"
+            "## Fix {#fix minutes=5 after=rank}\n\n" + GROUP_FIELDS,
+            id="no answer",
+        ),
+        pytest.param(
+            RANK + "## Fix {#fix minutes=5 after=rank}\n\n"
+            "::: field {#f}\nShared.\n:::\n",
+            id="a field it can't withhold",
+        ),
+        pytest.param(
+            RANK + "## Fix {#fix minutes=5}\n\n::: waiting\nx\n:::\n\n" + GROUP_FIELDS,
+            id="a marker in a step that waits for none",
+        ),
     ],
 )
 def test_the_loader_refuses_a_step_that_waits(body: str) -> None:

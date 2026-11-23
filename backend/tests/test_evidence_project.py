@@ -23,6 +23,14 @@ BAKERY = {
 }
 
 
+def installed_meanwhile(repository: str) -> bool:
+    return True
+
+
+def could_not_ask(repository: str) -> None:
+    return None
+
+
 @pytest.fixture
 def access() -> FakeAccessCheck:
     return FakeAccessCheck(readable={"ada/bakery"})
@@ -99,7 +107,7 @@ def test_access_is_checked_again_on_each_view_so_a_grant_shows_without_declaring
     ada: TestClient, access: FakeAccessCheck
 ) -> None:
     ada.post(DECLARATION, json={"url": "https://github.com/ada/secret", "note": "docs"})
-    access.rule = lambda repo: True
+    access.rule = installed_meanwhile
 
     assert (
         ada.get(f"{C2}/evidence-panel").json()["declaration"]["access"]["status"]
@@ -110,7 +118,7 @@ def test_access_is_checked_again_on_each_view_so_a_grant_shows_without_declaring
 def test_when_access_cannot_be_checked_it_reads_not_readable_yet_and_says_why(
     ada: TestClient, access: FakeAccessCheck
 ) -> None:
-    access.rule = lambda repo: None
+    access.rule = could_not_ask
 
     checked = ada.post(CHECK, json={"url": "https://github.com/ada/secret"}).json()
 
