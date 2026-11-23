@@ -17,8 +17,6 @@ from .evidence import (
     _declared,
 )
 from .models import (
-    MAX_EXAMPLE_CHARS,
-    MAX_PLAN_CHARS,
     ClosingIn,
     Draft,
     EvidencePlanIn,
@@ -26,7 +24,6 @@ from .models import (
     LevelsIn,
     SelfAssessmentIn,
     Stored,
-    _at_most,
 )
 from .review import (
     _draft,
@@ -94,7 +91,6 @@ def send_evidence_plan(
     student: Student = Depends(current_student),
 ) -> EvidencePlanVersion:
     page = _page(request, competency, student)
-    _at_most(sent.text, MAX_PLAN_CHARS, "Your Evidence Plan")
     _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Plan")
     store = _store(request)
     record = store.record(student)
@@ -121,8 +117,6 @@ def close_competency(
     page = _page(request, competency, student)
     if not sent.example.strip():
         raise HTTPException(422, "Write one example you will show at the Eval")
-    _at_most(sent.text, MAX_PLAN_CHARS, "Your Evidence Plan")
-    _at_most(sent.example, MAX_EXAMPLE_CHARS, "Your example for the Eval")
     declaration = (
         _declaration_payload(request, student, sent.declaration)
         if sent.declaration

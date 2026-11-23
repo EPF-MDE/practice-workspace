@@ -104,6 +104,33 @@ def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_
             "note",
         ),
         (
+            "/api/evidence-project/declaration",
+            {"url": "https://github.com/ada/" + "b" * 500, "note": "n"},
+            "URL",
+        ),
+        (
+            f"{C1}/close",
+            {
+                "text": "p",
+                "example": "e",
+                "declaration": {
+                    "url": "https://github.com/ada/bakery",
+                    "note": "x" * 2_001,
+                },
+            },
+            "note",
+        ),
+        (
+            "/api/evidence-project/check",
+            {"url": "https://github.com/ada/" + "b" * 500},
+            "URL",
+        ),
+        (
+            f"{C1}/steps/guided-calculation/questions",
+            {"text": "x" * 4_001},
+            "question",
+        ),
+        (
             f"{C1}/self-assessment",
             {
                 "levels": {
