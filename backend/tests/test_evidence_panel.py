@@ -249,7 +249,12 @@ def test_the_panel_needs_a_signed_in_student(client: TestClient) -> None:
 def test_with_the_real_repository_reading_the_app_starts_even_before_the_student_connector_is_installed(  # noqa: E501
     make_client: MakeClient, test_settings: Settings, student: OnTheRoster
 ) -> None:
-    settings = test_settings.model_copy(update={"repository_reading": "github"})
+    settings = test_settings.model_copy(
+        update={
+            "repository_reading": "github",
+            "repository": "demo-school/demo-course",
+        }
+    )
     client = make_client(settings=settings, access_check=FakeAccessCheck())
     sign_in(client, student.github_id)
 
