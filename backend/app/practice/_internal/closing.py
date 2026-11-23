@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import Depends, HTTPException, Request
 
 from app import closing, evidence_panel
@@ -9,7 +7,11 @@ from app.auth import current_student
 from app.repository_reading import StudentToRead
 from app.roster import Student
 from app.settings import Settings
-from app.store import Kind, StoredDeclaration
+from app.store import (
+    EvidencePlanPayload,
+    SelfAssessmentPayload,
+    StoredDeclaration,
+)
 
 from .evidence import (
     _changed,
@@ -32,6 +34,7 @@ from .review import (
     _draft,
     _drafted,
     _levels,
+    _levels_now,
     _plan_version,
     _ticks,
 )
@@ -59,18 +62,16 @@ def send_self_assessment(
     _refuse_after_the_reading_day(settings, "your Self-assessment")
     store = _store(request)
     record = store.record(student)
-    previous = record.latest(Kind.SELF_ASSESSMENT, competency)
     try:
-        closing.check_move(
-            previous.payload["levels"] if previous else {}, levels, phase
-        )
+        closing.check_move(_levels_now(record, competency), levels, phase)
     except closing.Refused as refused:
         raise HTTPException(refused.status, refused.message) from refused
     ticks = _ticks(page, record, sent.missed_check_points or {}, phase)
-    payload: dict[str, Any] = {"levels": levels} | (
-        {"missed_check_points": ticks} if ticks else {}
+    entry = store.send_self_assessment(
+        student,
+        competency,
+        SelfAssessmentPayload(levels=levels, missed_check_points=ticks),
     )
-    entry = store.save_self_assessment(student, competency, payload)
     return Stored(version=entry.version, sent_at=entry.at)
 
 
@@ -98,15 +99,16 @@ def send_evidence_plan(
     _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Plan")
     store = _store(request)
     record = store.record(student)
-    latest = record.latest(Kind.EVIDENCE_PLAN, competency)
-    carried = {
-        k: latest.payload[k]
-        for k in ("example", "confirmed")
-        if latest and k in latest.payload
-    }
-    drafted = _drafted(page, record, sent.text, sent.drafted)
-    entry = store.save_evidence_plan(
-        student, competency, {"text": sent.text} | drafted | carried
+    latest = record.latest(EvidencePlanPayload, competency)
+    entry = store.send_evidence_plan(
+        student,
+        competency,
+        EvidencePlanPayload(
+            text=sent.text,
+            drafted=_drafted(page, record, sent.text, sent.drafted),
+            example=latest.payload.example if latest else None,
+            confirmed=latest.payload.confirmed if latest else False,
+        ),
     )
     return _plan_version(entry)
 
@@ -131,25 +133,30 @@ def close_competency(
     _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Plan")
     store = _store(request)
     record = store.record(student)
-    if record.latest(Kind.SELF_ASSESSMENT, competency) is None:
+    if record.latest(SelfAssessmentPayload, competency) is None:
         raise HTTPException(
             409, "Send your Self-assessment first: the Evidence Plan is drafted from it"
         )
-    plan: dict[str, Any] = {
-        "text": sent.text,
-        "example": sent.example.strip(),
-        "confirmed": True,
-    }
-    plan |= _drafted(page, record, sent.text, sent.drafted)
     current = record.declaration()
-    if declaration and (current is None or _changed(current, declaration)):
-        plan["declaration"] = declaration
-        current = StoredDeclaration.from_payload(declaration, _now())
+    changed = (
+        declaration
+        if declaration and (current is None or _changed(current, declaration))
+        else None
+    )
+    if changed:
+        current = StoredDeclaration.from_payload(changed, _now())
     panel = evidence_panel.read_panel(
         competency,
         request.app.state.repository_reading,
         StudentToRead.from_roster(student),
         None if current is None else _declared(current, request, student),
     )
-    plan["evidence_panel_snapshot"] = evidence_panel.snapshot(panel)
-    return _plan_version(store.save_evidence_plan(student, competency, plan))
+    plan = EvidencePlanPayload(
+        text=sent.text,
+        example=sent.example.strip(),
+        confirmed=True,
+        drafted=_drafted(page, record, sent.text, sent.drafted),
+        declaration=changed,
+        evidence_panel_snapshot=evidence_panel.snapshot(panel),
+    )
+    return _plan_version(store.send_evidence_plan(student, competency, plan))

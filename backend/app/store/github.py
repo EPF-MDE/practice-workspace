@@ -26,7 +26,6 @@ from app.store._internal.model import (
     GITHUB_COMMENT_LIMIT,
     DrawingFiles,
     Entry,
-    Kind,
     Record,
     SendTooLarge,
     StoreUnavailable,
@@ -34,6 +33,18 @@ from app.store._internal.model import (
     drawing_paths,
     drawing_payload,
     snapshot_file,
+)
+from app.store._internal.payloads import (
+    AnswerPayload,
+    CheckPointsPayload,
+    DeclarationPayload,
+    DrawingPayload,
+    EvidencePanelSnapshotPayload,
+    EvidencePlanPayload,
+    Payload,
+    QuestionPayload,
+    SelfAssessmentPayload,
+    WithdrawalPayload,
 )
 
 STORE_BOT = "epf-mde-cws-store[bot]"
@@ -88,7 +99,7 @@ class GitHubStore:
         self._lock = threading.Lock()
         self._data_lock = data_branch_lock(repository, data_branch)
         self._issues: dict[int, list[int]] | None = None
-        self._records: dict[int, list[Entry]] = {}
+        self._records: dict[int, list[Entry[Payload]]] = {}
         self._student_locks: dict[int, threading.RLock] = {}
         self._drawings: dict[tuple[int, str, str], DrawingFiles] = {}
 
@@ -153,9 +164,9 @@ class GitHubStore:
         with self._lock:
             return self._student_locks.setdefault(student.github_id, threading.RLock())
 
-    def _entries(self, student: Student) -> list[Entry]:
+    def _entries(self, student: Student) -> list[Entry[Payload]]:
         if student.github_id not in self._records:
-            entries: list[Entry] = []
+            entries: list[Entry[Payload]] = []
             for number in self._issues_of(student):
                 comments = self._all_pages(
                     f"/repos/{self._repository}/issues/{number}/comments", {}
@@ -185,7 +196,7 @@ class GitHubStore:
                 for number in numbers
             }
         comments = self._all_pages(f"/repos/{self._repository}/issues/comments", {})
-        found: dict[int, list[Entry]] = {}
+        found: dict[int, list[Entry[Payload]]] = {}
         for comment in comments:
             number = _OnIssue.model_validate(comment).number
             entry = _entry(comment, self._bot_login)
@@ -203,14 +214,13 @@ class GitHubStore:
             for student in students
         ]
 
-    def _append(
+    def _append[P: Payload](
         self,
         student: Student,
-        kind: Kind,
         competency: str | None,
         key: str | None,
-        payload: dict[str, Any],
-    ) -> Entry:
+        payload: P,
+    ) -> Entry[P]:
         check_size(payload)
         with self._student_lock(student):
             entries = self._entries(student)
@@ -218,9 +228,9 @@ class GitHubStore:
             version = 1 + sum(
                 1
                 for e in entries
-                if (e.kind, e.competency, e.key) == (kind, competency, key)
+                if (e.kind, e.competency, e.key) == (payload.KIND, competency, key)
             )
-            body = comment_body(kind, competency, key, version, payload)
+            body = comment_body(competency, key, version, payload)
             if len(body) > GITHUB_COMMENT_LIMIT:
                 raise SendTooLarge(
                     f"the comment would be {len(body):,} characters, over GitHub's "
@@ -232,32 +242,30 @@ class GitHubStore:
                 json={"body": body},
             ).json()
             entry = Entry(
-                kind, competency, key, payload, version, _time(comment["created_at"])
+                competency, key, payload, version, _time(comment["created_at"])
             )
             entries.append(entry)
             return entry
 
-    def save_answer(
+    def send_answer(
         self, student: Student, competency: str, step: str, fields: dict[str, str]
-    ) -> Entry:
-        return self._append(
-            student, Kind.ANSWER, competency, step, {"fields": dict(fields)}
-        )
+    ) -> Entry[AnswerPayload]:
+        return self._append(student, competency, step, AnswerPayload(fields=fields))
 
-    def save_drawing(
+    def send_drawing(
         self,
         student: Student,
         competency: str,
         drawing: str,
         png: bytes,
         snapshot: dict[str, Any],
-    ) -> Entry:
+    ) -> Entry[DrawingPayload]:
         snapshot_bytes = snapshot_file(snapshot)
         png_path, snapshot_path = drawing_paths(student, competency, drawing)
         with self._student_lock(student):
             version = 1 + len(
                 Record(student, tuple(self._entries(student))).history(
-                    Kind.DRAWING, competency, drawing
+                    DrawingPayload, competency, drawing
                 )
             )
             message = (
@@ -269,9 +277,9 @@ class GitHubStore:
                 self._put_file(folder, png_path, png, message)
                 commit = self._put_file(folder, snapshot_path, snapshot_bytes, message)
             payload = drawing_payload(
-                student, competency, drawing, png, snapshot_bytes
-            ) | {"commit": commit}
-            entry = self._append(student, Kind.DRAWING, competency, drawing, payload)
+                student, competency, drawing, png, snapshot_bytes, commit
+            )
+            entry = self._append(student, competency, drawing, payload)
             self._drawings[(student.github_id, competency, drawing)] = DrawingFiles(
                 png, snapshot
             )
@@ -284,13 +292,13 @@ class GitHubStore:
             key = (student.github_id, competency, drawing)
             if key not in self._drawings:
                 latest = Record(student, tuple(self._entries(student))).latest(
-                    Kind.DRAWING, competency, drawing
+                    DrawingPayload, competency, drawing
                 )
                 if latest is None:
                     return None
-                at = latest.payload["commit"]
-                png = self._raw_file(latest.payload["png"], at)
-                snapshot = json.loads(self._raw_file(latest.payload["snapshot"], at))
+                at = latest.payload.commit or self._data_branch
+                png = self._raw_file(latest.payload.png, at)
+                snapshot = json.loads(self._raw_file(latest.payload.snapshot, at))
                 self._drawings[key] = DrawingFiles(png, snapshot)
             return self._drawings[key]
 
@@ -346,38 +354,42 @@ class GitHubStore:
             headers={"Accept": "application/vnd.github.raw+json"},
         ).content
 
-    def save_missed_check_points(
+    def send_missed_check_points(
         self, student: Student, competency: str, drawing: str, missed: list[str]
-    ) -> Entry:
+    ) -> Entry[CheckPointsPayload]:
         return self._append(
-            student, Kind.CHECK_POINTS, competency, drawing, {"missed": list(missed)}
+            student, competency, drawing, CheckPointsPayload(missed=missed)
         )
 
-    def save_self_assessment(
-        self, student: Student, competency: str, levels: dict[str, Any]
-    ) -> Entry:
-        return self._append(
-            student, Kind.SELF_ASSESSMENT, competency, None, dict(levels)
-        )
+    def send_self_assessment(
+        self, student: Student, competency: str, assessment: SelfAssessmentPayload
+    ) -> Entry[SelfAssessmentPayload]:
+        return self._append(student, competency, None, assessment)
 
-    def save_evidence_plan(
-        self, student: Student, competency: str, plan: dict[str, Any]
-    ) -> Entry:
-        return self._append(student, Kind.EVIDENCE_PLAN, competency, None, dict(plan))
+    def send_evidence_plan(
+        self, student: Student, competency: str, plan: EvidencePlanPayload
+    ) -> Entry[EvidencePlanPayload]:
+        return self._append(student, competency, None, plan)
 
-    def save_declaration(self, student: Student, declaration: dict[str, Any]) -> Entry:
-        return self._append(
-            student, Kind.DECLARATION, EVERY_COMPETENCY, None, dict(declaration)
-        )
+    def send_declaration(
+        self, student: Student, declaration: DeclarationPayload
+    ) -> Entry[DeclarationPayload]:
+        return self._append(student, EVERY_COMPETENCY, None, declaration)
 
-    def save_question(
+    def withdraw_declaration(self, student: Student) -> Entry[WithdrawalPayload]:
+        return self._append(student, EVERY_COMPETENCY, None, WithdrawalPayload())
+
+    def send_question(
         self, student: Student, competency: str, step: str, text: str
-    ) -> Entry:
-        return self._append(student, Kind.QUESTION, competency, step, {"text": text})
+    ) -> Entry[QuestionPayload]:
+        return self._append(student, competency, step, QuestionPayload(text=text))
 
-    def save_evidence_panel_snapshot(
+    def send_evidence_panel_snapshot(
         self, student: Student, competency: str, snapshot: dict[str, Any]
-    ) -> Entry:
+    ) -> Entry[EvidencePanelSnapshotPayload]:
         return self._append(
-            student, Kind.EVIDENCE_PANEL_SNAPSHOT, competency, None, dict(snapshot)
+            student,
+            competency,
+            None,
+            EvidencePanelSnapshotPayload.model_validate(snapshot),
         )

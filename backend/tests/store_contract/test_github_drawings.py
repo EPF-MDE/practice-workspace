@@ -17,7 +17,7 @@ def test_a_drawing_send_is_two_files_on_workspace_data_and_one_comment(
     store.open_record(ADA)
     writes = github.writes
 
-    store.save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
+    store.send_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
 
     assert github.writes == writes + 3
     files = github.files("workspace-data")
@@ -32,8 +32,8 @@ def test_a_new_version_overwrites_the_same_paths_and_git_history_keeps_every_ver
     github: FakeGitHub,
 ) -> None:
     store = github_store(github)
-    store.save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
-    store.save_drawing(ADA, "C1", "redraw", b"\x89PNG second", SNAPSHOT)
+    store.send_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
+    store.send_drawing(ADA, "C1", "redraw", b"\x89PNG second", SNAPSHOT)
 
     assert [p for p in github.files() if p.startswith("drawings/")] == [
         "drawings/ada-oceens/C1/redraw.png",
@@ -48,7 +48,7 @@ def test_a_new_version_overwrites_the_same_paths_and_git_history_keeps_every_ver
 def test_after_a_restart_a_drawing_is_read_from_workspace_data_at_its_version(
     github: FakeGitHub,
 ) -> None:
-    github_store(github).save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
+    github_store(github).send_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
     github.commit_by_hand(
         "workspace-data", "drawings/ada-oceens/C1/redraw.png", b"overwritten by hand"
     )
@@ -67,7 +67,7 @@ def test_a_drawing_send_retries_when_another_writer_moved_the_branch(
     )
     github.conflicts = 2
 
-    store.save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
+    store.send_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
 
     assert github.files()["drawings/ada-oceens/C1/redraw.png"] == PNG
 
@@ -79,11 +79,11 @@ def test_a_branch_that_keeps_moving_makes_the_store_unavailable_and_records_no_v
     github.conflicts = 100
 
     with pytest.raises(StoreUnavailable):
-        store.save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
+        store.send_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
 
     assert store.record(ADA).entries == ()
     github.conflicts = 0
-    assert store.save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT).version == 1
+    assert store.send_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT).version == 1
 
 
 def test_github_failing_on_a_drawing_makes_the_store_unavailable(
@@ -93,4 +93,4 @@ def test_github_failing_on_a_drawing_makes_the_store_unavailable(
     github.down = 502
 
     with pytest.raises(StoreUnavailable):
-        store.save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
+        store.send_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)

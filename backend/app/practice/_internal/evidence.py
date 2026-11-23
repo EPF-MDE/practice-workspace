@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import HTTPException, Request
 
 from app import evidence_panel
@@ -9,7 +7,7 @@ from app.evidence_panel import Declaration, NotAProject
 from app.repository_reading import COMPETENCIES
 from app.roster import Student
 from app.settings import Settings
-from app.store import StoredDeclaration
+from app.store import DeclarationPayload, StoredDeclaration
 
 from .models import (
     MAX_NOTE_CHARS,
@@ -19,13 +17,13 @@ from .models import (
 )
 
 
-def _changed(current: StoredDeclaration, new: dict[str, Any]) -> bool:
-    return (current.url, current.note) != (new["url"], new["note"])
+def _changed(current: StoredDeclaration, new: DeclarationPayload) -> bool:
+    return (current.url, current.note) != (new.url, new.note)
 
 
 def _declaration_payload(
     request: Request, student: Student, sent: DeclarationIn
-) -> dict[str, Any]:
+) -> DeclarationPayload:
     _at_most(sent.url, MAX_URL_CHARS, "The project's URL")
     _at_most(sent.note, MAX_NOTE_CHARS, "Your note on what to read")
     try:
@@ -44,13 +42,13 @@ def _declaration_payload(
         request.app.state.access_check,
         settings.github_app_slug,
     )
-    return {
-        "url": project.url,
-        "note": sent.note.strip(),
-        "repository": project.repository,
-        "host": project.host,
-        "access": checked.status,
-    }
+    return DeclarationPayload(
+        url=project.url,
+        note=sent.note.strip(),
+        repository=project.repository,
+        host=project.host,
+        access=checked.status,
+    )
 
 
 def _declared(

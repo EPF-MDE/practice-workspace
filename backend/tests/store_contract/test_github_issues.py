@@ -7,7 +7,13 @@ import httpx
 import pytest
 from fake_github import FakeGitHub
 
-from app.store import GitHubStore, Kind, StoreUnavailable
+from app.store import (
+    AnswerPayload,
+    GitHubStore,
+    Kind,
+    QuestionPayload,
+    StoreUnavailable,
+)
 
 from .conftest import ADA, GRACE, SENDS, github_store
 
@@ -54,19 +60,19 @@ def test_a_record_survives_a_restart_rebuilt_from_the_comments(
 ) -> None:
     before = github_store(github)
     before.open_record(ADA)
-    first = before.save_answer(ADA, "C1", "guided-calculation", {"sentence": "first"})
-    before.save_answer(ADA, "C1", "guided-calculation", {"sentence": "second"})
-    before.save_question(ADA, "C1", "read-the-chain", "Why?")
+    first = before.send_answer(ADA, "C1", "guided-calculation", {"sentence": "first"})
+    before.send_answer(ADA, "C1", "guided-calculation", {"sentence": "second"})
+    before.send_question(ADA, "C1", "read-the-chain", "Why?")
     SENDS[Kind.EVIDENCE_PLAN](before, ADA)
 
     after = github_store(github)
 
     assert after.record(ADA) == before.record(ADA)
     assert (
-        after.record(ADA).history(Kind.ANSWER, "C1", "guided-calculation")[0] == first
+        after.record(ADA).history(AnswerPayload, "C1", "guided-calculation")[0] == first
     )
     assert (
-        after.save_answer(
+        after.send_answer(
             ADA, "C1", "guided-calculation", {"sentence": "third"}
         ).version
         == 3
@@ -81,7 +87,7 @@ def test_one_send_is_one_comment_dated_by_github_and_the_body_is_never_rewritten
     body = github.issues[401]["body"]
     writes = github.writes
 
-    entry = store.save_answer(ADA, "C1", "guided-calculation", {"sentence": "D ≤ 2 h"})
+    entry = store.send_answer(ADA, "C1", "guided-calculation", {"sentence": "D ≤ 2 h"})
 
     assert github.writes == writes + 1
     assert github.issues[401]["body"] == body
@@ -93,8 +99,8 @@ def test_a_send_comment_is_a_line_to_read_then_a_block_to_parse(
     github: FakeGitHub,
 ) -> None:
     store = github_store(github)
-    store.save_answer(ADA, "C1", "guided-calculation", {"sentence": "D ≤ 2 h"})
-    store.save_question(ADA, "C1", "read-the-chain", "Why 10\nseconds?")
+    store.send_answer(ADA, "C1", "guided-calculation", {"sentence": "D ≤ 2 h"})
+    store.send_question(ADA, "C1", "read-the-chain", "Why 10\nseconds?")
 
     answer, question = (c["body"] for c in github.comments[401])
 
@@ -143,7 +149,7 @@ def test_a_declaration_comment_stores_one_for_every_competency(
 ) -> None:
     store = github_store(github)
     SENDS[Kind.DECLARATION](store, ADA)
-    store.save_declaration(ADA, {})
+    store.withdraw_declaration(ADA)
 
     declared, withdrawn = (_block(c["body"]) for c in github.comments[401])
 
@@ -168,45 +174,45 @@ def _block(body: str) -> dict[str, Any]:
 
 
 def test_a_send_before_sign_in_opened_the_issue_opens_it(github: FakeGitHub) -> None:
-    github_store(github).save_question(ADA, "C1", "read-the-chain", "?")
+    github_store(github).send_question(ADA, "C1", "read-the-chain", "?")
 
     assert len(github.issues) == 1 and len(github.comments[401]) == 1
 
 
 def test_comments_by_people_are_not_sends(github: FakeGitHub) -> None:
     store = github_store(github)
-    store.save_answer(ADA, "C1", "guided-calculation", {"sentence": "mine"})
+    store.send_answer(ADA, "C1", "guided-calculation", {"sentence": "mine"})
     github.comment_by_hand(
         401,
         "Good start.\n\n" + github.comments[401][0]["body"].replace("mine", "forged"),
     )
 
-    entries = github_store(github).record(ADA).entries
+    entries = github_store(github).record(ADA).all(AnswerPayload)
 
-    assert [e.payload["fields"]["sentence"] for e in entries] == ["mine"]
+    assert [e.payload.fields["sentence"] for e in entries] == ["mine"]
 
 
 def test_comments_by_another_app_are_not_sends(github: FakeGitHub) -> None:
     store = github_store(github)
-    store.save_answer(ADA, "C1", "guided-calculation", {"sentence": "mine"})
+    store.send_answer(ADA, "C1", "guided-calculation", {"sentence": "mine"})
     forged = github.comments[401][0]["body"].replace("mine", "forged")
     github.comment_by_hand(401, forged, login="github-actions[bot]", type="Bot")
 
-    entries = github_store(github).record(ADA).entries
+    entries = github_store(github).record(ADA).all(AnswerPayload)
 
-    assert [e.payload["fields"]["sentence"] for e in entries] == ["mine"]
+    assert [e.payload.fields["sentence"] for e in entries] == ["mine"]
 
 
 def test_a_second_issue_for_the_same_student_drops_nothing_from_their_record(
     github: FakeGitHub,
 ) -> None:
     first = github_store(github)
-    first.save_answer(ADA, "C1", "guided-calculation", {"sentence": "first"})
+    first.send_answer(ADA, "C1", "guided-calculation", {"sentence": "first"})
     github.unlisted = {401}
     lagging = github_store(github)
     lagging.open_record(ADA)
-    lagging.save_question(ADA, "C1", "read-the-chain", "Why?")
-    lagging.save_answer(ADA, "C1", "guided-calculation", {"sentence": "second"})
+    lagging.send_question(ADA, "C1", "read-the-chain", "Why?")
+    lagging.send_answer(ADA, "C1", "guided-calculation", {"sentence": "second"})
     github.unlisted = set()
     assert len(github.issues) == 2
 
@@ -218,11 +224,11 @@ def test_a_second_issue_for_the_same_student_drops_nothing_from_their_record(
         ("question", 1),
         ("answer", 2),
     ]
-    latest = record.latest(Kind.ANSWER, "C1", "guided-calculation")
+    latest = record.latest(AnswerPayload, "C1", "guided-calculation")
     assert latest is not None
-    assert latest.payload["fields"]["sentence"] == "second"
+    assert latest.payload.fields["sentence"] == "second"
     assert (
-        restarted.save_answer(
+        restarted.send_answer(
             ADA, "C1", "guided-calculation", {"sentence": "third"}
         ).version
         == 3
@@ -230,10 +236,10 @@ def test_a_second_issue_for_the_same_student_drops_nothing_from_their_record(
     restarted.open_record(ADA)
     assert len(github.issues) == 2
     assert [
-        e.payload["fields"]["sentence"]
+        e.payload.fields["sentence"]
         for e in github_store(github)
         .record(ADA)
-        .history(Kind.ANSWER, "C1", "guided-calculation")
+        .history(AnswerPayload, "C1", "guided-calculation")
     ] == ["first", "second", "third"]
 
 
@@ -241,16 +247,18 @@ def test_a_long_record_is_read_across_pages() -> None:
     github = FakeGitHub(max_per_page=2)
     store = github_store(github)
     for n in range(5):
-        store.save_question(ADA, "C1", "read-the-chain", f"q{n}")
+        store.send_question(ADA, "C1", "read-the-chain", f"q{n}")
 
-    texts = [e.payload["text"] for e in github_store(github).record(ADA).entries]
+    texts = [
+        e.payload.text for e in github_store(github).record(ADA).all(QuestionPayload)
+    ]
 
     assert texts == ["q0", "q1", "q2", "q3", "q4"]
 
 
 def test_a_record_once_read_is_kept_in_memory(github: FakeGitHub) -> None:
     store = github_store(github)
-    store.save_question(ADA, "C1", "read-the-chain", "?")
+    store.send_question(ADA, "C1", "read-the-chain", "?")
     reads = github.reads
 
     store.record(ADA)
@@ -264,18 +272,18 @@ def test_github_failing_makes_the_store_unavailable_and_loses_nothing_stored(
     github: FakeGitHub, status: int
 ) -> None:
     store = github_store(github)
-    store.save_answer(ADA, "C1", "guided-calculation", {"sentence": "kept"})
+    store.send_answer(ADA, "C1", "guided-calculation", {"sentence": "kept"})
     github.down = status
 
     with pytest.raises(StoreUnavailable):
-        store.save_answer(ADA, "C1", "guided-calculation", {"sentence": "lost"})
+        store.send_answer(ADA, "C1", "guided-calculation", {"sentence": "lost"})
     with pytest.raises(StoreUnavailable):
         github_store(github).record(ADA)
 
     github.down = None
     assert [e.version for e in store.record(ADA).entries] == [1]
     assert (
-        store.save_answer(
+        store.send_answer(
             ADA, "C1", "guided-calculation", {"sentence": "again"}
         ).version
         == 2
@@ -308,7 +316,7 @@ def test_the_label_is_a_setting(github: FakeGitHub) -> None:
 
 
 def test_a_closed_issue_still_holds_the_record(github: FakeGitHub) -> None:
-    github_store(github).save_question(ADA, "C1", "read-the-chain", "?")
+    github_store(github).send_question(ADA, "C1", "read-the-chain", "?")
     github.issues[401]["state"] = "closed"
 
     restarted = github_store(github)

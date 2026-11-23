@@ -9,14 +9,9 @@ from typing import Any
 from app.roster import Student
 from app.store._internal.model import (
     EVERY_COMPETENCY,
-    GITHUB,
-    GITLAB,
-    KINDS,
     MAX_SEND_CHARS,
     DrawingFiles,
     Entry,
-    Host,
-    Kind,
     Record,
     SendTooLarge,
     Store,
@@ -27,25 +22,52 @@ from app.store._internal.model import (
     drawing_payload,
     snapshot_file,
 )
+from app.store._internal.payloads import (
+    GITHUB,
+    GITLAB,
+    AnswerPayload,
+    CheckPointsPayload,
+    DeclarationPayload,
+    DrawingPayload,
+    EvidencePanelSnapshotPayload,
+    EvidencePlanPayload,
+    Host,
+    Kind,
+    Payload,
+    PointLevelPayload,
+    QuestionPayload,
+    SelfAssessmentPayload,
+    WithdrawalPayload,
+)
 from app.store.github import GitHubStore
 
 __all__ = [
     "EVERY_COMPETENCY",
     "GITHUB",
     "GITLAB",
-    "KINDS",
     "MAX_SEND_CHARS",
+    "AnswerPayload",
+    "CheckPointsPayload",
+    "DeclarationPayload",
     "DrawingFiles",
+    "DrawingPayload",
     "Entry",
+    "EvidencePanelSnapshotPayload",
+    "EvidencePlanPayload",
     "GitHubStore",
     "Host",
     "InMemoryStore",
     "Kind",
+    "Payload",
+    "PointLevelPayload",
+    "QuestionPayload",
     "Record",
+    "SelfAssessmentPayload",
     "SendTooLarge",
     "Store",
     "StoredDeclaration",
     "StoreUnavailable",
+    "WithdrawalPayload",
     "drawing_paths",
 ]
 
@@ -58,7 +80,7 @@ def _now() -> datetime:
 class InMemoryStore:
     clock: Callable[[], datetime] = _now
     writes: int = 0
-    _entries: dict[int, list[Entry]] = field(default_factory=dict)
+    _entries: dict[int, list[Entry[Payload]]] = field(default_factory=dict)
     _drawings: dict[tuple[int, str, str], DrawingFiles] = field(default_factory=dict)
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
@@ -72,42 +94,39 @@ class InMemoryStore:
     def records(self, students: list[Student]) -> list[Record]:
         return [self.record(student) for student in students]
 
-    def _append(
+    def _append[P: Payload](
         self,
         student: Student,
-        kind: Kind,
         competency: str | None,
         key: str | None,
-        payload: dict[str, Any],
-    ) -> Entry:
+        payload: P,
+    ) -> Entry[P]:
         check_size(payload)
         with self._lock:
             entries = self._entries.setdefault(student.github_id, [])
             version = 1 + sum(
                 1
                 for e in entries
-                if (e.kind, e.competency, e.key) == (kind, competency, key)
+                if (e.kind, e.competency, e.key) == (payload.KIND, competency, key)
             )
-            entry = Entry(kind, competency, key, payload, version, self.clock())
+            entry = Entry(competency, key, payload, version, self.clock())
             entries.append(entry)
             self.writes += 1
             return entry
 
-    def save_answer(
+    def send_answer(
         self, student: Student, competency: str, step: str, fields: dict[str, str]
-    ) -> Entry:
-        return self._append(
-            student, Kind.ANSWER, competency, step, {"fields": dict(fields)}
-        )
+    ) -> Entry[AnswerPayload]:
+        return self._append(student, competency, step, AnswerPayload(fields=fields))
 
-    def save_drawing(
+    def send_drawing(
         self,
         student: Student,
         competency: str,
         drawing: str,
         png: bytes,
         snapshot: dict[str, Any],
-    ) -> Entry:
+    ) -> Entry[DrawingPayload]:
         payload = drawing_payload(
             student, competency, drawing, png, snapshot_file(snapshot)
         )
@@ -116,7 +135,7 @@ class InMemoryStore:
             self._drawings[(student.github_id, competency, drawing)] = DrawingFiles(
                 png, snapshot
             )
-        return self._append(student, Kind.DRAWING, competency, drawing, payload)
+        return self._append(student, competency, drawing, payload)
 
     def drawing(
         self, student: Student, competency: str, drawing: str
@@ -124,38 +143,42 @@ class InMemoryStore:
         with self._lock:
             return self._drawings.get((student.github_id, competency, drawing))
 
-    def save_missed_check_points(
+    def send_missed_check_points(
         self, student: Student, competency: str, drawing: str, missed: list[str]
-    ) -> Entry:
+    ) -> Entry[CheckPointsPayload]:
         return self._append(
-            student, Kind.CHECK_POINTS, competency, drawing, {"missed": list(missed)}
+            student, competency, drawing, CheckPointsPayload(missed=missed)
         )
 
-    def save_self_assessment(
-        self, student: Student, competency: str, levels: dict[str, Any]
-    ) -> Entry:
-        return self._append(
-            student, Kind.SELF_ASSESSMENT, competency, None, dict(levels)
-        )
+    def send_self_assessment(
+        self, student: Student, competency: str, assessment: SelfAssessmentPayload
+    ) -> Entry[SelfAssessmentPayload]:
+        return self._append(student, competency, None, assessment)
 
-    def save_evidence_plan(
-        self, student: Student, competency: str, plan: dict[str, Any]
-    ) -> Entry:
-        return self._append(student, Kind.EVIDENCE_PLAN, competency, None, dict(plan))
+    def send_evidence_plan(
+        self, student: Student, competency: str, plan: EvidencePlanPayload
+    ) -> Entry[EvidencePlanPayload]:
+        return self._append(student, competency, None, plan)
 
-    def save_declaration(self, student: Student, declaration: dict[str, Any]) -> Entry:
-        return self._append(
-            student, Kind.DECLARATION, EVERY_COMPETENCY, None, dict(declaration)
-        )
+    def send_declaration(
+        self, student: Student, declaration: DeclarationPayload
+    ) -> Entry[DeclarationPayload]:
+        return self._append(student, EVERY_COMPETENCY, None, declaration)
 
-    def save_question(
+    def withdraw_declaration(self, student: Student) -> Entry[WithdrawalPayload]:
+        return self._append(student, EVERY_COMPETENCY, None, WithdrawalPayload())
+
+    def send_question(
         self, student: Student, competency: str, step: str, text: str
-    ) -> Entry:
-        return self._append(student, Kind.QUESTION, competency, step, {"text": text})
+    ) -> Entry[QuestionPayload]:
+        return self._append(student, competency, step, QuestionPayload(text=text))
 
-    def save_evidence_panel_snapshot(
+    def send_evidence_panel_snapshot(
         self, student: Student, competency: str, snapshot: dict[str, Any]
-    ) -> Entry:
+    ) -> Entry[EvidencePanelSnapshotPayload]:
         return self._append(
-            student, Kind.EVIDENCE_PANEL_SNAPSHOT, competency, None, dict(snapshot)
+            student,
+            competency,
+            None,
+            EvidencePanelSnapshotPayload.model_validate(snapshot),
         )

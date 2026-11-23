@@ -7,7 +7,18 @@ import pytest
 from fake_github import FakeGitHub
 
 from app.roster import Student
-from app.store import Entry, GitHubStore, InMemoryStore, Kind, Store
+from app.store import (
+    DeclarationPayload,
+    Entry,
+    EvidencePlanPayload,
+    GitHubStore,
+    InMemoryStore,
+    Kind,
+    Payload,
+    PointLevelPayload,
+    SelfAssessmentPayload,
+    Store,
+)
 
 ADA = Student(
     1001, "ada-oceens", "Ada Lovelace", "OcéENS", "OcéENS", "ada-oceens/OceENS"
@@ -40,53 +51,58 @@ def store(request: pytest.FixtureRequest, github: FakeGitHub) -> Store:
     return github_store(github)
 
 
-def declared(url: str, note: str = "n") -> dict[str, Any]:
+def declared(url: str, note: str = "n") -> DeclarationPayload:
     host, repository = url.removeprefix("https://").split(".com/")
-    return {
-        "url": url,
-        "note": note,
-        "repository": repository,
-        "host": host,
-        "access": "gitlab" if host == "gitlab" else "readable",
-    }
+    return DeclarationPayload.model_validate(
+        {
+            "url": url,
+            "note": note,
+            "repository": repository,
+            "host": host,
+            "access": "gitlab" if host == "gitlab" else "readable",
+        }
+    )
 
 
-SENDS: dict[Kind, Callable[[Store, Student], Entry]] = {
-    Kind.CHECK_POINTS: lambda s, who: s.save_missed_check_points(
+SENDS: dict[Kind, Callable[[Store, Student], Entry[Payload]]] = {
+    Kind.CHECK_POINTS: lambda s, who: s.send_missed_check_points(
         who, "C2", "redraw", ["queue", "retry"]
     ),
-    Kind.SELF_ASSESSMENT: lambda s, who: s.save_self_assessment(
+    Kind.SELF_ASSESSMENT: lambda s, who: s.send_self_assessment(
         who,
         "C1",
-        {
-            "levels": {
-                "C1.a": {"level": "done", "link": "https://github.com/x/y/pull/3"}
+        SelfAssessmentPayload(
+            levels={
+                "C1.a": PointLevelPayload(
+                    level="done", link="https://github.com/x/y/pull/3"
+                ),
+                "C1.b": PointLevelPayload(level="redo", link=None),
             },
-            "missed_check_points": {"redraw": ["queue"]},
-        },
+            missed_check_points={"redraw": ["queue"]},
+        ),
     ),
-    Kind.EVIDENCE_PLAN: lambda s, who: s.save_evidence_plan(
+    Kind.EVIDENCE_PLAN: lambda s, who: s.send_evidence_plan(
         who,
         "C1",
-        {
-            "text": "Redo the gate\n\nC1.b, été",
-            "example": "my README",
-            "confirmed": True,
-            "declaration": declared("https://github.com/ada/bakery", "été"),
-            "evidence_panel_snapshot": {
+        EvidencePlanPayload(
+            text="Redo the gate\n\nC1.b, été",
+            example="my README",
+            confirmed=True,
+            declaration=declared("https://github.com/ada/bakery", "été"),
+            evidence_panel_snapshot={
                 "competency": "C1",
                 "facts": [{"point": "C1", "files": []}],
                 "files_dropped": True,
             },
-        },
+        ),
     ),
-    Kind.DECLARATION: lambda s, who: s.save_declaration(
+    Kind.DECLARATION: lambda s, who: s.send_declaration(
         who, declared("https://gitlab.com/a/b", "été")
     ),
-    Kind.QUESTION: lambda s, who: s.save_question(
+    Kind.QUESTION: lambda s, who: s.send_question(
         who, "C1", "read-the-chain", "Why 10?\nAnd why ``` here?"
     ),
-    Kind.EVIDENCE_PANEL_SNAPSHOT: lambda s, who: s.save_evidence_panel_snapshot(
+    Kind.EVIDENCE_PANEL_SNAPSHOT: lambda s, who: s.send_evidence_panel_snapshot(
         who, "C2", {"empty": False, "facts": [{"point": "C2.c"}]}
     ),
 }
