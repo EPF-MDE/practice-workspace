@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -245,6 +246,8 @@ def create_app(
             "Send too large on %s %s: %s", request.method, request.url.path, error
         )
         return JSONResponse({"detail": SEND_TOO_LARGE}, status_code=422)
+
+    app.exception_handler(RequestValidationError)(practice.validation_error)
 
     app.add_middleware(
         SessionMiddleware,

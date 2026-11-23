@@ -12,10 +12,7 @@ from app.settings import Settings
 from app.store import StoredDeclaration
 
 from .models import (
-    MAX_NOTE_CHARS,
-    MAX_URL_CHARS,
     DeclarationIn,
-    _at_most,
 )
 
 
@@ -26,8 +23,6 @@ def _changed(current: StoredDeclaration, new: dict[str, Any]) -> bool:
 def _declaration_payload(
     request: Request, student: Student, sent: DeclarationIn
 ) -> dict[str, Any]:
-    _at_most(sent.url, MAX_URL_CHARS, "The project's URL")
-    _at_most(sent.note, MAX_NOTE_CHARS, "Your note on what to read")
     try:
         project = evidence_panel.parse_project(sent.url)
     except NotAProject as error:
