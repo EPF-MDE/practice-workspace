@@ -57,6 +57,10 @@ class Readability(StrEnum):
     NOT_CHECKED = "not-checked"
 
 
+def _readable_if(readable: bool) -> Readability:
+    return Readability.READABLE if readable else Readability.NOT_READABLE
+
+
 class NotAProject(ValueError):
     pass
 
@@ -177,11 +181,7 @@ class AppAccessCheck:
                 return Readability.NOT_CHECKED
             public = self._client.get(f"/repos/{repository}")
             if public.status_code == 200:
-                return (
-                    Readability.NOT_READABLE
-                    if public.json().get("private", True)
-                    else Readability.READABLE
-                )
+                return _readable_if(not public.json().get("private", True))
             if public.status_code == 404:
                 return Readability.NOT_READABLE
             return Readability.NOT_CHECKED
@@ -191,16 +191,12 @@ class AppAccessCheck:
 
 class FakeAccessCheck:
     def __init__(self, readable: set[str] | None = None):
-        known = None if readable is None else {r.lower() for r in readable}
-        self.rule: Callable[[str], Readability] = lambda repo: (
-            Readability.READABLE
-            if (
-                "private" not in repo.lower()
-                if known is None
-                else repo.lower() in known
-            )
-            else Readability.NOT_READABLE
-        )
+        self.rule: Callable[[str], Readability]
+        if readable is None:
+            self.rule = lambda repo: _readable_if("private" not in repo.lower())
+        else:
+            known = {r.lower() for r in readable}
+            self.rule = lambda repo: _readable_if(repo.lower() in known)
         self.checked: list[str] = []
 
     def can_read(self, repository: str) -> Readability:
