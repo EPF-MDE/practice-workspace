@@ -4,7 +4,7 @@ import { Fragment } from "react";
 import { type EvidencePanel, type PanelFact, PracticeService } from "@/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { errorMessage } from "../progress";
+import { errorMessage } from "@/packages/shared/errorMessage";
 
 export const evidencePanelsKey = ["evidence-panel"];
 

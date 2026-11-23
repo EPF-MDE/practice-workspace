@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { errorMessage } from "../progress";
+import { errorMessage } from "@/packages/shared/errorMessage";
 import type { Plan, useExample, useSendPlan } from "./useEvidencePlan";
 
 export function PlanEditor({ plan, over }: { plan: Plan; over: boolean }) {

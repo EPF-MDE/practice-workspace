@@ -2,7 +2,10 @@ import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { StepOut } from "@/client";
 import { cn } from "@/lib/utils";
-import { EvidencePanelView, openQuestion } from "./evidence/EvidencePanel";
+import {
+  EvidencePanelView,
+  openQuestion,
+} from "@/packages/evidence/EvidencePanel";
 
 const SESSION = ["C1", "C2", "C3"];
 const MINUTES_PER_COMPETENCY = 40;

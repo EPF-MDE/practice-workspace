@@ -5,8 +5,12 @@ import {
   type CompetencyPage,
   PracticeService,
 } from "@/client";
-import { closingDrafts, type DraftScope, type LevelDraft } from "../progress";
-import { pathKey } from "../pathKeys";
+import {
+  closingDrafts,
+  type DraftScope,
+  type LevelDraft,
+} from "@/packages/shared/drafts";
+import { pathKey } from "@/packages/shared/pathKeys";
 
 export const DONE = "done";
 

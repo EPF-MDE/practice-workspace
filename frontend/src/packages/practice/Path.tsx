@@ -2,17 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { type CompetencyPage, PracticeService } from "@/client";
-import { Html } from "./lib/Html";
+import { Html } from "@/packages/shared/Html";
 import {
   type DraftScope,
-  finishedSteps,
-  greyedSteps,
   readSteps,
   startedAt,
-} from "./lib/progress";
+} from "@/packages/shared/drafts";
+import { finishedSteps, greyedSteps } from "./lib/progress";
 import { Sidebar } from "./lib/Sidebar";
 import { StepSection } from "./lib/StepSection";
-import { pathKey } from "./lib/pathKeys";
+import { pathKey } from "@/packages/shared/pathKeys";
 
 function progressOf(page: CompetencyPage, read: string[]) {
   const { steps } = page;

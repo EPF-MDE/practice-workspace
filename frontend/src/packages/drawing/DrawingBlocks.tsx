@@ -10,12 +10,13 @@ import {
   type StepOut,
 } from "@/client";
 import { Button } from "@/components/ui/button";
-import { Html } from "../Html";
-import { closingDrafts, drafts, errorMessage } from "../progress";
-import type { Snapshot } from "./views";
-import { pathKey } from "../pathKeys";
+import { Html } from "@/packages/shared/Html";
+import { closingDrafts, drafts } from "@/packages/shared/drafts";
+import { errorMessage } from "@/packages/shared/errorMessage";
+import type { Snapshot } from "./lib/views";
+import { pathKey } from "@/packages/shared/pathKeys";
 
-const views = () => import("./views");
+const views = () => import("./lib/views");
 const ReadOnlyDrawing = lazy(() =>
   views().then((m) => ({ default: m.ReadOnlyDrawing }))
 );

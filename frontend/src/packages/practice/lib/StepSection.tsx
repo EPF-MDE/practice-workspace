@@ -4,10 +4,11 @@ import { type CompetencyPage, PracticeService, type StepOut } from "@/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ClosingStep } from "./closing/ClosingStep";
-import { type DraftScope, drafts, errorMessage, readSteps } from "./progress";
+import { type DraftScope, drafts, readSteps } from "@/packages/shared/drafts";
+import { errorMessage } from "@/packages/shared/errorMessage";
 import { QuestionField } from "./QuestionField";
 import { StepBlock } from "./StepBlock";
-import { pathKey } from "./pathKeys";
+import { pathKey } from "@/packages/shared/pathKeys";
 
 type Props = DraftScope & {
   step: StepOut;

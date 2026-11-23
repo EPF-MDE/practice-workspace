@@ -1,15 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { type CompetencyPage, PracticeService } from "@/client";
-import { evidencePanelsKey } from "../evidence/EvidencePanel";
+import { evidencePanelsKey } from "@/packages/evidence/EvidencePanel";
 import {
   closingDrafts,
   type DraftScope,
   type EvidenceDraft,
   evidenceDrafts,
-} from "../progress";
+} from "@/packages/shared/drafts";
 import { DONE, type Levels } from "./useSelfAssessment";
-import { pathKey, pathsKey } from "../pathKeys";
+import { pathKey, pathsKey } from "@/packages/shared/pathKeys";
 
 export function usePlan(
   scope: DraftScope,

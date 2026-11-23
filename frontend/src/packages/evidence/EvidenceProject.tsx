@@ -1,14 +1,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type Access, type EvidencePanel, PracticeService } from "@/client";
 import { Button } from "@/components/ui/button";
-import { type EvidenceDraft, errorMessage } from "../progress";
+import { type EvidenceDraft } from "@/packages/shared/drafts";
+import { errorMessage } from "@/packages/shared/errorMessage";
 import {
   evidencePanelKey,
   evidencePanelsKey,
   Sentence,
   useEvidencePanel,
 } from "./EvidencePanel";
-import { pathsKey } from "../pathKeys";
+import { pathsKey } from "@/packages/shared/pathKeys";
 
 function AccessView({ access }: { access: Access }) {
   return (
