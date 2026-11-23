@@ -344,7 +344,7 @@ def test_after_the_reading_day_nothing_changes(at: At) -> None:
     assert "Reading Day" in done.json()["detail"]
 
 
-def test_the_page_says_both_cut_offs(at: At) -> None:
+def test_the_page_says_whether_the_close_and_the_reading_day_passed(at: At) -> None:
     page = at(AFTER_THE_CLOSE).get(PAGE).json()
 
     assert page["closed"] is True
