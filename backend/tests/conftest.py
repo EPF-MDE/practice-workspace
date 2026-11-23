@@ -61,6 +61,10 @@ def store() -> InMemoryStore:
     return InMemoryStore()
 
 
+def store_on(github: FakeGitHub) -> GitHubStore:
+    return GitHubStore(github.client(), github.repository, github.store_app_slug)
+
+
 class MakeClient(Protocol):
     def __call__(
         self,
@@ -133,7 +137,7 @@ def counted(
         store, writes = memory, lambda: memory.writes
     else:
         github = FakeGitHub()
-        store = GitHubStore(github.client(), github.repository, github.store_app_slug)
+        store = store_on(github)
         writes = lambda: github.write_requests  # noqa: E731
     client = make_client(
         store=store,

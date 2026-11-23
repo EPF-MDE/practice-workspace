@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from conftest import MakeClient, sign_in
+from conftest import MakeClient, sign_in, store_on
 from courses_under_test import OnTheRoster
 from fake_github import FakeGitHub
 from fastapi.testclient import TestClient
@@ -16,7 +16,6 @@ from app.repository_reading import (
     PointId,
     RepositoryReading,
 )
-from app.store import GitHubStore
 
 C1 = "/api/competencies/C1"
 FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
@@ -64,7 +63,7 @@ def signed_in(
     repositories = OfflineRepositoryReading()
     repositories.put(a_repository_with_very_many_files(student))
     client = make_client(
-        store=GitHubStore(github.client(), github.repository, github.store_app_slug),
+        store=store_on(github),
         repository_reading=repositories,
         access_check=FakeAccessCheck(),
     )
