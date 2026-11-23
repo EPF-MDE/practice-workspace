@@ -65,3 +65,27 @@ from app import store
     expect(result.status).toBe(1);
   });
 });
+
+describe("check-store-format-imports on the payloads the Store takes", () => {
+  it("passes a test importing one from the Store", () => {
+    const result = checkTests({
+      "backend/tests/test_declaration.py":
+        "from app.store import DeclarationPayload, InMemoryStore\n",
+    });
+
+    expect(result.stderr).toBe("");
+    expect(result.status).toBe(0);
+  });
+
+  it("refuses a test importing one from the Store's internals", () => {
+    const result = checkTests({
+      "backend/tests/test_declaration.py":
+        "from app.store._internal.payloads import DeclarationPayload\n",
+    });
+
+    expect(result.stderr).toContain(
+      "test_declaration.py:1: imports app.store._internal.payloads.DeclarationPayload"
+    );
+    expect(result.status).toBe(1);
+  });
+});
