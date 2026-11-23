@@ -47,6 +47,10 @@ async function drawBox(
   await page.keyboard.press("Escape");
 }
 
+export function shapesOfChain(labels: string[]): number {
+  return labels.length * 2 - 1;
+}
+
 export async function drawChain(page: Page, canvas: Locator, labels: string[]) {
   await canvas.scrollIntoViewIfNeeded();
   const centres: Point[] = [];

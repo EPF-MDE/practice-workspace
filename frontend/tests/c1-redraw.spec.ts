@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { drawChain } from "./helpers/draw";
+import { drawChain, shapesOfChain } from "./helpers/draw";
 import { path, signIn, step } from "./helpers/path";
 
 const STUDENTS = [
@@ -7,7 +7,6 @@ const STUDENTS = [
   { id: 1022, group: "MATHutrice", checkPoints: 4 },
 ];
 const CHAIN = ["Start", "Front door", "Queue", "Worker", "Store", "Reply"];
-const SHAPES = CHAIN.length * 2 - 1;
 
 for (const student of STUDENTS) {
   test(`${student.group}: the redraw is kept while drawing, sent, then compared with the Reference Drawing`, async ({
@@ -44,7 +43,7 @@ for (const student of STUDENTS) {
       step(elsewhere, "redraw")
         .getByRole("figure", { name: "Your drawing" })
         .locator(".tl-shape")
-    ).toHaveCount(SHAPES);
+    ).toHaveCount(shapesOfChain(CHAIN));
     await other.close();
   });
 }
@@ -59,11 +58,11 @@ async function drawAndReload(page: Page) {
   const canvas = redraw.getByRole("figure", { name: "Your drawing" });
   await drawChain(page, canvas.locator(".tl-canvas"), CHAIN);
   const shapes = canvas.locator(".tl-shape");
-  await expect(shapes).toHaveCount(SHAPES);
+  await expect(shapes).toHaveCount(shapesOfChain(CHAIN));
   await expect(canvas.getByText("Worker")).toBeVisible();
   await page.waitForTimeout(500);
   await page.reload();
-  await expect(shapes).toHaveCount(SHAPES);
+  await expect(shapes).toHaveCount(shapesOfChain(CHAIN));
   await expect(redraw.getByTestId("reference-locked")).toBeVisible();
 }
 
