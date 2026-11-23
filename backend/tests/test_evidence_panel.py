@@ -9,15 +9,18 @@ from fastapi.testclient import TestClient
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
 from app.repository_reading import (
     CompetencyReading,
+    Credit,
     Fact,
+    PointId,
     RepositoryReading,
     StudentToRead,
 )
+from app.roster import Repository
 from app.settings import Settings
 from app.store import InMemoryStore
 
 FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
-ADA_REPOSITORY = StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS")
+ADA_REPOSITORY = StudentToRead("ada-oceens", "OcéENS", Repository("ada-oceens/OceENS"))
 
 
 def reading(
@@ -31,7 +34,7 @@ def reading(
         if empty
         else [
             Fact(
-                "C1",
+                PointId.CHANGED_FILES,
                 "`feature/cache` changes 2 files beyond `course-2026`, 40 lines added; "
                 "last change on 2026-10-13.",
                 link="https://github.com/ada-oceens/OceENS/compare/a...b",
@@ -47,14 +50,14 @@ def reading(
         if empty
         else [
             Fact(
-                "C2.c",
+                PointId.C2_C,
                 "The ruleset on `main` requires `architecture` and `test`.",
                 link="https://x/rules",
             ),
             Fact(
-                "C2.b",
+                PointId.C2_B,
                 "`main` contains the Clean Bench Fallback Branch.",
-                credited_to="course-2026-fallback-clean-bench",
+                credited_to=Credit("course-2026-fallback-clean-bench"),
             ),
         ]
     )
@@ -67,12 +70,20 @@ def reading(
         pull_requests_read=pulls,
         empty=empty,
         competencies={
-            "C1": CompetencyReading("C1", c1, [] if c1 else ["C1"], []),
+            "C1": CompetencyReading(
+                "C1", c1, [] if c1 else [PointId.CHANGED_FILES], []
+            ),
             "C2": CompetencyReading(
-                "C2", c2, ["C2.a", "C2.d", "C2.e"], ["C2.f", "C2.g"]
+                "C2",
+                c2,
+                [PointId.C2_A, PointId.C2_D, PointId.C2_E],
+                [PointId.C2_F, PointId.C2_G],
             ),
             "C3": CompetencyReading(
-                "C3", [], ["C3.b", "C3.e"], ["C3.a", "C3.c", "C3.d", "C3.f"]
+                "C3",
+                [],
+                [PointId.C3_B, PointId.C3_E],
+                [PointId.C3_A, PointId.C3_C, PointId.C3_D, PointId.C3_F],
             ),
         },
     )
@@ -146,7 +157,9 @@ def test_c1s_changed_files_come_with_a_sentence_saying_the_workspace_does_not_ju
     c1 = panel_client.get("/api/competencies/C1/evidence-panel").json()
 
     assert "does not judge them" in c1["not_judged"]
-    assert c1["facts"][0]["files"] == [{"path": "app/cache.py", "additions": 30}]
+    assert c1["facts"][0]["files"] == [
+        {"path": "app/cache.py", "additions": 30, "changes": None}
+    ]
     assert (
         c1["facts"][0]["link"] == "https://github.com/ada-oceens/OceENS/compare/a...b"
     )

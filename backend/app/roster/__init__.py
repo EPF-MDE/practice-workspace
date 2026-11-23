@@ -8,23 +8,26 @@ import time
 from collections.abc import Callable, Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, NewType, Protocol
 
 logger = logging.getLogger(__name__)
+
+
+Repository = NewType("Repository", str)
 
 
 @dataclass(frozen=True)
 class Group:
     name: str
     directive: str
-    upstream: str
+    upstream: Repository
 
 
 GROUPS: dict[str, Group] = {
     g.name: g
     for g in (
-        Group("OcéENS", "oceens", "EPF-MDE/OceENS"),
-        Group("MATHutrice", "mathutrice", "EPF-MDE/MATHutrice"),
+        Group("OcéENS", "oceens", Repository("EPF-MDE/OceENS")),
+        Group("MATHutrice", "mathutrice", Repository("EPF-MDE/MATHutrice")),
     )
 }
 
@@ -36,7 +39,7 @@ class Student:
     name: str
     group: str
     project: str
-    evidence_project: str
+    evidence_project: Repository
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -96,7 +99,7 @@ def parse_roster(text: str) -> Roster:
                 name=row["name"].strip(),
                 group=row["group"].strip(),
                 project=row["project"].strip(),
-                evidence_project=row["evidence_project"].strip(),
+                evidence_project=Repository(row["evidence_project"].strip()),
             )
         )
     return Roster(students)

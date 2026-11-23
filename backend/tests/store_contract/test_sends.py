@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 from fake_github import FakeGitHub
 
-from app.roster import Student
+from app.roster import Repository, Student
 from app.store import EVERY_COMPETENCY, MAX_SEND_CHARS, Kind, SendTooLarge, Store
 
 from .conftest import ADA_OF_OCEENS, GRACE_OF_MATHUTRICE, SENDS, declared, github_store
@@ -185,7 +185,9 @@ def test_several_records_are_read_at_once_each_its_own_students(store: Store) ->
         GRACE_OF_MATHUTRICE, "C1", "guided-calculation", {"sentence": "Grace's"}
     )
     store.save_declaration(ADA_OF_OCEENS, declared("https://github.com/ada/b", "n"))
-    nobody = Student(3000, "nobody", "No One", "OcéENS", "OcéENS", "nobody/OceENS")
+    nobody = Student(
+        3000, "nobody", "No One", "OcéENS", "OcéENS", Repository("nobody/OceENS")
+    )
 
     ada, grace, none = store.records([ADA_OF_OCEENS, GRACE_OF_MATHUTRICE, nobody])
 
@@ -228,7 +230,14 @@ def test_each_student_has_their_own_record(store: Store) -> None:
 
 def test_concurrent_sends_from_many_students_all_land(store: Store) -> None:
     students = [
-        Student(2000 + n, f"s{n}", f"Student {n}", "OcéENS", "OcéENS", f"s{n}/OceENS")
+        Student(
+            2000 + n,
+            f"s{n}",
+            f"Student {n}",
+            "OcéENS",
+            "OcéENS",
+            Repository(f"s{n}/OceENS"),
+        )
         for n in range(12)
     ]
 

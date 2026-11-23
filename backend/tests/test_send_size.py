@@ -12,9 +12,11 @@ from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
 from app.repository_reading import (
     CompetencyReading,
     Fact,
+    PointId,
     RepositoryReading,
     StudentToRead,
 )
+from app.roster import Repository
 from app.store import GitHubStore
 
 C1 = "/api/competencies/C1"
@@ -27,14 +29,14 @@ def a_repository_with_very_many_files() -> RepositoryReading:
         for i in range(3000)
     ]
     fact = Fact(
-        "C1",
+        PointId.CHANGED_FILES,
         "`feature/cache` changes 3000 files beyond `course-2026`; "
         "last change on 2026-10-13.",
         link="https://github.com/ada-oceens/OceENS/compare/a...b",
         detail={"branch": "feature/cache", "files": files},
     )
     return RepositoryReading(
-        student=StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS"),
+        student=StudentToRead("ada-oceens", "OcéENS", Repository("ada-oceens/OceENS")),
         default_branch="main",
         facts_computed_at=FRESH_READING_AT,
         last_checked_at=FRESH_READING_AT,
@@ -43,8 +45,10 @@ def a_repository_with_very_many_files() -> RepositoryReading:
         empty=False,
         competencies={
             "C1": CompetencyReading("C1", [fact], [], []),
-            "C2": CompetencyReading("C2", [], ["C2.a"], ["C2.f", "C2.g"]),
-            "C3": CompetencyReading("C3", [], ["C3.b"], ["C3.a"]),
+            "C2": CompetencyReading(
+                "C2", [], [PointId.C2_A], [PointId.C2_F, PointId.C2_G]
+            ),
+            "C3": CompetencyReading("C3", [], [PointId.C3_B], [PointId.C3_A]),
         },
     )
 

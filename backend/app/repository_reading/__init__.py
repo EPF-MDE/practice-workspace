@@ -9,8 +9,11 @@ from .github import (
 from .reader import RepositoryReader
 from .reading import (
     COMPETENCIES,
+    ChangedFile,
     CompetencyReading,
+    Credit,
     Fact,
+    PointId,
     RepositoryReading,
     StudentToRead,
 )
@@ -24,9 +27,12 @@ from .storage import (
 
 __all__ = [
     "COMPETENCIES",
+    "ChangedFile",
     "CompetencyReading",
+    "Credit",
     "DirectoryReadings",
     "Fact",
+    "PointId",
     "RepositoryReader",
     "RepositoryReading",
     "GitHub",

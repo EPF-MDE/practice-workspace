@@ -83,8 +83,8 @@ function Fact({ fact }: { fact: PanelFact }) {
           </summary>
           <ul className="pl-4">
             {fact.files?.map((file) => (
-              <li key={String(file.path)}>
-                <code>{String(file.path)}</code>
+              <li key={file.path}>
+                <code>{file.path}</code>
                 {typeof file.additions === "number" && ` +${file.additions}`}
               </li>
             ))}

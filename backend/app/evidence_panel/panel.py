@@ -6,8 +6,15 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-from app.repository_reading import Fact, RepositoryReading
+from app.repository_reading import (
+    ChangedFile,
+    Credit,
+    Fact,
+    PointId,
+    RepositoryReading,
+)
 from app.repository_reading.reading import not_read_on_gitlab
+from app.roster import Repository
 from app.store import GITLAB, Host
 
 NOT_VISIBLE = "Not visible from your Evidence Project: show it at the Eval"
@@ -77,15 +84,15 @@ def not_read_text(declaration: Declaration) -> str:
 
 
 class PanelFact(BaseModel):
-    point: str
+    point: PointId
     text: str
-    credited_to: str
+    credited_to: Credit
     link: str | None
-    files: list[dict[str, Any]] = []
+    files: list[ChangedFile] = []
 
 
 class NotVisible(BaseModel):
-    point: str
+    point: PointId
     text: str
 
 
@@ -104,7 +111,7 @@ class Access(BaseModel):
 class Declaration(BaseModel):
     url: str
     what_to_read: str
-    repository: str
+    repository: Repository
     host: Host
     declares_roster_evidence_project: bool
     declared_at: datetime
@@ -119,7 +126,7 @@ class DeclarationHelp(BaseModel):
 
 class EvidencePanel(BaseModel):
     competency: str
-    evidence_project: str
+    evidence_project: Repository
     unavailable: str | None
     facts_computed_at: datetime | None
     last_checked_at: datetime | None
@@ -129,7 +136,7 @@ class EvidencePanel(BaseModel):
     empty: bool
     empty_text: str | None
     facts: list[PanelFact]
-    nothing_found: list[str]
+    nothing_found: list[PointId]
     nothing_found_text: str | None
     not_visible: list[NotVisible]
     not_judged: str | None
@@ -138,13 +145,13 @@ class EvidencePanel(BaseModel):
 
 
 def _fact(fact: Fact) -> PanelFact:
-    files = fact.detail.get("files") if fact.point == "C1" else None
+    files = fact.detail.get("files") if fact.point == PointId.CHANGED_FILES else None
     return PanelFact(
         point=fact.point,
         text=fact.text,
         credited_to=fact.credited_to,
         link=fact.link,
-        files=[f for f in files if isinstance(f, dict)]
+        files=[ChangedFile.model_validate(f) for f in files if isinstance(f, dict)]
         if isinstance(files, list)
         else [],
     )
@@ -154,7 +161,7 @@ def build_panel(
     competency: str, reading: RepositoryReading, declaration: Declaration | None
 ) -> EvidencePanel:
     found = reading[competency]
-    nothing = [p for p in found.nothing_found if p != "C1"]
+    nothing = [p for p in found.nothing_found if p != PointId.CHANGED_FILES]
     looked = _looked(reading.branches_read, reading.pull_requests_read)
     return EvidencePanel(
         competency=competency,
@@ -192,7 +199,7 @@ def build_panel(
 
 def unavailable_panel(
     competency: str,
-    evidence_project: str,
+    evidence_project: Repository,
     declaration: Declaration | None,
     unavailable: str = UNAVAILABLE,
 ) -> EvidencePanel:

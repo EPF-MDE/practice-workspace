@@ -12,11 +12,13 @@ from app.repository_reading import (
     CompetencyReading,
     Fact,
     InMemoryReadings,
+    PointId,
     RepositoryReader,
     RepositoryReading,
     Response,
     StudentToRead,
 )
+from app.roster import Repository
 
 DECLARATION = "/api/evidence-project/declaration"
 COMPETENCIES = ("C1", "C2", "C3")
@@ -38,7 +40,7 @@ def declare(client: TestClient, url: str) -> None:
 
 def reading_of(repository: str, ruleset: str) -> RepositoryReading:
     return RepositoryReading(
-        student=StudentToRead("ada-oceens", "OcéENS", repository),
+        student=StudentToRead("ada-oceens", "OcéENS", Repository(repository)),
         default_branch="main",
         facts_computed_at=FRESH_READING_AT,
         last_checked_at=FRESH_READING_AT,
@@ -46,11 +48,11 @@ def reading_of(repository: str, ruleset: str) -> RepositoryReading:
         pull_requests_read=0,
         empty=False,
         competencies={
-            "C1": CompetencyReading("C1", [], ["C1"], []),
+            "C1": CompetencyReading("C1", [], [PointId.CHANGED_FILES], []),
             "C2": CompetencyReading(
-                "C2", [Fact("C2.c", f"The ruleset `{ruleset}`.")], [], []
+                "C2", [Fact(PointId.C2_C, f"The ruleset `{ruleset}`.")], [], []
             ),
-            "C3": CompetencyReading("C3", [], ["C3.b", "C3.e"], []),
+            "C3": CompetencyReading("C3", [], [PointId.C3_B, PointId.C3_E], []),
         },
     )
 

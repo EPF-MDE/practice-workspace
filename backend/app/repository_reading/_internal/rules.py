@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from ..reading import Credit
+
 COURSE_PREFIX = "course-2026"
 LOCKFILES = {
     "package-lock.json",
@@ -22,7 +24,7 @@ FALLBACK_CHAIN = (
     "course-2026-fallback-posthog",
 )
 CLEAN_BENCH = "course-2026-fallback-clean-bench"
-POSTHOG_FALLBACK = "course-2026-fallback-posthog"
+POSTHOG_FALLBACK = Credit("course-2026-fallback-posthog")
 
 FIX_PR = re.compile(r"fix|correct|corrig|bug|repair|répar", re.I)
 POSTHOG = re.compile(r"posthog", re.I)

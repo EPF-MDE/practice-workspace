@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Literal, Protocol
 
-from app.roster import Student
+from app.roster import Repository, Student
 
 
 class Kind(StrEnum):
@@ -54,7 +54,7 @@ def _what_to_read(payload: dict[str, Any]) -> str:
 class StoredDeclaration:
     url: str
     what_to_read: str
-    repository: str
+    repository: Repository
     host: Host
     access: str
     at: datetime
@@ -64,7 +64,7 @@ class StoredDeclaration:
         return cls(
             url=payload["url"],
             what_to_read=_what_to_read(payload),
-            repository=payload["repository"],
+            repository=Repository(payload["repository"]),
             host=_HOSTS[payload["host"]],
             access=payload["access"],
             at=at,
