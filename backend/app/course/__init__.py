@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from app.content import COMPETENCIES, Competency, ContentError, load_content
 
-from ._internal.settings_file import missing_and_unknown, read_settings
+from ._internal.settings_file import competency_problems, read_settings
 
 __all__ = ["CompetencyOfCourse", "Course", "Loading", "load_course", "router"]
 
@@ -43,10 +43,11 @@ def load_course(folder: str | Path) -> Loading:
     except ContentError as error:
         problems.append(str(error))
     else:
-        missing, unknown = missing_and_unknown(set(content))
-        problems += [
-            f"{c.lower()}.md: missing, so {c} has no content" for c in missing
-        ] + [f"content for {c}, which is no Competency of the Engine" for c in unknown]
+        problems += competency_problems(
+            set(content),
+            lambda c: f"{c.lower()}.md: missing, so {c} has no content",
+            lambda c: f"content for {c}, which is no Competency of the Engine",
+        )
     if settings is None or problems:
         return Loading(None, problems)
     competencies = {

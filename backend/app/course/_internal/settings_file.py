@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tomllib
+from collections.abc import Callable
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt, ValidationError
@@ -25,11 +26,12 @@ class CourseSettings(BaseModel):
     competencies: dict[str, CompetencySettings]
 
 
-def missing_and_unknown(ids: set[str]) -> tuple[list[str], list[str]]:
-    return (
-        [competency for competency in COMPETENCIES if competency not in ids],
-        sorted(ids - set(COMPETENCIES)),
-    )
+def competency_problems(
+    ids: set[str], missing: Callable[[str], str], unknown: Callable[[str], str]
+) -> list[str]:
+    return [missing(c) for c in COMPETENCIES if c not in ids] + [
+        unknown(c) for c in sorted(ids - set(COMPETENCIES))
+    ]
 
 
 def read_settings(folder: Path) -> tuple[CourseSettings | None, list[str]]:
@@ -44,13 +46,11 @@ def read_settings(folder: Path) -> tuple[CourseSettings | None, list[str]]:
         settings = CourseSettings.model_validate(raw)
     except ValidationError as error:
         return None, [_problem(e) for e in error.errors()]
-    missing, unknown = missing_and_unknown(set(settings.competencies))
-    problems = [
-        f"{SETTINGS_FILE}: no [competencies.{c}], so {c} has no title" for c in missing
-    ] + [
-        f"{SETTINGS_FILE}: [competencies.{c}] is no Competency of the Engine"
-        for c in unknown
-    ]
+    problems = competency_problems(
+        set(settings.competencies),
+        lambda c: f"{SETTINGS_FILE}: no [competencies.{c}], so {c} has no title",
+        lambda c: f"{SETTINGS_FILE}: [competencies.{c}] is no Competency of the Engine",
+    )
     return (None, problems) if problems else (settings, [])
 
 
