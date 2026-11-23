@@ -14,9 +14,9 @@ DEMO_COURSE = BACKEND.parent / "demo-course"
 COURSES = FIXTURES / "courses"
 
 
-def check(folder: Path) -> subprocess.CompletedProcess[str]:
+def verify(folder: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, "-m", "app", "check", str(folder)],
+        [sys.executable, "-m", "app", "verify", str(folder)],
         cwd=BACKEND,
         capture_output=True,
         text=True,
@@ -25,7 +25,7 @@ def check(folder: Path) -> subprocess.CompletedProcess[str]:
 
 
 def on(test_settings: Settings, folder: Path) -> Settings:
-    return test_settings.model_copy(update={"content_dir": str(folder)})
+    return test_settings.model_copy(update={"course_folder": str(folder)})
 
 
 def test_the_api_serves_the_courses_name(client: TestClient) -> None:
@@ -52,21 +52,21 @@ def test_the_app_refuses_to_start_on_invalid_settings_and_names_each_problem(
     assert "'title'" in str(refusal.value)
 
 
-def test_check_passes_the_demo_course() -> None:
-    result = check(DEMO_COURSE)
+def test_verify_passes_the_demo_course() -> None:
+    result = verify(DEMO_COURSE)
 
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def test_check_reports_every_settings_problem_and_fails() -> None:
-    result = check(COURSES / "two-settings-problems")
+def test_verify_reports_every_settings_problem_and_fails() -> None:
+    result = verify(COURSES / "two-settings-problems")
 
     assert result.returncode != 0
     assert "'name'" in result.stdout
     assert "'title'" in result.stdout
 
 
-def test_check_reports_a_content_problem_beside_a_settings_problem(
+def test_verify_reports_a_content_problem_beside_a_settings_problem(
     tmp_path: Path,
 ) -> None:
     (tmp_path / "c1.md").write_text(
@@ -74,7 +74,7 @@ def test_check_reports_a_content_problem_beside_a_settings_problem(
         "::: answr\nx\n:::\n"
     )
 
-    result = check(tmp_path)
+    result = verify(tmp_path)
 
     assert result.returncode != 0
     assert "course.toml" in result.stdout

@@ -11,7 +11,7 @@ app = create_app(
         _env_file=None,
         sign_in="fake",
         roster_file=str(fixtures / "roster.csv"),
-        content_dir=str(fixtures / "content"),
+        course_folder=str(fixtures / "content"),
     )
 )
 Path(sys.argv[1]).write_text(json.dumps(app.openapi(), indent=2) + "\n")

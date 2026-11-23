@@ -93,12 +93,12 @@ def default_identity(settings: Settings) -> Identity:
 
 
 def default_course(settings: Settings) -> Course:
-    if not settings.content_dir:
-        raise ConfigurationError("No Course folder: set WORKSPACE_CONTENT_DIR")
-    loading = load_course(settings.content_dir)
+    if not settings.course_folder:
+        raise ConfigurationError("No Course folder: set WORKSPACE_COURSE_FOLDER")
+    loading = load_course(settings.course_folder)
     if loading.course is None:
         raise ConfigurationError(
-            f"The Course folder {settings.content_dir} cannot be served:\n"
+            f"The Course folder {settings.course_folder} cannot be served:\n"
             + "\n".join(f"- {problem}" for problem in loading.problems)
         )
     return loading.course
