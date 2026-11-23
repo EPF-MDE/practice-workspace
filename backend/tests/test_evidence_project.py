@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
 import httpx
 import pytest
-from conftest import ADA, MakeClient, sign_in
-from fake_github import FakeGitHub
+from conftest import ADA, Counted, MakeClient, sign_in
 from fastapi.testclient import TestClient
 
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
 from app.settings import Settings
-from app.store import GitHubStore, InMemoryStore, Store
+from app.store import InMemoryStore
 
 C2 = "/api/competencies/C2"
 DECLARATION = "/api/evidence-project/declaration"
@@ -231,31 +229,10 @@ def _rate_and_close(client: TestClient, **extra: Any) -> httpx.Response:
     return response
 
 
-Counted = tuple[TestClient, Store, Callable[[], int]]
-
-
-@pytest.fixture(params=["memory", "github"])
-def counted(request: pytest.FixtureRequest, make_client: MakeClient) -> Counted:
-    store: Store
-    if request.param == "memory":
-        store = InMemoryStore()
-        writes = lambda: store.writes  # noqa: E731
-    else:
-        github = FakeGitHub()
-        store = GitHubStore(github.client(), github.repository)
-        writes = lambda: github.writes  # noqa: E731
-    repositories = OfflineRepositoryReading()
-    client = make_client(
-        store=store, repository_reading=repositories, access_check=FakeAccessCheck()
-    )
-    sign_in(client, ADA)
-    return client, store, writes
-
-
 def test_the_closing_step_stores_the_panel_and_the_declaration_in_its_one_send(
     counted: Counted,
 ) -> None:
-    client, store, writes = counted
+    client, writes = counted
     client.post(
         f"{C1}/self-assessment",
         json={"levels": {"C1.a": {"level": "understand", "link": None}}},
@@ -279,7 +256,7 @@ def test_the_closing_step_stores_the_panel_and_the_declaration_in_its_one_send(
 
 
 def test_closing_without_a_declaration_still_stores_the_panel(counted: Counted) -> None:
-    client, store, writes = counted
+    client, writes = counted
     shown = client.get(f"{C1}/evidence-panel").json()
     before = writes()
 
@@ -295,7 +272,7 @@ def test_closing_without_a_declaration_still_stores_the_panel(counted: Counted) 
 def test_a_declaration_after_the_closing_step_is_its_own_send_and_wins(
     counted: Counted,
 ) -> None:
-    client, _, writes = counted
+    client, writes = counted
     _rate_and_close(client, declaration=BAKERY)
     before = writes()
 
@@ -309,7 +286,7 @@ def test_a_declaration_after_the_closing_step_is_its_own_send_and_wins(
 def test_the_closing_step_refuses_a_bad_declaration_and_stores_nothing(
     counted: Counted,
 ) -> None:
-    client, _, writes = counted
+    client, writes = counted
     client.post(
         f"{C1}/self-assessment",
         json={"levels": {"C1.a": {"level": "understand", "link": None}}},

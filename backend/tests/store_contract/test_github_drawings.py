@@ -15,11 +15,11 @@ def test_a_drawing_send_is_two_files_on_workspace_data_and_one_comment(
 ) -> None:
     store = github_store(github)
     store.open_record(ADA)
-    writes = github.writes
+    writes = github.write_requests
 
     store.save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
 
-    assert github.writes == writes + 3
+    assert github.write_requests == writes + 3
     files = github.files("workspace-data")
     assert files["drawings/ada-oceens/C1/redraw.png"] == PNG
     assert json.loads(files["drawings/ada-oceens/C1/redraw.snapshot.json"]) == SNAPSHOT
@@ -65,7 +65,7 @@ def test_a_drawing_send_retries_when_another_writer_moved_the_branch(
     github.commit_by_hand(
         "workspace-data", "drawings/ada-oceens/C1/redraw.png", b"an older one"
     )
-    github.conflicts = 2
+    github.refuse_next_file_writes = 2
 
     store.save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
 
@@ -76,13 +76,13 @@ def test_a_branch_that_keeps_moving_makes_the_store_unavailable_and_records_no_v
     github: FakeGitHub,
 ) -> None:
     store = github_store(github)
-    github.conflicts = 100
+    github.refuse_next_file_writes = 100
 
     with pytest.raises(StoreUnavailable):
         store.save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)
 
     assert store.record(ADA).entries == ()
-    github.conflicts = 0
+    github.refuse_next_file_writes = 0
     assert store.save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT).version == 1
 
 
@@ -90,7 +90,7 @@ def test_github_failing_on_a_drawing_makes_the_store_unavailable(
     github: FakeGitHub,
 ) -> None:
     store = github_store(github)
-    github.down = 502
+    github.fail_every_request_with = 502
 
     with pytest.raises(StoreUnavailable):
         store.save_drawing(ADA, "C1", "redraw", PNG, SNAPSHOT)

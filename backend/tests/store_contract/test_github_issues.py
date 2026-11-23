@@ -46,7 +46,7 @@ def test_after_a_restart_the_issue_is_found_again_not_opened_twice(
     restarted.open_record(GRACE)
 
     assert len(github.issues) == 3
-    assert github.writes == 2
+    assert github.write_requests == 2
 
 
 def test_a_record_survives_a_restart_rebuilt_from_the_comments(
@@ -79,11 +79,11 @@ def test_one_send_is_one_comment_dated_by_github_and_the_body_is_never_rewritten
     store = github_store(github)
     store.open_record(ADA)
     body = github.issues[401]["body"]
-    writes = github.writes
+    writes = github.write_requests
 
     entry = store.save_answer(ADA, "C1", "guided-calculation", {"sentence": "D ≤ 2 h"})
 
-    assert github.writes == writes + 1
+    assert github.write_requests == writes + 1
     assert github.issues[401]["body"] == body
     (comment,) = github.comments[401]
     assert entry.at.isoformat().replace("+00:00", "Z") == comment["created_at"]
@@ -265,14 +265,14 @@ def test_github_failing_makes_the_store_unavailable_and_loses_nothing_stored(
 ) -> None:
     store = github_store(github)
     store.save_answer(ADA, "C1", "guided-calculation", {"sentence": "kept"})
-    github.down = status
+    github.fail_every_request_with = status
 
     with pytest.raises(StoreUnavailable):
         store.save_answer(ADA, "C1", "guided-calculation", {"sentence": "lost"})
     with pytest.raises(StoreUnavailable):
         github_store(github).record(ADA)
 
-    github.down = None
+    github.fail_every_request_with = None
     assert [e.version for e in store.record(ADA).entries] == [1]
     assert (
         store.save_answer(
