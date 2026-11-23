@@ -59,13 +59,14 @@ from .steps import (
 def competency_page(
     competency: str, request: Request, student: Student = Depends(current_student)
 ) -> CompetencyPage:
-    page = _page(request, competency, student)
+    of_course = _competency_of_course(request, competency)
+    page = of_course.content.for_group(student.group)
     record = _store(request).record(student)
     settings: Settings = request.app.state.settings
     hints = _hints(page, record)
     return CompetencyPage(
         competency=page.competency,
-        title=_competency_of_course(request, competency).title,
+        title=of_course.title,
         intro_html=page.intro_html,
         steps=[_step_out(step, page, record, hints) for step in page.steps],
         closes_at=settings.closes_at,
