@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any, ClassVar, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, ValidationError
 
 from app.roster import Repository
 
@@ -25,13 +25,11 @@ GITLAB: Host = "gitlab"
 
 
 class Payload(BaseModel):
-    model_config = ConfigDict(
-        frozen=True, extra="ignore", validate_by_name=True, validate_by_alias=True
-    )
+    model_config = ConfigDict(frozen=True, extra="ignore")
     KIND: ClassVar[Kind]
 
     def stored(self) -> dict[str, Any]:
-        return self.model_dump(mode="json", exclude_defaults=True, by_alias=True)
+        return self.model_dump(mode="json", exclude_defaults=True)
 
 
 class AnswerPayload(Payload):
@@ -68,10 +66,12 @@ class SelfAssessmentPayload(Payload):
 class DeclarationPayload(Payload):
     KIND = Kind.DECLARATION
     url: str
-    what_to_read: str
+    what_to_read: str = Field(validation_alias=AliasChoices("what_to_read", "note"))
     repository: Repository
     host: Host
-    access_when_declared: str = Field(alias="access")
+    access_when_declared: str = Field(
+        validation_alias=AliasChoices("access_when_declared", "access")
+    )
 
 
 class WithdrawalPayload(Payload):
