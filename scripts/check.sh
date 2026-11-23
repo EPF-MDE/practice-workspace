@@ -15,6 +15,14 @@ repository() {
   node scripts/check-agent-secrets.js .github/workflows/*.yml
   step "Repository: triggers (no pull_request_target, no workflow_run)"
   node scripts/check-workflow-triggers.js .github/workflows/*.yml
+  step "Repository: Markdown (no hard-wrapped paragraph or list item)"
+  git ls-files -z '*.md' | xargs -0 node scripts/check-markdown-wraps.js
+  step "Repository: names (none the glossary retired)"
+  git ls-files -z | xargs -0 node scripts/check-retired-names.js
+  step "Repository: Store (no stored format in a test outside its contract suite)"
+  git ls-files -z 'backend/tests/*.py' | xargs -0 python3 scripts/check-store-format-imports.py
+  step "Repository: Store (no entry kind as a literal outside the Store)"
+  git ls-files -z 'backend/*.py' | xargs -0 python3 scripts/check-store-kinds.py
   step "Repository: format (Markdown, JSON, configuration)"
   npx biome format .
   step "Repository: lint (everything outside the front end)"
@@ -36,6 +44,8 @@ backend() {
   step "Back end: boundaries"
   backend_boundaries
   backend_cycles
+  step "Back end: the Demo course (verify, as the Engine loads it at start)"
+  uv_backend python -m app verify ../demo-course
   step "Back end: tests"
   uv_backend pytest
 }

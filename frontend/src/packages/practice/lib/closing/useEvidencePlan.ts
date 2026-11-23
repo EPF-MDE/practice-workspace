@@ -66,10 +66,10 @@ export function useExample(scope: DraftScope, stored: Plan["stored"]) {
 
 export function useEvidence(scope: DraftScope) {
   const [evidence, setEvidence] = useState<EvidenceDraft>(
-    () => evidenceDrafts.get(scope) ?? { url: "", note: "" }
+    () => evidenceDrafts.get(scope) ?? { url: "", what_to_read: "" }
   );
   const draftEvidence = (next: EvidenceDraft | null) => {
-    setEvidence(next ?? { url: "", note: "" });
+    setEvidence(next ?? { url: "", what_to_read: "" });
     evidenceDrafts.set(scope, next);
   };
   return { evidence, draftEvidence };
@@ -116,7 +116,7 @@ export function useSendPlan({
   const declaring =
     !stored?.confirmed &&
     evidence.url.trim() !== "" &&
-    evidence.note.trim() !== "";
+    evidence.what_to_read.trim() !== "";
   const planChanged =
     confirming ||
     (own !== null && own !== (stored?.text ?? "")) ||

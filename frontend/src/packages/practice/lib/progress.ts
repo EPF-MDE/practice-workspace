@@ -65,11 +65,25 @@ export const closingDrafts = {
     write(key(scope, "example"), text),
 };
 
-export type EvidenceDraft = { url: string; note: string };
+export type EvidenceDraft = { url: string; what_to_read: string };
+
+type FormerEvidenceDraft = { url: string; note: string };
+
+function evidenceDraft(
+  stored: EvidenceDraft | FormerEvidenceDraft | null
+): EvidenceDraft | null {
+  if (stored === null || "what_to_read" in stored) return stored;
+  return { url: stored.url, what_to_read: stored.note };
+}
 
 export const evidenceDrafts = {
   get: (scope: DraftScope) =>
-    read<EvidenceDraft | null>(key(scope, "evidence"), null),
+    evidenceDraft(
+      read<EvidenceDraft | FormerEvidenceDraft | null>(
+        key(scope, "evidence"),
+        null
+      )
+    ),
   set: (scope: DraftScope, draft: EvidenceDraft | null) =>
     draft === null
       ? localStorage.removeItem(key(scope, "evidence"))

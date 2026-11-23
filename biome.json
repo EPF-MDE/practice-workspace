@@ -14,7 +14,8 @@
       "!frontend/src/client",
       "!frontend/src/routeTree.gen.ts",
       "!demo-course",
-      "!backend/tests/fixtures/content"
+      "!backend/tests/fixtures/content",
+      "!backend/tests/fixtures/courses"
     ]
   },
   "formatter": {

@@ -31,7 +31,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
-from app.roster import Student, parse_roster
+from app.roster import Repository, Student, parse_roster
 from app.settings import Settings
 from app.store import GITLAB, GitHubStore, Store
 
@@ -56,9 +56,9 @@ from .storage import (
 
 def evidence_projects(
     students: list[Student], store: Store
-) -> tuple[list[StudentToRead], dict[str, str]]:
+) -> tuple[list[StudentToRead], dict[str, Repository]]:
     to_read: list[StudentToRead] = []
-    gitlab: dict[str, str] = {}
+    gitlab: dict[str, Repository] = {}
     for student, record in zip(students, store.records(students), strict=True):
         declared = record.declaration()
         roster = StudentToRead.from_roster(student)
@@ -179,7 +179,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.only:
         wanted = set(args.only.split(","))
         roster_rows = [s for s in roster_rows if s.github_login in wanted]
-    gitlab: dict[str, str] = {}
+    gitlab: dict[str, Repository] = {}
     if args.roster_only:
         students = [StudentToRead.from_roster(s) for s in roster_rows]
     else:

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from conftest import ADA, MakeClient, sign_in
+from conftest import ADA_OF_OCEENS, MakeClient, sign_in
 from fastapi.testclient import TestClient
 
 from app.settings import Settings
@@ -31,11 +31,12 @@ ANSWER = f"{PAGE}/steps/predict/answer"
 
 @pytest.fixture
 def ada(make_client: MakeClient, test_settings: Settings, tmp_path: Path) -> TestClient:
+    (tmp_path / "course.toml").write_text('name = "Choice course"\n')
     (tmp_path / "c2.md").write_text(CONTENT)
     client = make_client(
-        settings=test_settings.model_copy(update={"content_dir": str(tmp_path)})
+        settings=test_settings.model_copy(update={"course_folder": str(tmp_path)})
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     return client
 
 

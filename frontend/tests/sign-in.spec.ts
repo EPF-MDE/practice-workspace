@@ -50,6 +50,16 @@ for (const student of [ADA, GRACE]) {
   });
 }
 
+test("the opening page names the Course, as its Course folder's settings say", async ({
+  page,
+}) => {
+  await signIn(page, ADA.id);
+
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Demo course" })
+  ).toBeVisible();
+});
+
 test("someone not on the roster is told so, and whom to ask", async ({
   page,
 }) => {

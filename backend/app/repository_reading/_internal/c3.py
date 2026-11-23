@@ -4,6 +4,7 @@ from typing import Any
 
 from ..reading import (
     Fact,
+    PointId,
 )
 from .rules import (
     FIX_PR,
@@ -19,7 +20,7 @@ class _C3Facts(_ReadingState):
             if a.get("posthog_identity"):
                 self.facts["C3"].append(
                     Fact(
-                        point="C3.b",
+                        point=PointId.C3_B,
                         text="Your code on "
                         f"{', '.join(self.ref_names.get(sha, [])[:3])} "
                         "sends errors to PostHog with an identity "
@@ -33,7 +34,7 @@ class _C3Facts(_ReadingState):
         if on_default and on_default.get("fallback") == POSTHOG_FALLBACK:
             self.facts["C3"].append(
                 Fact(
-                    point="C3.b",
+                    point=PointId.C3_B,
                     text=f"`{self.default}` is built on the PostHog Fallback Branch, "
                     "whose code sends errors to PostHog with an identity.",
                     credited_to=POSTHOG_FALLBACK,
@@ -63,7 +64,7 @@ class _C3Facts(_ReadingState):
             if c is not None and c["behind_by"] == 0:
                 self.facts["C3"].append(
                     Fact(
-                        point="C3.e",
+                        point=PointId.C3_E,
                         text=f"Pull request #{p['number']} “{p['title']}” "
                         "went through your pipeline to production "
                         f"(deployed on {_date(latest['created_at'])}).",

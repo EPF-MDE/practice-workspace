@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Literal, Protocol
 
-from app.roster import Student
+from app.roster import Repository, Student
 
 
 class Kind(StrEnum):
@@ -41,11 +41,20 @@ GITLAB: Host = "gitlab"
 _HOSTS: dict[str, Host] = {GITHUB: GITHUB, GITLAB: GITLAB}
 
 
+_FORMER_WHAT_TO_READ = "note"
+
+
+def _what_to_read(payload: dict[str, Any]) -> str:
+    if "what_to_read" in payload:
+        return str(payload["what_to_read"])
+    return str(payload[_FORMER_WHAT_TO_READ])
+
+
 @dataclass(frozen=True)
 class StoredDeclaration:
     url: str
-    note: str
-    repository: str
+    what_to_read: str
+    repository: Repository
     host: Host
     access: str
     at: datetime
@@ -54,8 +63,8 @@ class StoredDeclaration:
     def from_payload(cls, payload: dict[str, Any], at: datetime) -> StoredDeclaration:
         return cls(
             url=payload["url"],
-            note=payload["note"],
-            repository=payload["repository"],
+            what_to_read=_what_to_read(payload),
+            repository=Repository(payload["repository"]),
             host=_HOSTS[payload["host"]],
             access=payload["access"],
             at=at,

@@ -5,27 +5,32 @@ import pytest
 
 from app.repository_reading import InMemoryReadings, RepositoryReader, StudentToRead
 from app.repository_reading.recorded import RecordedGitHub
+from app.roster import Repository
 
 FIXTURES = Path(__file__).parent / "fixtures"
 NOW = datetime(2026, 12, 11, 9, 0, tzinfo=UTC)
 
 REPOSITORIES = {
     "empty-repository": StudentToRead(
-        "dorothy-math", "MATHutrice", "dorothy-math/MATHutrice"
+        "dorothy-math", "MATHutrice", Repository("dorothy-math/MATHutrice")
     ),
     "work-off-default": StudentToRead(
-        "rosalind-oceens", "OcéENS", "rosalind-oceens/OceENS"
+        "rosalind-oceens", "OcéENS", Repository("rosalind-oceens/OceENS")
     ),
     "deleted-pr-branch": StudentToRead(
-        "barbara-oceens", "OcéENS", "barbara-oceens/OceENS"
+        "barbara-oceens", "OcéENS", Repository("barbara-oceens/OceENS")
     ),
     "placeholder-email": StudentToRead(
-        "frances-oceens", "OcéENS", "frances-oceens/OceENS"
+        "frances-oceens", "OcéENS", Repository("frances-oceens/OceENS")
     ),
-    "claude-author": StudentToRead("joan-oceens", "OcéENS", "joan-oceens/OceENS"),
-    "fallback-default": StudentToRead("radia-oceens", "OcéENS", "radia-oceens/OceENS"),
+    "claude-author": StudentToRead(
+        "joan-oceens", "OcéENS", Repository("joan-oceens/OceENS")
+    ),
+    "fallback-default": StudentToRead(
+        "radia-oceens", "OcéENS", Repository("radia-oceens/OceENS")
+    ),
     "both-environments": StudentToRead(
-        "emmy-math", "MATHutrice", "emmy-math/MATHutrice"
+        "emmy-math", "MATHutrice", Repository("emmy-math/MATHutrice")
     ),
 }
 

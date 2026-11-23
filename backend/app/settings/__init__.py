@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     store: Literal["memory", "github"] = "memory"
     store_label: str = "practice"
     data_branch: str = "workspace-data"
-    content_dir: str = ""
+    course_folder: str = ""
     roster_file: str = ""
     repository_reading: Literal["auto", "fake", "github"] = "auto"
     repository_readings_dir: str = ""

@@ -3,21 +3,24 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from conftest import ADA, MakeClient, sign_in
+from conftest import ADA_OF_OCEENS, MakeClient, sign_in
 from fastapi.testclient import TestClient
 
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
 from app.repository_reading import (
     CompetencyReading,
+    Credit,
     Fact,
+    PointId,
     RepositoryReading,
     StudentToRead,
 )
+from app.roster import Repository
 from app.settings import Settings
 from app.store import InMemoryStore
 
-READ_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
-ADA_REPOSITORY = StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS")
+FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
+ADA_REPOSITORY = StudentToRead("ada-oceens", "OcéENS", Repository("ada-oceens/OceENS"))
 
 
 def reading(
@@ -31,7 +34,7 @@ def reading(
         if empty
         else [
             Fact(
-                "C1",
+                PointId.CHANGED_FILES,
                 "`feature/cache` changes 2 files beyond `course-2026`, 40 lines added; "
                 "last change on 2026-10-13.",
                 link="https://github.com/ada-oceens/OceENS/compare/a...b",
@@ -47,32 +50,40 @@ def reading(
         if empty
         else [
             Fact(
-                "C2.c",
+                PointId.C2_C,
                 "The ruleset on `main` requires `architecture` and `test`.",
                 link="https://x/rules",
             ),
             Fact(
-                "C2.b",
+                PointId.C2_B,
                 "`main` contains the Clean Bench Fallback Branch.",
-                credited_to="course-2026-fallback-clean-bench",
+                credited_to=Credit("course-2026-fallback-clean-bench"),
             ),
         ]
     )
     return RepositoryReading(
         student=student,
         default_branch="main",
-        read_at=READ_AT,
-        checked_at=READ_AT,
+        facts_computed_at=FRESH_READING_AT,
+        last_checked_at=FRESH_READING_AT,
         branches_read=branches,
         pull_requests_read=pulls,
         empty=empty,
         competencies={
-            "C1": CompetencyReading("C1", c1, [] if c1 else ["C1"], []),
+            "C1": CompetencyReading(
+                "C1", c1, [] if c1 else [PointId.CHANGED_FILES], []
+            ),
             "C2": CompetencyReading(
-                "C2", c2, ["C2.a", "C2.d", "C2.e"], ["C2.f", "C2.g"]
+                "C2",
+                c2,
+                [PointId.C2_A, PointId.C2_D, PointId.C2_E],
+                [PointId.C2_F, PointId.C2_G],
             ),
             "C3": CompetencyReading(
-                "C3", [], ["C3.b", "C3.e"], ["C3.a", "C3.c", "C3.d", "C3.f"]
+                "C3",
+                [],
+                [PointId.C3_B, PointId.C3_E],
+                [PointId.C3_A, PointId.C3_C, PointId.C3_D, PointId.C3_F],
             ),
         },
     )
@@ -97,7 +108,7 @@ def test_each_fact_names_the_point_it_supports(
     panel_client: TestClient, repositories: OfflineRepositoryReading
 ) -> None:
     repositories.put(reading())
-    sign_in(panel_client, ADA)
+    sign_in(panel_client, ADA_OF_OCEENS)
 
     panel = panel_client.get("/api/competencies/C1/evidence-panel").json()
 
@@ -114,7 +125,7 @@ def test_a_point_the_repository_cannot_show_says_to_show_it_at_the_eval(
     panel_client: TestClient, repositories: OfflineRepositoryReading
 ) -> None:
     repositories.put(reading())
-    sign_in(panel_client, ADA)
+    sign_in(panel_client, ADA_OF_OCEENS)
 
     c2 = panel_client.get("/api/competencies/C2/evidence-panel").json()
     c3 = panel_client.get("/api/competencies/C3/evidence-panel").json()
@@ -141,12 +152,14 @@ def test_c1s_changed_files_come_with_a_sentence_saying_the_workspace_does_not_ju
     panel_client: TestClient, repositories: OfflineRepositoryReading
 ) -> None:
     repositories.put(reading())
-    sign_in(panel_client, ADA)
+    sign_in(panel_client, ADA_OF_OCEENS)
 
     c1 = panel_client.get("/api/competencies/C1/evidence-panel").json()
 
     assert "does not judge them" in c1["not_judged"]
-    assert c1["facts"][0]["files"] == [{"path": "app/cache.py", "additions": 30}]
+    assert c1["facts"][0]["files"] == [
+        {"path": "app/cache.py", "additions": 30, "changes": None}
+    ]
     assert (
         c1["facts"][0]["link"] == "https://github.com/ada-oceens/OceENS/compare/a...b"
     )
@@ -160,7 +173,7 @@ def test_an_empty_repository_says_where_it_looked_what_to_do_and_that_it_is_not_
     panel_client: TestClient, repositories: OfflineRepositoryReading
 ) -> None:
     repositories.put(reading(empty=True, branches=1, pulls=0))
-    sign_in(panel_client, ADA)
+    sign_in(panel_client, ADA_OF_OCEENS)
 
     c1 = panel_client.get("/api/competencies/C1/evidence-panel").json()
 
@@ -181,15 +194,17 @@ def test_the_panel_shows_when_the_repository_was_read_and_a_refresh_writes_nothi
     store: InMemoryStore,
 ) -> None:
     repositories.put(reading())
-    sign_in(panel_client, ADA)
+    sign_in(panel_client, ADA_OF_OCEENS)
     before = store.writes
 
     shown = panel_client.get("/api/competencies/C2/evidence-panel").json()
     refreshed = panel_client.post("/api/competencies/C2/evidence-panel/refresh").json()
 
-    assert shown["read_at"] == shown["checked_at"] == "2026-11-01T08:00:00Z"
-    assert refreshed["read_at"] == shown["read_at"]
-    assert refreshed["checked_at"] > shown["checked_at"]
+    assert (
+        shown["facts_computed_at"] == shown["last_checked_at"] == "2026-11-01T08:00:00Z"
+    )
+    assert refreshed["facts_computed_at"] == shown["facts_computed_at"]
+    assert refreshed["last_checked_at"] > shown["last_checked_at"]
     assert repositories.refreshes == 1
     assert store.writes == before
 
@@ -204,21 +219,21 @@ def test_a_repository_that_cannot_be_read_now_is_said_plainly_never_a_zero(
         refresh = read
 
     client = make_client(repository_reading=Down(), access_check=FakeAccessCheck())
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     panel = client.get("/api/competencies/C1/evidence-panel")
 
     assert panel.status_code == 200
-    assert panel.json()["available"] is False
+    assert panel.json()["unavailable"] is not None
     assert "could not be read just now" in panel.json()["unavailable"]
     assert (
-        client.post("/api/competencies/C1/evidence-panel/refresh").json()["available"]
-        is False
+        client.post("/api/competencies/C1/evidence-panel/refresh").json()["unavailable"]
+        is not None
     )
 
 
 def test_an_unknown_competency_has_no_panel(panel_client: TestClient) -> None:
-    sign_in(panel_client, ADA)
+    sign_in(panel_client, ADA_OF_OCEENS)
     assert panel_client.get("/api/competencies/C9/evidence-panel").status_code == 404
 
 
@@ -231,8 +246,8 @@ def test_with_the_real_repository_reading_the_app_starts_even_before_the_student
 ) -> None:
     settings = test_settings.model_copy(update={"repository_reading": "github"})
     client = make_client(settings=settings, access_check=FakeAccessCheck())
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     panel = client.get("/api/competencies/C1/evidence-panel").json()
 
-    assert panel["available"] is False
+    assert panel["unavailable"] is not None

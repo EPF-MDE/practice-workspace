@@ -16,7 +16,9 @@ function AccessView({ access }: { access: Access }) {
       <p className={access.status === "readable" ? "" : "font-semibold"}>
         <Sentence text={access.message} />
       </p>
-      {access.how && <p className="text-muted-foreground">{access.how}</p>}
+      {access.how_to_make_readable && (
+        <p className="text-muted-foreground">{access.how_to_make_readable}</p>
+      )}
     </div>
   );
 }
@@ -85,7 +87,7 @@ function Declared({
           {declared.url}
         </a>{" "}
         (declared {new Date(declared.declared_at).toLocaleString()}). What to
-        read: {declared.note}
+        read: {declared.what_to_read}
       </p>
       <AccessView access={declared.access} />
       <div className="flex flex-wrap gap-3">
@@ -144,19 +146,19 @@ type FieldProps = {
   edit: (next: Partial<EvidenceDraft>) => void;
 };
 
-function NoteField({ draft, over, edit }: FieldProps) {
+function WhatToReadField({ draft, over, edit }: FieldProps) {
   return (
     <label className="flex flex-col gap-1 text-sm">
       <span className="font-semibold">
         A note saying what to read: a branch, a folder, a pull request, a file
       </span>
       <textarea
-        name="evidence-note"
+        name="evidence-what-to-read"
         rows={3}
         className="rounded-md border p-2"
-        value={draft.note}
+        value={draft.what_to_read}
         disabled={over}
-        onChange={(event) => edit({ note: event.target.value })}
+        onChange={(event) => edit({ what_to_read: event.target.value })}
       />
     </label>
   );
@@ -184,7 +186,7 @@ function DraftFields({
           onChange={(event) => edit({ url: event.target.value })}
         />
       </label>
-      <NoteField draft={draft} over={over} edit={edit} />
+      <WhatToReadField draft={draft} over={over} edit={edit} />
     </>
   );
 }
@@ -199,7 +201,7 @@ function DraftActions({
   declared: boolean;
   requests: Requests;
 }) {
-  const filled = draft.url.trim() !== "" && draft.note.trim() !== "";
+  const filled = draft.url.trim() !== "" && draft.what_to_read.trim() !== "";
   return (
     <div className="flex flex-wrap items-center gap-3">
       <Button

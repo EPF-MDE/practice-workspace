@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SoftwareFactory } from "@/components/SoftwareFactory";
 import { Button } from "@/components/ui/button";
+import { courseQuery } from "@/course";
 import { requireStudent } from "@/session";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async ({ context }) => ({
     student: await requireStudent(context.queryClient),
+    course: await context.queryClient.fetchQuery(courseQuery),
   }),
   component: Opening,
 });
@@ -24,12 +26,15 @@ const COMPETENCIES = [
 ];
 
 function Opening() {
-  const { student } = Route.useRouteContext();
+  const { student, course } = Route.useRouteContext();
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-8 p-8">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">Practice workspace</h1>
+          <p className="text-sm text-muted-foreground">Practice workspace</p>
+          <h1 className="text-3xl font-semibold" data-testid="course-name">
+            {course.name}
+          </h1>
           <p className="text-muted-foreground">
             {student.name}, your Project is{" "}
             <strong data-testid="project">{student.project}</strong>.

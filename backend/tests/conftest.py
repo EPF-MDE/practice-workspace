@@ -1,25 +1,29 @@
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Protocol
+from typing import Any, NamedTuple, Protocol
 
 import httpx
 import pytest
+from fake_github import FakeGitHub
 from fastapi.testclient import TestClient
 
 from app.auth import FakeIdentity, Identity
-from app.evidence_panel import AccessCheck, RepositoryReadingSource
+from app.evidence_panel import (
+    AccessCheck,
+    FakeAccessCheck,
+    OfflineRepositoryReading,
+    RepositoryReadingSource,
+)
 from app.main import create_app
 from app.roster import RosterSource, StaticRoster, parse_roster
 from app.settings import PARIS, Settings
-from app.store import InMemoryStore, Store
+from app.store import GitHubStore, InMemoryStore, Store
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
-Counted = tuple[TestClient, Callable[[], int]]
-
-ADA = 1001
-GRACE = 1002
+ADA_OF_OCEENS = 1001
+GRACE_OF_MATHUTRICE = 1002
 
 
 @pytest.fixture
@@ -34,7 +38,7 @@ def test_settings() -> Settings:
         session_secret="test-secret",
         sign_in="fake",
         public_url="http://testserver",
-        content_dir=str(FIXTURES / "content"),
+        course_folder=str(FIXTURES / "content"),
     )
 
 
@@ -100,3 +104,36 @@ def sign_in(client: TestClient, github_id: int) -> httpx.Response:
         "/auth/login", params={"github_id": github_id}
     )
     return response
+
+
+class Counted(NamedTuple):
+    client: TestClient
+    writes: Callable[[], int]
+
+
+@pytest.fixture(params=["memory", "github"])
+def counted(request: pytest.FixtureRequest, make_client: MakeClient) -> Counted:
+    store: Store
+    writes: Callable[[], int]
+    if request.param == "memory":
+        memory = InMemoryStore()
+        store, writes = memory, lambda: memory.writes
+    else:
+        github = FakeGitHub()
+        store = GitHubStore(github.client(), github.repository)
+        writes = lambda: github.write_requests  # noqa: E731
+    client = make_client(
+        store=store,
+        repository_reading=OfflineRepositoryReading(),
+        access_check=FakeAccessCheck(),
+    )
+    sign_in(client, ADA_OF_OCEENS)
+    return Counted(client, writes)
+
+
+def c1_levels(**by_point: str | tuple[str, str]) -> dict[str, Any]:
+    rated: dict[str, dict[str, str | None]] = {}
+    for letter, value in by_point.items():
+        level, link = value if isinstance(value, tuple) else (value, None)
+        rated[f"C1.{letter}"] = {"level": level, "link": link}
+    return {"levels": rated}

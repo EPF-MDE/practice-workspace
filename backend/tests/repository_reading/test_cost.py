@@ -7,6 +7,7 @@ from app.repository_reading import (
     Response,
     StudentToRead,
 )
+from app.roster import Repository
 
 from .conftest import NOW, Recorded
 
@@ -151,7 +152,9 @@ def test_a_full_reading_of_the_largest_shape_stays_within_its_estimate() -> None
     github = LargestShape()
     reader = RepositoryReader(github, InMemoryReadings(), now=lambda: NOW)
 
-    reading = reader.read(StudentToRead("student", "OcéENS", github.repository))
+    reading = reader.read(
+        StudentToRead("student", "OcéENS", Repository(github.repository))
+    )
 
     assert (reading.branches_read, reading.pull_requests_read) == (19, 16)
     assert len(github.requests) <= 500

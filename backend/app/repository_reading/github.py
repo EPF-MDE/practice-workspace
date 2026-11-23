@@ -10,6 +10,7 @@ import httpx
 from pydantic import BaseModel
 
 from app.github_app import API, HEADERS, InstallationAuth, private_key_from_base64
+from app.roster import Repository
 
 
 @dataclass(frozen=True)
@@ -39,7 +40,7 @@ def next_page_path(link_header: str | None) -> str | None:
 
 INSTALLED_TTL = 15 * 60
 
-TokenFor = Callable[[str], str]
+TokenFor = Callable[[Repository], str]
 
 
 class HttpGitHub:
@@ -62,8 +63,8 @@ class HttpGitHub:
         return Response(r.status_code, body, next_page_path(r.headers.get("link")))
 
 
-def repository_of(path: str) -> str:
-    return "/".join(path.lstrip("/").split("/")[1:3])
+def repository_of(path: str) -> Repository:
+    return Repository("/".join(path.lstrip("/").split("/")[1:3]))
 
 
 def static_token(token: str) -> TokenFor:
@@ -82,7 +83,7 @@ def repository_tokens(
 ) -> TokenFor:
     pem = private_key_from_base64(private_key_base64)
 
-    def installed(repository: str) -> Callable[[], str] | None:
+    def installed(repository: Repository) -> Callable[[], str] | None:
         app_jwt = InstallationAuth(app_id, pem, "").app_jwt()
         found = httpx.get(
             f"{API}/repos/{repository}/installation",
@@ -101,20 +102,27 @@ def repository_tokens(
     )
 
 
+@dataclass(frozen=True)
+class _InstallationLookup:
+    asked_at: float
+    token: Callable[[], str] | None
+
+
 def tokens_per_repository(
-    installed: Callable[[str], Callable[[], str] | None],
+    installed: Callable[[Repository], Callable[[], str] | None],
     default: Callable[[], str],
     clock: Callable[[], float] = time.monotonic,
 ) -> TokenFor:
-    seen: dict[str, tuple[float, Callable[[], str] | None]] = {}
+    seen: dict[str, _InstallationLookup] = {}
 
-    def token(repository: str) -> str:
+    def token(repository: Repository) -> str:
         key = repository.lower()
-        if key not in seen or (
-            seen[key][1] is None and clock() - seen[key][0] > INSTALLED_TTL
+        lookup = seen.get(key)
+        if lookup is None or (
+            lookup.token is None and clock() - lookup.asked_at > INSTALLED_TTL
         ):
-            seen[key] = (clock(), installed(repository))
-        return (seen[key][1] or default)()
+            lookup = seen[key] = _InstallationLookup(clock(), installed(repository))
+        return (lookup.token or default)()
 
     return token
 
