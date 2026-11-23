@@ -1,6 +1,5 @@
 {
   "branches_read": 4,
-  "checked_at": "2026-11-18T07:30:00+00:00",
   "competencies": {
     "C1": {
       "competency": "C1",
@@ -72,8 +71,9 @@
   },
   "default_branch": "main",
   "empty": false,
+  "facts_computed_at": "2026-11-18T07:30:00+00:00",
+  "last_checked_at": "2026-11-18T07:30:00+00:00",
   "pull_requests_read": 2,
-  "read_at": "2026-11-18T07:30:00+00:00",
   "refs": {},
   "student": {
     "evidence_project": "alan-oceens/OceENS",

@@ -18,7 +18,7 @@ from app.repository_reading import (
 from app.store import GitHubStore
 
 C1 = "/api/competencies/C1"
-READ_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
+FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 
 
 def a_repository_with_very_many_files() -> RepositoryReading:
@@ -36,8 +36,8 @@ def a_repository_with_very_many_files() -> RepositoryReading:
     return RepositoryReading(
         student=StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS"),
         default_branch="main",
-        read_at=READ_AT,
-        checked_at=READ_AT,
+        facts_computed_at=FRESH_READING_AT,
+        last_checked_at=FRESH_READING_AT,
         branches_read=3,
         pull_requests_read=2,
         empty=False,

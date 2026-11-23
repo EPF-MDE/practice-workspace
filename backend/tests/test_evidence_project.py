@@ -288,7 +288,10 @@ def test_closing_without_a_declaration_still_stores_the_panel(counted: Counted) 
     assert writes() == before + 2
     assert client.get(C1).json()["evidence_plan"]["confirmed"] is True
     assert client.get(C1).json()["evidence_project"] is None
-    assert client.get(f"{C1}/evidence-panel").json()["read_at"] == shown["read_at"]
+    assert (
+        client.get(f"{C1}/evidence-panel").json()["facts_computed_at"]
+        == shown["facts_computed_at"]
+    )
     assert client.get(f"{C1}/evidence-panel").json()["declaration"] is None
 
 
