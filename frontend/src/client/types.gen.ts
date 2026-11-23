@@ -85,6 +85,24 @@ export type CanvasBlock = {
 };
 
 /**
+ * ChangedFile
+ */
+export type ChangedFile = {
+    /**
+     * Path
+     */
+    path: string;
+    /**
+     * Additions
+     */
+    additions?: number | null;
+    /**
+     * Changes
+     */
+    changes?: number | null;
+};
+
+/**
  * CheckPointOut
  */
 export type CheckPointOut = {
@@ -668,9 +686,7 @@ export type PanelFact = {
     /**
      * Files
      */
-    files?: Array<{
-        [key: string]: unknown;
-    }>;
+    files?: Array<ChangedFile>;
 };
 
 /**

@@ -6,11 +6,16 @@ from typing import Any
 import pytest
 from fake_github import FakeGitHub
 
-from app.roster import Student
+from app.roster import Repository, Student
 from app.store import Entry, GitHubStore, InMemoryStore, Kind, Store
 
 ADA = Student(
-    1001, "ada-oceens", "Ada Lovelace", "OcéENS", "OcéENS", "ada-oceens/OceENS"
+    1001,
+    "ada-oceens",
+    "Ada Lovelace",
+    "OcéENS",
+    "OcéENS",
+    Repository("ada-oceens/OceENS"),
 )
 GRACE = Student(
     1002,
@@ -18,7 +23,7 @@ GRACE = Student(
     "Grace Hopper",
     "MATHutrice",
     "MATHutrice",
-    "grace-math/MATHutrice",
+    Repository("grace-math/MATHutrice"),
 )
 
 

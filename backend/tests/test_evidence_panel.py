@@ -9,15 +9,18 @@ from fastapi.testclient import TestClient
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
 from app.repository_reading import (
     CompetencyReading,
+    Credit,
     Fact,
+    Point,
     RepositoryReading,
     StudentToRead,
 )
+from app.roster import Repository
 from app.settings import Settings
 from app.store import InMemoryStore
 
 READ_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
-ADA_REPOSITORY = StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS")
+ADA_REPOSITORY = StudentToRead("ada-oceens", "OcéENS", Repository("ada-oceens/OceENS"))
 
 
 def reading(
@@ -31,7 +34,7 @@ def reading(
         if empty
         else [
             Fact(
-                "C1",
+                Point("C1"),
                 "`feature/cache` changes 2 files beyond `course-2026`, 40 lines added; "
                 "last change on 2026-10-13.",
                 link="https://github.com/ada-oceens/OceENS/compare/a...b",
@@ -47,14 +50,14 @@ def reading(
         if empty
         else [
             Fact(
-                "C2.c",
+                Point("C2.c"),
                 "The ruleset on `main` requires `architecture` and `test`.",
                 link="https://x/rules",
             ),
             Fact(
-                "C2.b",
+                Point("C2.b"),
                 "`main` contains the Clean Bench Fallback Branch.",
-                credited_to="course-2026-fallback-clean-bench",
+                credited_to=Credit("course-2026-fallback-clean-bench"),
             ),
         ]
     )
@@ -146,7 +149,9 @@ def test_c1s_changed_files_come_with_a_sentence_saying_the_workspace_does_not_ju
     c1 = panel_client.get("/api/competencies/C1/evidence-panel").json()
 
     assert "does not judge them" in c1["not_judged"]
-    assert c1["facts"][0]["files"] == [{"path": "app/cache.py", "additions": 30}]
+    assert c1["facts"][0]["files"] == [
+        {"path": "app/cache.py", "additions": 30, "changes": None}
+    ]
     assert (
         c1["facts"][0]["link"] == "https://github.com/ada-oceens/OceENS/compare/a...b"
     )

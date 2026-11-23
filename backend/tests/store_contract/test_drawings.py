@@ -3,7 +3,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from app.roster import Student
+from app.roster import Repository, Student
 from app.store import DrawingFiles, Kind, Store
 
 from .conftest import ADA, PNG, SNAPSHOT
@@ -46,7 +46,14 @@ def test_a_new_drawing_version_replaces_the_files_and_the_record_keeps_both(
 
 def test_concurrent_drawing_sends_from_many_students_all_land(store: Store) -> None:
     students = [
-        Student(3000 + n, f"d{n}", f"Student {n}", "OcéENS", "OcéENS", f"d{n}/OceENS")
+        Student(
+            3000 + n,
+            f"d{n}",
+            f"Student {n}",
+            "OcéENS",
+            "OcéENS",
+            Repository(f"d{n}/OceENS"),
+        )
         for n in range(19)
     ]
 

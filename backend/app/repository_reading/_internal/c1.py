@@ -4,6 +4,7 @@ from dataclasses import replace
 from typing import Any
 
 from ..reading import (
+    CHANGED_FILES,
     Fact,
 )
 from .analysis import OWN_HISTORY
@@ -55,7 +56,7 @@ class _C1Facts(_ReadingState):
             f"last change on {a['last_change']}."
         )
         return Fact(
-            point="C1",
+            point=CHANGED_FILES,
             text=text,
             link=a.get("link"),
             detail={

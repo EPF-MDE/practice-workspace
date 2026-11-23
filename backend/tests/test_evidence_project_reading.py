@@ -12,11 +12,13 @@ from app.repository_reading import (
     CompetencyReading,
     Fact,
     InMemoryReadings,
+    Point,
     RepositoryReader,
     RepositoryReading,
     Response,
     StudentToRead,
 )
+from app.roster import Repository
 
 DECLARATION = "/api/evidence-project/declaration"
 COMPETENCIES = ("C1", "C2", "C3")
@@ -36,7 +38,7 @@ def declare(client: TestClient, url: str) -> None:
 
 def reading_of(repository: str, ruleset: str) -> RepositoryReading:
     return RepositoryReading(
-        student=StudentToRead("ada-oceens", "OcéENS", repository),
+        student=StudentToRead("ada-oceens", "OcéENS", Repository(repository)),
         default_branch="main",
         read_at=READ_AT,
         checked_at=READ_AT,
@@ -46,7 +48,7 @@ def reading_of(repository: str, ruleset: str) -> RepositoryReading:
         competencies={
             "C1": CompetencyReading("C1", [], ["C1"], []),
             "C2": CompetencyReading(
-                "C2", [Fact("C2.c", f"The ruleset `{ruleset}`.")], [], []
+                "C2", [Fact(Point("C2.c"), f"The ruleset `{ruleset}`.")], [], []
             ),
             "C3": CompetencyReading("C3", [], ["C3.b", "C3.e"], []),
         },

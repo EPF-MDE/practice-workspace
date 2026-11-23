@@ -12,9 +12,11 @@ from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
 from app.repository_reading import (
     CompetencyReading,
     Fact,
+    Point,
     RepositoryReading,
     StudentToRead,
 )
+from app.roster import Repository
 from app.store import GitHubStore
 
 C1 = "/api/competencies/C1"
@@ -27,14 +29,14 @@ def a_repository_with_very_many_files() -> RepositoryReading:
         for i in range(3000)
     ]
     fact = Fact(
-        "C1",
+        Point("C1"),
         "`feature/cache` changes 3000 files beyond `course-2026`; "
         "last change on 2026-10-13.",
         link="https://github.com/ada-oceens/OceENS/compare/a...b",
         detail={"branch": "feature/cache", "files": files},
     )
     return RepositoryReading(
-        student=StudentToRead("ada-oceens", "OcéENS", "ada-oceens/OceENS"),
+        student=StudentToRead("ada-oceens", "OcéENS", Repository("ada-oceens/OceENS")),
         default_branch="main",
         read_at=READ_AT,
         checked_at=READ_AT,

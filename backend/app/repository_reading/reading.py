@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, NewType
 
-from app.roster import GROUPS, Student
+from pydantic import BaseModel
+
+from app.roster import GROUPS, Repository, Student
 
 COMPETENCIES = ("C1", "C2", "C3")
 
@@ -20,21 +22,31 @@ LOOKED_FOR = {
     "C3": ("C3.b", "C3.e"),
 }
 
-STUDENT = "student"
+Point = NewType("Point", str)
+Credit = NewType("Credit", str)
+
+CHANGED_FILES = Point("C1")
+STUDENT = Credit("student")
+
+
+class ChangedFile(BaseModel):
+    path: str
+    additions: int | None = None
+    changes: int | None = None
 
 
 @dataclass(frozen=True)
 class StudentToRead:
     login: str
     project: str
-    evidence_project: str
+    evidence_project: Repository
 
     @classmethod
     def from_roster(cls, student: Student) -> StudentToRead:
         return cls(student.github_login, student.project, student.evidence_project)
 
     @property
-    def upstream(self) -> str:
+    def upstream(self) -> Repository:
         return GROUPS[self.project].upstream
 
     @property
@@ -42,7 +54,7 @@ class StudentToRead:
         return self.login, self.evidence_project.lower()
 
 
-def not_read_on_gitlab(repository: str) -> str:
+def not_read_on_gitlab(repository: Repository) -> str:
     return (
         f"The workspace cannot read a GitLab project: nothing of `{repository}` is "
         "read here, which says nothing about the work. Show the evidence at the Eval."
@@ -51,9 +63,9 @@ def not_read_on_gitlab(repository: str) -> str:
 
 @dataclass(frozen=True)
 class Fact:
-    point: str
+    point: Point
     text: str
-    credited_to: str = STUDENT
+    credited_to: Credit = STUDENT
     link: str | None = None
     detail: dict[str, Any] = field(default_factory=dict)
 
@@ -65,7 +77,7 @@ class CompetencyReading:
     nothing_found: list[str]
     not_visible: list[str]
 
-    def facts_for(self, point: str) -> list[Fact]:
+    def facts_for(self, point: Point) -> list[Fact]:
         return [f for f in self.facts if f.point == point]
 
 

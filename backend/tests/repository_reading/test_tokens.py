@@ -1,6 +1,7 @@
 from collections.abc import Callable
 
 from app.repository_reading.github import INSTALLED_TTL, tokens_per_repository
+from app.roster import Repository
 
 
 class Installations:
@@ -21,14 +22,14 @@ def test_a_repository_the_app_is_not_installed_on_is_asked_again_after_a_while()
     installations = Installations({})
     token = tokens_per_repository(installations, lambda: "default", lambda: now[0])
 
-    assert token("Ada/Bakery") == "default"
+    assert token(Repository("Ada/Bakery")) == "default"
     now[0] = INSTALLED_TTL
-    assert token("ada/bakery") == "default"
+    assert token(Repository("ada/bakery")) == "default"
     assert installations.asked == ["Ada/Bakery"]
 
     now[0] = INSTALLED_TTL + 1
     installations.tokens["ada/bakery"] = "ada's"
-    assert token("ada/bakery") == "ada's"
+    assert token(Repository("ada/bakery")) == "ada's"
     assert installations.asked == ["Ada/Bakery", "ada/bakery"]
 
 
@@ -37,7 +38,7 @@ def test_a_repository_the_app_is_installed_on_is_asked_once() -> None:
     installations = Installations({"ada/bakery": "ada's"})
     token = tokens_per_repository(installations, lambda: "default", lambda: now[0])
 
-    assert token("ada/bakery") == "ada's"
+    assert token(Repository("ada/bakery")) == "ada's"
     now[0] = 10 * INSTALLED_TTL
-    assert token("ada/bakery") == "ada's"
+    assert token(Repository("ada/bakery")) == "ada's"
     assert installations.asked == ["ada/bakery"]

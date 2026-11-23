@@ -6,11 +6,16 @@ from fake_github import FakeGitHub
 
 from app.github_app import data_branch_lock
 from app.repository_reading import GitHubWorkspaceData
-from app.roster import Student
+from app.roster import Repository, Student
 from app.store import GitHubStore
 
 STUDENT = Student(
-    1001, "ada-oceens", "Ada Lovelace", "OcéENS", "OcéENS", "ada-oceens/OceENS"
+    1001,
+    "ada-oceens",
+    "Ada Lovelace",
+    "OcéENS",
+    "OcéENS",
+    Repository("ada-oceens/OceENS"),
 )
 
 

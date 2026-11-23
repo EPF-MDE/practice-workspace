@@ -10,6 +10,7 @@ from typing import Protocol
 import httpx
 
 from app.github_app import API, HEADERS, InstallationAuth, private_key_from_base64
+from app.roster import Repository
 from app.store import GITHUB, GITLAB, Host
 
 from .panel import GITLAB_ACCESS, NOT_READABLE_ACCESS, READABLE_ACCESS, Access
@@ -57,7 +58,7 @@ class NotAProject(ValueError):
 @dataclass(frozen=True)
 class Project:
     host: Host
-    repository: str
+    repository: Repository
 
     @property
     def url(self) -> str:
@@ -88,15 +89,15 @@ def parse_project(url: str) -> Project:
             "Give the address of a repository: https://github.com/<owner>/<repository>"
         )
     parts[-1] = parts[-1].removesuffix(".git")
-    return Project(host, "/".join(parts))  # type: ignore[arg-type]
+    return Project(host, Repository("/".join(parts)))  # type: ignore[arg-type]
 
 
 class AccessCheck(Protocol):
-    def can_read(self, repository: str) -> bool | None: ...
+    def can_read(self, repository: Repository) -> bool | None: ...
 
 
 def access(
-    project: Project, evidence_project: str, check: AccessCheck, app_slug: str
+    project: Project, evidence_project: Repository, check: AccessCheck, app_slug: str
 ) -> Access:
     if project.host == GITLAB:
         return Access(status=GITLAB_ACCESS, message=GITLAB_MESSAGE, how=GITLAB_HOW)
@@ -116,6 +117,12 @@ def access(
     )
 
 
+@dataclass(frozen=True)
+class _AccessAnswer:
+    asked_at: float
+    readable: bool | None
+
+
 class AppAccessCheck:
     TTL = 60.0
 
@@ -132,20 +139,20 @@ class AppAccessCheck:
         )
         self._client = client or httpx.Client(base_url=API, headers=HEADERS, timeout=10)
         self._clock = clock
-        self._seen: dict[str, tuple[float, bool | None]] = {}
+        self._seen: dict[str, _AccessAnswer] = {}
         self._lock = threading.Lock()
 
-    def can_read(self, repository: str) -> bool | None:
+    def can_read(self, repository: Repository) -> bool | None:
         with self._lock:
             seen = self._seen.get(repository.lower())
-        if seen and self._clock() - seen[0] < self.TTL:
-            return seen[1]
+        if seen and self._clock() - seen.asked_at < self.TTL:
+            return seen.readable
         answer = self._ask(repository)
         with self._lock:
-            self._seen[repository.lower()] = (self._clock(), answer)
+            self._seen[repository.lower()] = _AccessAnswer(self._clock(), answer)
         return answer
 
-    def _ask(self, repository: str) -> bool | None:
+    def _ask(self, repository: Repository) -> bool | None:
         if not (self._app_id and self._key):
             return None
         try:
@@ -179,6 +186,6 @@ class FakeAccessCheck:
             self.rule = lambda repo: repo.lower() in known
         self.checked: list[str] = []
 
-    def can_read(self, repository: str) -> bool | None:
+    def can_read(self, repository: Repository) -> bool | None:
         self.checked.append(repository)
         return self.rule(repository)
