@@ -5,7 +5,7 @@ from typing import Any
 
 import httpx
 import pytest
-from conftest import ADA, Counted, MakeClient, sign_in
+from conftest import ADA_OF_OCEENS, Counted, MakeClient, sign_in
 from fastapi.testclient import TestClient
 
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
@@ -38,7 +38,7 @@ def ada(
         repository_reading=OfflineRepositoryReading(),
         access_check=access,
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     return client
 
 
@@ -204,7 +204,7 @@ def test_a_declaration_changes_until_the_reading_day_and_no_later(
             repository_reading=OfflineRepositoryReading(),
             access_check=FakeAccessCheck(),
         )
-        sign_in(c, ADA)
+        sign_in(c, ADA_OF_OCEENS)
         return c
 
     open_until_reading_day = client(future)

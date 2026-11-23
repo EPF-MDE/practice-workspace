@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any
 
 import pytest
-from conftest import ADA, MakeClient, c1_levels, sign_in
+from conftest import ADA_OF_OCEENS, MakeClient, c1_levels, sign_in
 from fastapi.testclient import TestClient
 
 from app.settings import Settings
@@ -27,7 +27,7 @@ def points(page: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 @pytest.fixture
 def ada(client: TestClient) -> TestClient:
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     return client
 
 
@@ -42,7 +42,7 @@ def at(
             update={"closes_at": closes_at, "reading_day_at": reading_day_at}
         )
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     return client
 
 

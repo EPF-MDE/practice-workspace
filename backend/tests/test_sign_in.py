@@ -1,4 +1,4 @@
-from conftest import ADA, GRACE, MakeClient, sign_in
+from conftest import ADA_OF_OCEENS, GRACE_OF_MATHUTRICE, MakeClient, sign_in
 from fastapi.testclient import TestClient
 
 from app.auth import FakeIdentity
@@ -11,12 +11,12 @@ def test_a_visitor_is_not_signed_in(client: TestClient) -> None:
 def test_a_student_on_the_roster_signs_in_and_lands_on_the_opening(
     client: TestClient,
 ) -> None:
-    response = sign_in(client, ADA)
+    response = sign_in(client, ADA_OF_OCEENS)
 
     assert response.url.path == "/"
     me = client.get("/api/me").json()
     assert me == {
-        "github_id": ADA,
+        "github_id": ADA_OF_OCEENS,
         "github_login": "ada-oceens",
         "name": "Ada Lovelace",
         "group": "OcéENS",
@@ -26,15 +26,15 @@ def test_a_student_on_the_roster_signs_in_and_lands_on_the_opening(
 
 
 def test_the_project_is_the_one_on_the_roster(client: TestClient) -> None:
-    sign_in(client, GRACE)
+    sign_in(client, GRACE_OF_MATHUTRICE)
 
     assert client.get("/api/me").json()["project"] == "MATHutrice"
 
 
 def test_a_renamed_account_still_gets_in(make_client: MakeClient) -> None:
-    client = make_client(identity=FakeIdentity(logins={ADA: "ada-renamed"}))
+    client = make_client(identity=FakeIdentity(logins={ADA_OF_OCEENS: "ada-renamed"}))
 
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     me = client.get("/api/me")
     assert me.status_code == 200
@@ -66,14 +66,14 @@ def test_someone_not_on_the_roster_is_told_so_and_whom_to_ask(
 
 
 def test_the_session_persists_across_requests(client: TestClient) -> None:
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     assert client.get("/api/me").status_code == 200
     assert client.get("/api/me").status_code == 200
 
 
 def test_signing_out_ends_the_session(client: TestClient) -> None:
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     client.post("/auth/logout")
 
@@ -87,7 +87,7 @@ def test_a_student_removed_from_the_roster_is_signed_out(
 
     roster = StaticRoster(parse_roster(roster_csv))
     client = make_client(roster=roster)
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     roster.replace(
         parse_roster(roster_csv.replace("ada-oceens,1001", "ada-oceens,7777"))
@@ -101,7 +101,7 @@ def test_a_callback_without_the_state_it_was_sent_is_refused(
 ) -> None:
     response = client.get(
         "/auth/callback",
-        params={"code": f"fake-{ADA}", "state": "forged"},
+        params={"code": f"fake-{ADA_OF_OCEENS}", "state": "forged"},
         follow_redirects=False,
     )
 

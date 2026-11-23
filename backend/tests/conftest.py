@@ -22,8 +22,8 @@ from app.store import GitHubStore, InMemoryStore, Store
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
-ADA = 1001
-GRACE = 1002
+ADA_OF_OCEENS = 1001
+GRACE_OF_MATHUTRICE = 1002
 
 
 @pytest.fixture
@@ -127,7 +127,7 @@ def counted(request: pytest.FixtureRequest, make_client: MakeClient) -> Counted:
         repository_reading=OfflineRepositoryReading(),
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     return Counted(client, writes)
 
 

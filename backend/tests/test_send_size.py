@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from conftest import ADA, MakeClient, sign_in
+from conftest import ADA_OF_OCEENS, MakeClient, sign_in
 from fake_github import FakeGitHub
 from fastapi.testclient import TestClient
 
@@ -63,7 +63,7 @@ def ada(make_client: MakeClient, github: FakeGitHub) -> TestClient:
         repository_reading=repositories,
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     client.post(
         f"{C1}/self-assessment",
         json={"levels": {"C1.a": {"level": "understand", "link": None}}},

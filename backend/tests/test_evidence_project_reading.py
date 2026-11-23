@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from conftest import ADA, MakeClient, sign_in
+from conftest import ADA_OF_OCEENS, MakeClient, sign_in
 from fastapi.testclient import TestClient
 
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
@@ -77,7 +77,7 @@ def ada(make_client: MakeClient, repositories: CountedReading) -> TestClient:
         repository_reading=repositories,
         access_check=FakeAccessCheck(readable={"ada/bakery"}),
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     return client
 
 
@@ -177,7 +177,7 @@ def test_a_repository_of_its_own_history_is_read_and_a_change_reads_the_new_one(
         repository_reading=RepositoryReader(github, InMemoryReadings()),
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     declare(client, "https://github.com/ada/bakery")
     bakery = panel(client, "C1")
@@ -206,7 +206,7 @@ def test_a_repository_linked_to_the_upstream_it_cannot_be_compared_with_shows_no
         repository_reading=RepositoryReader(github, InMemoryReadings()),
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
 
     declare(client, "https://github.com/ada/OceENS")
 

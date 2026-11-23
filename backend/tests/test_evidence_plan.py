@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pytest
-from conftest import ADA, MakeClient, c1_levels, sign_in
+from conftest import ADA_OF_OCEENS, MakeClient, c1_levels, sign_in
 from fastapi.testclient import TestClient
 
 from app.roster import Student
@@ -18,7 +18,7 @@ LINK = "https://github.com/ada/notes/pull/4"
 
 @pytest.fixture
 def ada(client: TestClient) -> TestClient:
-    sign_in(client, ADA)
+    sign_in(client, ADA_OF_OCEENS)
     return client
 
 
@@ -200,20 +200,20 @@ def test_the_plan_stays_editable_after_the_close_until_the_reading_day(
             update={"closes_at": future, "reading_day_at": future}
         )
     )
-    sign_in(before, ADA)
+    sign_in(before, ADA_OF_OCEENS)
     before.post(SELF, json=c1_levels(a="understand"))
     closed = make_client(
         settings=test_settings.model_copy(
             update={"closes_at": past, "reading_day_at": future}
         )
     )
-    sign_in(closed, ADA)
+    sign_in(closed, ADA_OF_OCEENS)
     over = make_client(
         settings=test_settings.model_copy(
             update={"closes_at": past, "reading_day_at": past}
         )
     )
-    sign_in(over, ADA)
+    sign_in(over, ADA_OF_OCEENS)
 
     assert (
         closed.post(CLOSE, json={"text": "Plan.", "example": "Example."}).status_code
