@@ -25,11 +25,13 @@ GITLAB: Host = "gitlab"
 
 
 class Payload(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="ignore")
+    model_config = ConfigDict(
+        frozen=True, extra="ignore", validate_by_name=True, validate_by_alias=True
+    )
     KIND: ClassVar[Kind]
 
     def stored(self) -> dict[str, Any]:
-        return self.model_dump(mode="json", exclude_defaults=True)
+        return self.model_dump(mode="json", exclude_defaults=True, by_alias=True)
 
 
 class AnswerPayload(Payload):
@@ -69,7 +71,7 @@ class DeclarationPayload(Payload):
     what_to_read: str
     repository: Repository
     host: Host
-    access: str
+    access_when_declared: str = Field(alias="access")
 
 
 class WithdrawalPayload(Payload):

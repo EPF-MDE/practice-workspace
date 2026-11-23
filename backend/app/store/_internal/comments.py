@@ -28,7 +28,7 @@ FENCE = "json practice"
 _BLOCK = re.compile(r"^```json practice\n(\{.*\})\n```$", re.MULTILINE)
 _MARKER = "<!-- practice-student-id: {} -->"
 _MARKER_RE = re.compile(r"<!-- practice-student-id: (\d+) -->")
-_KEY_NAME: dict[str, str] = {
+_STEP_OR_DRAWING_FIELD: dict[str, str] = {
     Kind.ANSWER: "step",
     Kind.QUESTION: "step",
     Kind.DRAWING: "drawing",
@@ -37,24 +37,30 @@ _KEY_NAME: dict[str, str] = {
 
 
 def _line(
-    competency: str | None, key: str | None, version: int, payload: Payload
+    competency: str | None,
+    step_or_drawing: str | None,
+    version: int,
+    payload: Payload,
 ) -> str:
     v = f"(version {version})"
     match payload:
         case AnswerPayload():
-            return f"**Answer** to {competency}, step `{key}` {v}"
+            return f"**Answer** to {competency}, step `{step_or_drawing}` {v}"
         case QuestionPayload(text=text):
             quoted = "\n".join(f"> {line}" for line in text.splitlines())
-            return f"**Question** at {competency}, step `{key}`:\n\n{quoted}"
+            return (
+                f"**Question** at {competency}, step `{step_or_drawing}`:\n\n{quoted}"
+            )
         case DrawingPayload():
             return (
-                f"**Drawing** `{key}` for {competency} {v}: `{payload.png}` "
+                f"**Drawing** `{step_or_drawing}` for {competency} {v}: "
+                f"`{payload.png}` "
                 f"({payload.png_bytes:,} bytes), "
                 f"`{payload.snapshot}` ({payload.snapshot_bytes:,} bytes)"
             )
         case CheckPointsPayload(missed=missed):
             return (
-                f"**Check points missed** on drawing `{key}`, "
+                f"**Check points missed** on drawing `{step_or_drawing}`, "
                 f"{competency} {v}: {', '.join(missed) or 'none'}"
             )
         case SelfAssessmentPayload(levels=levels):
@@ -87,14 +93,17 @@ def _line(
 
 
 def comment_body(
-    competency: str | None, key: str | None, version: int, payload: Payload
+    competency: str | None,
+    step_or_drawing: str | None,
+    version: int,
+    payload: Payload,
 ) -> str:
     block: dict[str, Any] = {"kind": payload.KIND, "competency": competency}
-    if payload.KIND in _KEY_NAME:
-        block[_KEY_NAME[payload.KIND]] = key
+    if payload.KIND in _STEP_OR_DRAWING_FIELD:
+        block[_STEP_OR_DRAWING_FIELD[payload.KIND]] = step_or_drawing
     block |= {"version": version, "payload": payload.stored()}
     data = json.dumps(block, ensure_ascii=False, separators=(", ", ": "))
-    line = _line(competency, key, version, payload)
+    line = _line(competency, step_or_drawing, version, payload)
     if len(line) > LINE_CHARS:
         line = line[: LINE_CHARS - 1] + "…"
     return f"{line}\n\n```{FENCE}\n{data}\n```\n"
@@ -113,10 +122,14 @@ def _entry(comment: dict[str, Any], bot_login: str) -> Entry[Payload] | None:
         payload = read_payload(kind, block["payload"])
     except (ValueError, UnreadablePayload):
         return None
-    key = block.get(_KEY_NAME[kind]) if kind in _KEY_NAME else None
+    step_or_drawing = (
+        block.get(_STEP_OR_DRAWING_FIELD[kind])
+        if kind in _STEP_OR_DRAWING_FIELD
+        else None
+    )
     return Entry(
         block["competency"],
-        key,
+        step_or_drawing,
         payload,
         block["version"],
         _time(comment["created_at"]),
@@ -127,10 +140,10 @@ def _renumbered(entries: list[Entry[Payload]]) -> list[Entry[Payload]]:
     seen: dict[tuple[Any, ...], int] = {}
     out = []
     for entry in entries:
-        key = (entry.kind, entry.competency, entry.key)
-        seen[key] = seen.get(key, 0) + 1
+        same = (entry.kind, entry.competency, entry.step_or_drawing)
+        seen[same] = seen.get(same, 0) + 1
         out.append(
-            entry if entry.version == seen[key] else replace(entry, version=seen[key])
+            entry if entry.version == seen[same] else replace(entry, version=seen[same])
         )
     return out
 

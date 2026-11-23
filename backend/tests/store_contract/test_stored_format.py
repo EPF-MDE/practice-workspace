@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 from fake_github import FakeGitHub
 
+from app.roster import Repository
 from app.store import (
     EVERY_COMPETENCY,
     DeclarationPayload,
@@ -76,6 +77,23 @@ def test_each_kind_is_written_as_the_json_it_always_was(
     SENDS[kind](github_store(github), ADA_OF_OCEENS)
 
     assert _payloads(github) == [WRITTEN[kind]]
+
+
+def test_a_declaration_keeps_the_names_it_was_always_written_under(
+    github: FakeGitHub,
+) -> None:
+    github_store(github).send_declaration(
+        ADA_OF_OCEENS,
+        DeclarationPayload(
+            url="https://gitlab.com/a/b",
+            what_to_read="été",
+            repository=Repository("a/b"),
+            host="gitlab",
+            access_when_declared="gitlab",
+        ),
+    )
+
+    assert _payloads(github) == [WRITTEN[Kind.DECLARATION]]
 
 
 def test_a_field_left_at_its_default_is_not_written(github: FakeGitHub) -> None:

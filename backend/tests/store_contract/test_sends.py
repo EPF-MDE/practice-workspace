@@ -64,14 +64,20 @@ def test_every_kind_reads_back_as_sent(store: Store, kind: Kind) -> None:
     sent = SENDS[kind](store, ADA_OF_OCEENS)
 
     read = store.record(ADA_OF_OCEENS).latest(
-        type(sent.payload), sent.competency, sent.key
+        type(sent.payload), sent.competency, sent.step_or_drawing
     )
 
     assert read is not None
-    assert (read.kind, read.competency, read.key, read.payload, read.version) == (
+    assert (
+        read.kind,
+        read.competency,
+        read.step_or_drawing,
+        read.payload,
+        read.version,
+    ) == (
         kind,
         sent.competency,
-        sent.key,
+        sent.step_or_drawing,
         sent.payload,
         1,
     )
@@ -126,7 +132,7 @@ def test_every_question_is_kept_with_its_step(store: Store) -> None:
 
     questions = store.record(ADA_OF_OCEENS).all(QuestionPayload, "C1")
 
-    assert [(q.key, q.payload.text) for q in questions] == [
+    assert [(q.step_or_drawing, q.payload.text) for q in questions] == [
         ("read-the-chain", "First"),
         ("guided-calculation", "Second"),
     ]

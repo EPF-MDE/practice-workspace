@@ -218,7 +218,7 @@ class GitHubStore:
         self,
         student: Student,
         competency: str | None,
-        key: str | None,
+        step_or_drawing: str | None,
         payload: P,
     ) -> Entry[P]:
         check_size(payload)
@@ -228,9 +228,10 @@ class GitHubStore:
             version = 1 + sum(
                 1
                 for e in entries
-                if (e.kind, e.competency, e.key) == (payload.KIND, competency, key)
+                if (e.kind, e.competency, e.step_or_drawing)
+                == (payload.KIND, competency, step_or_drawing)
             )
-            body = comment_body(competency, key, version, payload)
+            body = comment_body(competency, step_or_drawing, version, payload)
             if len(body) > GITHUB_COMMENT_LIMIT:
                 raise SendTooLarge(
                     f"the comment would be {len(body):,} characters, over GitHub's "
@@ -242,7 +243,11 @@ class GitHubStore:
                 json={"body": body},
             ).json()
             entry = Entry(
-                competency, key, payload, version, _time(comment["created_at"])
+                competency,
+                step_or_drawing,
+                payload,
+                version,
+                _time(comment["created_at"]),
             )
             entries.append(entry)
             return entry

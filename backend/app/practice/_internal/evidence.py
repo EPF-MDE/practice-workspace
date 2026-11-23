@@ -42,7 +42,7 @@ def _declaration_payload(
         what_to_read=sent.what_to_read.strip(),
         repository=project.repository,
         host=project.host,
-        access=checked.status,
+        access_when_declared=checked.status,
     )
 
 

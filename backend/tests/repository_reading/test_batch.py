@@ -69,7 +69,7 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
             what_to_read="n",
             repository="radia/notes",
             host="github",
-            access="readable",
+            access_when_declared="readable",
         ),
     )
     store.send_declaration(
@@ -79,7 +79,7 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
             what_to_read="n",
             repository="b/api",
             host="gitlab",
-            access="gitlab",
+            access_when_declared="gitlab",
         ),
     )
 
