@@ -254,7 +254,7 @@ def test_confirming_the_untouched_draft_keeps_it_a_draft_that_follows_later_leve
     assert page["evidence_plan"]["drafted"] is True
     assert (
         page["evidence_plan_draft"] != draft and "C1.b" in page["evidence_plan_draft"]
-    )
+    ), "not the Student's text: the page offers the new draft"
     assert page["evidence_plan"]["confirmed"] is True
 
 
