@@ -59,5 +59,10 @@ def load_content(directory: str | Path) -> dict[str, Competency]:
         competency = parse_competency(
             path.read_text(encoding="utf-8"), path.name, drawings
         )
+        if path.name != f"{competency.id.lower()}.md":
+            raise ContentError(
+                f"{path.name}: holds the content of {competency.id}, "
+                f"which belongs in {competency.id.lower()}.md"
+            )
         content[competency.id] = competency
     return content

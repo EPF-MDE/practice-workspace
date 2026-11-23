@@ -4,7 +4,12 @@ from pathlib import Path
 
 import pytest
 from conftest import ADA_OF_OCEENS, FIXTURES, MakeClient, sign_in
-from course_folders import ONE_STEP, with_every_competency, write_course_folder
+from course_folders import (
+    ONE_STEP,
+    front_matter,
+    with_every_competency,
+    write_course_folder,
+)
 from fastapi.testclient import TestClient
 
 from app.main import ConfigurationError
@@ -135,6 +140,17 @@ def test_verify_refuses_content_for_a_competency_beyond_c3(tmp_path: Path) -> No
     assert result.returncode != 0
     assert len(problems(result)) == 1
     assert "C4" in problems(result)[0]
+
+
+def test_verify_refuses_a_c4_file_holding_the_content_of_c1(tmp_path: Path) -> None:
+    folder = write_course_folder(tmp_path, with_every_competency())
+    (folder / "c4.md").write_text(front_matter("C1") + ONE_STEP)
+
+    result = verify(folder)
+
+    assert result.returncode != 0
+    assert len(problems(result)) == 1
+    assert "c4.md" in problems(result)[0]
 
 
 def test_verify_names_a_competency_the_settings_miss_and_one_they_hold_beyond_c3(
