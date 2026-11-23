@@ -18,7 +18,7 @@ from .panel import GITLAB_ACCESS, NOT_READABLE_ACCESS, READABLE_ACCESS, Access
 GITLAB_MESSAGE = (
     "On GitLab, the workspace cannot check access: give the Instructor Reporter access."
 )
-GITLAB_HOW = (
+GITLAB_HOW_TO_MAKE_READABLE = (
     "In your GitLab project: Manage, then Members, then Invite members. Invite the "
     "Instructor with the role "
     "Reporter (read-only). A public project needs nothing."
@@ -36,7 +36,7 @@ NOT_CHECKED_MESSAGE = (
 )
 
 
-def github_how(app_slug: str, name: str) -> str:
+def github_how_to_make_readable(app_slug: str, name: str) -> str:
     where = (
         f"https://github.com/apps/{app_slug}/installations/new"
         if app_slug
@@ -109,7 +109,7 @@ def access(
         return Access(
             status=GITLAB_ACCESS,
             message=GITLAB_MESSAGE,
-            how_to_make_readable=GITLAB_HOW,
+            how_to_make_readable=GITLAB_HOW_TO_MAKE_READABLE,
         )
     if project.repository.lower() == evidence_project.lower():
         return Access(
@@ -129,7 +129,7 @@ def access(
         message=NOT_READABLE_MESSAGE
         if readability == Readability.NOT_READABLE
         else NOT_CHECKED_MESSAGE,
-        how_to_make_readable=github_how(app_slug, project.name),
+        how_to_make_readable=github_how_to_make_readable(app_slug, project.name),
     )
 
 
