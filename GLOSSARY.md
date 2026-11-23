@@ -70,6 +70,8 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 ### Time
 
+**Calendar**: A Course's Close and Reading Day, and the time zone it shows them in, set in the Course folder's settings. Each Course keeps its own.
+
 **Close**: The instant a Course's Practice stops taking new answers, set in the Course folder's settings, in the Course's time zone. After it and until the Reading Day, a Self-assessment level only moves up to the top level of the Course's Scale, with a link to the work, so the Self-assessment cannot be rewritten to look better than the Practice was; the Evidence Plan and Evidence Project stay editable. _Avoid_: deadline, cut-off
 
 **Reading Day**: The instant from which the Instructor reads each Student's Evidence Project, set in the Course folder's settings, in the Course's time zone, and never before the Close. Nothing sent after it is read. _Avoid_: deadline, freeze
