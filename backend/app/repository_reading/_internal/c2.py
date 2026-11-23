@@ -5,6 +5,7 @@ from urllib.parse import quote
 
 from ..reading import (
     STUDENT,
+    Credit,
     Fact,
     PointId,
 )
@@ -85,7 +86,7 @@ class _C2Facts(_ReadingState):
                         f"`{path}` on `{self.default}`.",
                         credited_to=STUDENT
                         if path in own
-                        else (a["closest"] or a.get("fallback") or STUDENT),
+                        else Credit(a["closest"] or a.get("fallback") or STUDENT),
                         link=f"https://github.com/{self.s.evidence_project}/blob/{self.default}/{path}",
                         detail={"workflow": path},
                     )
@@ -100,7 +101,7 @@ class _C2Facts(_ReadingState):
                     point=PointId.C2_B,
                     text=f"`{self.default}` contains the Clean Bench Fallback Branch "
                     f"(it is built on `{fallback}`).",
-                    credited_to=fallback,
+                    credited_to=Credit(fallback),
                     detail={"fallback": fallback},
                 )
             )
@@ -193,7 +194,7 @@ class _C2Facts(_ReadingState):
                             text=f"In `{path}`, the job `{job}` waits for {waits}.",
                             credited_to=STUDENT
                             if path in own
-                            else (a["closest"] or STUDENT),
+                            else Credit(a["closest"] or STUDENT),
                             detail={
                                 "workflow": path,
                                 "job": job,
