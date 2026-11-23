@@ -81,7 +81,7 @@ def declare_evidence_project(
 ) -> Declaration:
     declaration = _declaration_payload(request, student, sent)
     _refuse_after_the_reading_day(request.app.state.settings, "your Evidence Project")
-    entry = _store(request).save_declaration(student, declaration)
+    entry = _store(request).send_declaration(student, declaration)
     return _declared(
         StoredDeclaration.from_payload(entry.payload, entry.at), request, student
     )
@@ -95,4 +95,4 @@ def withdraw_evidence_project(
     store = _store(request)
     if store.record(student).declaration() is None:
         raise HTTPException(409, "No other Evidence Project is declared")
-    store.save_declaration(student, {})
+    store.withdraw_declaration(student)

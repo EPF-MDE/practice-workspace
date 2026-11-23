@@ -13,6 +13,18 @@ THE_STORE_ITSELF = {
     "SendTooLarge",
     "MAX_SEND_CHARS",
 }
+THE_PAYLOADS_IT_TAKES = {
+    "Payload",
+    "AnswerPayload",
+    "DeclarationPayload",
+    "DrawingPayload",
+    "EvidencePlanPayload",
+    "PointLevelPayload",
+    "QuestionPayload",
+    "SelfAssessmentPayload",
+    "WithdrawalPayload",
+}
+ITS_INTERFACE = THE_STORE_ITSELF | THE_PAYLOADS_IT_TAKES
 
 
 def is_store(module: str) -> bool:
@@ -37,7 +49,7 @@ def refused_imports(source: str) -> list[tuple[int, str]]:
                 refused += [
                     (node.lineno, f"{node.module}.{a.name}")
                     for a in node.names
-                    if is_internal(node.module) or a.name not in THE_STORE_ITSELF
+                    if is_internal(node.module) or a.name not in ITS_INTERFACE
                 ]
         elif isinstance(node, ast.Import):
             refused += [(node.lineno, a.name) for a in node.names if is_store(a.name)]
@@ -57,7 +69,8 @@ def main(paths: list[str]) -> int:
             print(f"  {failure}", file=sys.stderr)
         print(
             "\nA test outside backend/tests/store_contract/ imports only the Store"
-            f" itself ({', '.join(sorted(THE_STORE_ITSELF))}), and reads a Student's"
+            f" itself ({', '.join(sorted(THE_STORE_ITSELF))}) and the payloads it"
+            f" takes ({', '.join(sorted(THE_PAYLOADS_IT_TAKES))}), and reads a Student's"
             " record back through the HTTP API.",
             file=sys.stderr,
         )

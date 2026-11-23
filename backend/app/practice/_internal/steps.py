@@ -22,7 +22,14 @@ from app.content import (
 from app.content import Field as ContentField
 from app.roster import Student
 from app.settings import PARIS, Settings
-from app.store import Entry, Kind, Record, Store
+from app.store import (
+    AnswerPayload,
+    DrawingPayload,
+    Entry,
+    QuestionPayload,
+    Record,
+    Store,
+)
 
 from .models import (
     AnswerBlock,
@@ -77,10 +84,10 @@ def _refuse_if_closed(settings: Settings, what: str) -> None:
 
 def _unlocked(step: Step, record: Record, competency: str) -> bool:
     if step.kind == "drawing":
-        return record.latest(Kind.DRAWING, competency, step.id) is not None
+        return record.latest(DrawingPayload, competency, step.id) is not None
     return (
         bool(step.fields)
-        and record.latest(Kind.ANSWER, competency, step.id) is not None
+        and record.latest(AnswerPayload, competency, step.id) is not None
     )
 
 
@@ -149,18 +156,18 @@ def _block(
     raise TypeError(block)
 
 
-def _drawing_sent(entry: Entry) -> DrawingSent:
+def _drawing_sent(entry: Entry[DrawingPayload]) -> DrawingSent:
     return DrawingSent(
         version=entry.version,
         sent_at=entry.at,
-        png_bytes=entry.payload["png_bytes"],
-        snapshot_bytes=entry.payload["snapshot_bytes"],
+        png_bytes=entry.payload.png_bytes,
+        snapshot_bytes=entry.payload.snapshot_bytes,
     )
 
 
-def _version(entry: Entry) -> SentVersion:
+def _version(entry: Entry[AnswerPayload]) -> SentVersion:
     return SentVersion(
-        fields=entry.payload["fields"], version=entry.version, sent_at=entry.at
+        fields=entry.payload.fields, version=entry.version, sent_at=entry.at
     )
 
 
@@ -186,7 +193,7 @@ def _step_out(
 ) -> StepOut:
     competency = page.competency
     waits_for = _waits_for(step, page, record)
-    history = record.history(Kind.ANSWER, competency, step.id)
+    history = record.history(AnswerPayload, competency, step.id)
     sent = (
         Sent(
             **_version(history[-1]).model_dump(), history=[_version(e) for e in history]
@@ -195,7 +202,7 @@ def _step_out(
         else None
     )
     unlocked = _unlocked(step, record, competency)
-    drawing = record.latest(Kind.DRAWING, competency, step.id)
+    drawing = record.latest(DrawingPayload, competency, step.id)
     missed = record.missed_check_points(competency, step.id)
     return StepOut(
         id=step.id,
@@ -215,8 +222,8 @@ def _step_out(
         drawing=_drawing_sent(drawing) if drawing else None,
         missed_check_points=missed,
         questions=[
-            Question(text=e.payload["text"], asked_at=e.at)
-            for e in record.all(Kind.QUESTION, competency)
+            Question(text=e.payload.text, asked_at=e.at)
+            for e in record.all(QuestionPayload, competency)
             if e.key == step.id
         ],
     )

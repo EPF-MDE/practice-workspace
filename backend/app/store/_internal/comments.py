@@ -7,10 +7,21 @@ from datetime import datetime
 from typing import Any
 
 from app.roster import Student
-from app.store._internal.model import (
-    LINE_CHARS,
-    Entry,
+from app.store._internal.model import LINE_CHARS, Entry
+from app.store._internal.payloads import (
+    AnswerPayload,
+    CheckPointsPayload,
+    DeclarationPayload,
+    DrawingPayload,
+    EvidencePanelSnapshotPayload,
+    EvidencePlanPayload,
     Kind,
+    Payload,
+    QuestionPayload,
+    SelfAssessmentPayload,
+    UnreadablePayload,
+    WithdrawalPayload,
+    read_payload,
 )
 
 FENCE = "json practice"
@@ -26,85 +37,70 @@ _KEY_NAME: dict[str, str] = {
 
 
 def _line(
-    kind: str,
-    competency: str | None,
-    key: str | None,
-    version: int,
-    payload: dict[str, Any],
+    competency: str | None, key: str | None, version: int, payload: Payload
 ) -> str:
     v = f"(version {version})"
-    match kind:
-        case Kind.ANSWER:
+    match payload:
+        case AnswerPayload():
             return f"**Answer** to {competency}, step `{key}` {v}"
-        case Kind.QUESTION:
-            quoted = "\n".join(f"> {line}" for line in payload["text"].splitlines())
+        case QuestionPayload(text=text):
+            quoted = "\n".join(f"> {line}" for line in text.splitlines())
             return f"**Question** at {competency}, step `{key}`:\n\n{quoted}"
-        case Kind.DRAWING:
+        case DrawingPayload():
             return (
-                f"**Drawing** `{key}` for {competency} {v}: `{payload['png']}` "
-                f"({payload['png_bytes']:,} bytes), "
-                f"`{payload['snapshot']}` ({payload['snapshot_bytes']:,} bytes)"
+                f"**Drawing** `{key}` for {competency} {v}: `{payload.png}` "
+                f"({payload.png_bytes:,} bytes), "
+                f"`{payload.snapshot}` ({payload.snapshot_bytes:,} bytes)"
             )
-        case Kind.CHECK_POINTS:
-            missed = ", ".join(payload["missed"]) or "none"
+        case CheckPointsPayload(missed=missed):
             return (
                 f"**Check points missed** on drawing `{key}`, "
-                f"{competency} {v}: {missed}"
+                f"{competency} {v}: {', '.join(missed) or 'none'}"
             )
-        case Kind.SELF_ASSESSMENT:
-            levels = ", ".join(
-                f"{point} {rated['level']}"
-                for point, rated in payload.get("levels", {}).items()
-            )
+        case SelfAssessmentPayload(levels=levels):
+            rated = ", ".join(f"{point} {it.level}" for point, it in levels.items())
             return (
-                f"**Self-assessment** of {competency} {v}: {levels or 'no point rated'}"
+                f"**Self-assessment** of {competency} {v}: {rated or 'no point rated'}"
             )
-        case Kind.EVIDENCE_PLAN:
-            confirmed = (
-                ", confirmed at the closing step" if payload.get("confirmed") else ""
-            )
-            confirmed += ", the draft untouched" if payload.get("drafted") else ""
+        case EvidencePlanPayload():
+            confirmed = ", confirmed at the closing step" if payload.confirmed else ""
+            confirmed += ", the draft untouched" if payload.drafted else ""
             snapshot = (
                 ", with the Evidence panel as shown"
-                if "evidence_panel_snapshot" in payload
+                if payload.evidence_panel_snapshot is not None
                 else ""
             )
-            declared = payload.get("declaration")
+            declared = payload.declaration
             evidence = (
-                f"; **Evidence Project** declared: {declared['url']}"
-                if declared
-                else ""
+                f"; **Evidence Project** declared: {declared.url}" if declared else ""
             )
             return (
                 f"**Evidence Plan** for {competency} {v}{confirmed}{snapshot}{evidence}"
             )
-        case Kind.DECLARATION:
-            what = "withdrawn" if not payload else "declared"
-            return f"**Evidence Project** {what} for every Competency {v}"
-        case Kind.EVIDENCE_PANEL_SNAPSHOT:
+        case DeclarationPayload():
+            return f"**Evidence Project** declared for every Competency {v}"
+        case WithdrawalPayload():
+            return f"**Evidence Project** withdrawn for every Competency {v}"
+        case EvidencePanelSnapshotPayload():
             return f"**Evidence panel** as seen at {competency}'s closing step {v}"
-    raise ValueError(kind)
+    raise ValueError(payload)
 
 
 def comment_body(
-    entry_kind: str,
-    competency: str | None,
-    key: str | None,
-    version: int,
-    payload: dict[str, Any],
+    competency: str | None, key: str | None, version: int, payload: Payload
 ) -> str:
-    block: dict[str, Any] = {"kind": entry_kind, "competency": competency}
-    if entry_kind in _KEY_NAME:
-        block[_KEY_NAME[entry_kind]] = key
-    block |= {"version": version, "payload": payload}
+    block: dict[str, Any] = {"kind": payload.KIND, "competency": competency}
+    if payload.KIND in _KEY_NAME:
+        block[_KEY_NAME[payload.KIND]] = key
+    block |= {"version": version, "payload": payload.stored()}
     data = json.dumps(block, ensure_ascii=False, separators=(", ", ": "))
-    line = _line(entry_kind, competency, key, version, payload)
+    line = _line(competency, key, version, payload)
     if len(line) > LINE_CHARS:
         line = line[: LINE_CHARS - 1] + "…"
     return f"{line}\n\n```{FENCE}\n{data}\n```\n"
 
 
-def _entry(comment: dict[str, Any], bot_login: str) -> Entry | None:
+def _entry(comment: dict[str, Any], bot_login: str) -> Entry[Payload] | None:
     user = comment.get("user") or {}
     if user.get("type") != "Bot" or user.get("login") != bot_login:
         return None
@@ -114,20 +110,20 @@ def _entry(comment: dict[str, Any], bot_login: str) -> Entry | None:
     block = json.loads(match[1])
     try:
         kind = Kind(block["kind"])
-    except ValueError:
+        payload = read_payload(kind, block["payload"])
+    except (ValueError, UnreadablePayload):
         return None
     key = block.get(_KEY_NAME[kind]) if kind in _KEY_NAME else None
     return Entry(
-        kind,
         block["competency"],
         key,
-        block["payload"],
+        payload,
         block["version"],
         _time(comment["created_at"]),
     )
 
 
-def _renumbered(entries: list[Entry]) -> list[Entry]:
+def _renumbered(entries: list[Entry[Payload]]) -> list[Entry[Payload]]:
     seen: dict[tuple[Any, ...], int] = {}
     out = []
     for entry in entries:

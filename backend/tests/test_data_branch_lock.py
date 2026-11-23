@@ -63,7 +63,7 @@ def test_a_drawing_and_a_repository_reading_write_one_at_a_time() -> None:
     store.open_record(STUDENT)
 
     drawing = threading.Thread(
-        target=store.save_drawing,
+        target=store.send_drawing,
         args=(STUDENT, "C1", "redraw", b"\x89PNG", {"document": {}}),
     )
     drawing.start()

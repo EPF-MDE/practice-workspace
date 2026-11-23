@@ -14,7 +14,7 @@ from app.content import (
 )
 from app.roster import Student
 from app.settings import Settings
-from app.store import Kind
+from app.store import DrawingPayload
 
 from .models import (
     MAX_PNG_BYTES,
@@ -35,6 +35,7 @@ from .review import (
     _draft,
     _evidence_plan,
     _evidence_project,
+    _levels_now,
     _self_assessment,
 )
 from .router import router
@@ -61,7 +62,6 @@ def competency_page(
     record = _store(request).record(student)
     settings: Settings = request.app.state.settings
     hints = _hints(page, record)
-    assessment = record.latest(Kind.SELF_ASSESSMENT, page.competency)
     return CompetencyPage(
         competency=page.competency,
         title=page.title,
@@ -73,9 +73,7 @@ def competency_page(
         reading_day_passed=_phase(settings) == "over",
         self_assessment=_self_assessment(record, page.competency),
         evidence_plan=_evidence_plan(record, page.competency),
-        evidence_plan_draft=_draft(
-            page, record, assessment.payload["levels"] if assessment else {}
-        ),
+        evidence_plan_draft=_draft(page, record, _levels_now(record, page.competency)),
         evidence_project=_evidence_project(record),
         tldraw_license_key=settings.tldraw_license_key,
     )
@@ -117,7 +115,7 @@ def send_answer(
             409,
             f"Send your answer to “{waits_for.title}” first: this step starts from it.",
         )
-    entry = _store(request).save_answer(student, competency, step_id, answer.fields)
+    entry = _store(request).send_answer(student, competency, step_id, answer.fields)
     return AnswerSent(
         version=entry.version,
         sent_at=entry.at,
@@ -139,10 +137,10 @@ def ask_question(
     if not question.text.strip():
         raise HTTPException(422, "Write your question before sending it")
     _refuse_if_closed(request.app.state.settings, "questions")
-    entry = _store(request).save_question(
+    entry = _store(request).send_question(
         student, competency, step_id, question.text.strip()
     )
-    return Question(text=entry.payload["text"], asked_at=entry.at)
+    return Question(text=entry.payload.text, asked_at=entry.at)
 
 
 def _drawing_step(page: Page, step_id: str) -> Step:
@@ -189,7 +187,7 @@ def send_drawing(
             "try again",
         )
     _refuse_if_closed(request.app.state.settings, "drawings")
-    entry = _store(request).save_drawing(
+    entry = _store(request).send_drawing(
         student, competency, step_id, png, drawing.snapshot
     )
     reference = step.reference
@@ -209,7 +207,7 @@ def my_drawing(
 ) -> MyDrawing:
     _drawing_step(_page(request, competency, student), step_id)
     store = _store(request)
-    entry = store.record(student).latest(Kind.DRAWING, competency, step_id)
+    entry = store.record(student).latest(DrawingPayload, competency, step_id)
     files = store.drawing(student, competency, step_id) if entry else None
     if entry is None or files is None:
         raise HTTPException(404, "No drawing sent for this step yet")
@@ -236,13 +234,13 @@ def tick_missed_check_points(
         )
     _refuse_if_closed(request.app.state.settings, "check points")
     store = _store(request)
-    if store.record(student).latest(Kind.DRAWING, competency, step_id) is None:
+    if store.record(student).latest(DrawingPayload, competency, step_id) is None:
         raise HTTPException(
             409,
             "Send your drawing first: the check points come with the Reference Drawing",
         )
     missed = [c for c in known if c in ticks.missed]
-    entry = store.save_missed_check_points(student, competency, step_id, missed)
+    entry = store.send_missed_check_points(student, competency, step_id, missed)
     return CheckPointsSent(
-        missed=entry.payload["missed"], version=entry.version, sent_at=entry.at
+        missed=entry.payload.missed, version=entry.version, sent_at=entry.at
     )

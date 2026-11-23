@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import HTTPException, Request
 
 from app import evidence_panel
@@ -9,23 +7,20 @@ from app.evidence_panel import Declaration, NotAProject
 from app.repository_reading import COMPETENCIES
 from app.roster import Student
 from app.settings import Settings
-from app.store import StoredDeclaration
+from app.store import DeclarationPayload, StoredDeclaration
 
 from .models import (
     DeclarationIn,
 )
 
 
-def _changed(current: StoredDeclaration, new: dict[str, Any]) -> bool:
-    return (current.url, current.what_to_read) != (
-        new["url"],
-        new["what_to_read"],
-    )
+def _changed(current: StoredDeclaration, new: DeclarationPayload) -> bool:
+    return (current.url, current.what_to_read) != (new.url, new.what_to_read)
 
 
 def _declaration_payload(
     request: Request, student: Student, sent: DeclarationIn
-) -> dict[str, Any]:
+) -> DeclarationPayload:
     try:
         project = evidence_panel.parse_project(sent.url)
     except NotAProject as error:
@@ -42,13 +37,13 @@ def _declaration_payload(
         request.app.state.access_check,
         settings.github_app_slug,
     )
-    return {
-        "url": project.url,
-        "what_to_read": sent.what_to_read.strip(),
-        "repository": project.repository,
-        "host": project.host,
-        "access": checked.status,
-    }
+    return DeclarationPayload(
+        url=project.url,
+        what_to_read=sent.what_to_read.strip(),
+        repository=project.repository,
+        host=project.host,
+        access=checked.status,
+    )
 
 
 def _declared(

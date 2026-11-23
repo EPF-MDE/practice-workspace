@@ -7,6 +7,7 @@ from html.parser import HTMLParser
 from typing import Any, Literal
 
 from app.content import Point
+from app.store import PointLevelPayload
 
 Level = Literal["not-yet", "understand", "redo", "done"]
 LEVELS: tuple[Level, ...] = ("not-yet", "understand", "redo", "done")
@@ -42,7 +43,7 @@ def is_project_link(url: str | None) -> bool:
 
 def clean_levels(
     levels: dict[str, dict[str, Any]], point_ids: list[str]
-) -> dict[str, dict[str, Any]]:
+) -> dict[str, PointLevelPayload]:
     unknown = [p for p in levels if p not in point_ids]
     if unknown:
         raise Refused(
@@ -50,7 +51,7 @@ def clean_levels(
         )
     if not levels:
         raise Refused(422, "Rate at least one point before sending")
-    clean: dict[str, dict[str, Any]] = {}
+    clean: dict[str, PointLevelPayload] = {}
     for point in point_ids:
         if point not in levels:
             continue
@@ -69,12 +70,14 @@ def clean_levels(
                 )
         else:
             link = None
-        clean[point] = {"level": level, "link": link}
+        clean[point] = PointLevelPayload(level=level, link=link)
     return clean
 
 
 def check_move(
-    previous: dict[str, dict[str, Any]], new: dict[str, dict[str, Any]], now: Phase
+    previous: dict[str, PointLevelPayload],
+    new: dict[str, PointLevelPayload],
+    now: Phase,
 ) -> None:
     if now == "open":
         return
@@ -91,14 +94,14 @@ def check_move(
         after = new.get(point)
         if after is None:
             raise Refused(403, f"{point} is missing: {rule}.")
-        if after != before and after["level"] != "done":
+        if after != before and after.level != "done":
             raise Refused(
-                403, f'{point} cannot move to "{LABELS[after["level"]]}": {rule}.'
+                403, f'{point} cannot move to "{LABELS[after.level]}": {rule}.'
             )
 
 
 def since(
-    history: list[tuple[dict[str, dict[str, Any]], datetime]], point: str
+    history: list[tuple[dict[str, PointLevelPayload], datetime]], point: str
 ) -> datetime | None:
     current = history[-1][0].get(point) if history else None
     if current is None:
@@ -133,16 +136,16 @@ def plain(html: str | None) -> str:
 
 def draft(
     points: list[Point],
-    levels: dict[str, dict[str, Any]],
+    levels: dict[str, PointLevelPayload],
     transfer: Transfer | None = None,
     evidence_project: str | None = None,
 ) -> str:
     blocks = []
     for point in points:
         rated = levels.get(point.id)
-        if rated is None or rated["level"] == "done":
+        if rated is None or rated.level == "done":
             continue
-        level = rated["level"]
+        level = rated.level
         lines = [
             f"{point.id} ({point.band}), {LABELS[level]}: {plain(point.statement_html)}"
         ]

@@ -13,7 +13,7 @@ from app.repository_reading import (
 from app.repository_reading.batch import evidence_projects, run_batch
 from app.repository_reading.recorded import RecordedGitHub
 from app.roster import parse_roster
-from app.store import InMemoryStore
+from app.store import DeclarationPayload, InMemoryStore
 
 from .conftest import FIXTURES, NOW, REPOSITORIES
 
@@ -62,25 +62,25 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
 ):
     dorothy, radia, barbara = parse_roster(ROSTER)
     store = InMemoryStore()
-    store.save_declaration(
+    store.send_declaration(
         radia,
-        {
-            "url": "https://github.com/radia/notes",
-            "what_to_read": "n",
-            "repository": "radia/notes",
-            "host": "github",
-            "access": "readable",
-        },
+        DeclarationPayload(
+            url="https://github.com/radia/notes",
+            what_to_read="n",
+            repository="radia/notes",
+            host="github",
+            access="readable",
+        ),
     )
-    store.save_declaration(
+    store.send_declaration(
         barbara,
-        {
-            "url": "https://gitlab.com/b/api",
-            "what_to_read": "n",
-            "repository": "b/api",
-            "host": "gitlab",
-            "access": "gitlab",
-        },
+        DeclarationPayload(
+            url="https://gitlab.com/b/api",
+            what_to_read="n",
+            repository="b/api",
+            host="gitlab",
+            access="gitlab",
+        ),
     )
 
     to_read, gitlab = evidence_projects([dorothy, radia, barbara], store)
@@ -91,7 +91,7 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
     ]
     assert gitlab == {"barbara-oceens": "b/api"}
 
-    store.save_declaration(radia, {})
+    store.withdraw_declaration(radia)
     to_read, _ = evidence_projects([radia], store)
     assert to_read[0].evidence_project == "radia-oceens/OceENS"
 

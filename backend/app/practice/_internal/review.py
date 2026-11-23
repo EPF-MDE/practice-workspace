@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 
 from fastapi import HTTPException
 
@@ -10,7 +9,15 @@ from app.content import (
     Page,
     Point,
 )
-from app.store import Entry, Kind, Record
+from app.store import (
+    AnswerPayload,
+    DrawingPayload,
+    Entry,
+    EvidencePlanPayload,
+    PointLevelPayload,
+    Record,
+    SelfAssessmentPayload,
+)
 
 from .models import (
     EvidencePlan,
@@ -27,7 +34,7 @@ def _points(page: Page) -> list[Point]:
 
 
 def _since(
-    dated: list[tuple[dict[str, dict[str, Any]], datetime]], point: str
+    dated: list[tuple[dict[str, PointLevelPayload], datetime]], point: str
 ) -> datetime:
     at = closing.since(dated, point)
     assert at is not None
@@ -35,40 +42,52 @@ def _since(
 
 
 def _self_assessment(record: Record, competency: str) -> SelfAssessment | None:
-    history = record.history(Kind.SELF_ASSESSMENT, competency)
+    history = record.history(SelfAssessmentPayload, competency)
     if not history:
         return None
-    dated = [(e.payload["levels"], e.at) for e in history]
+    dated = [(e.payload.levels, e.at) for e in history]
     latest = history[-1]
     return SelfAssessment(
         levels={
-            point: PointLevelNow(**level, since=_since(dated, point))
-            for point, level in latest.payload["levels"].items()
+            point: PointLevelNow(
+                level=level.level, link=level.link, since=_since(dated, point)
+            )
+            for point, level in latest.payload.levels.items()
         },
         version=latest.version,
         sent_at=latest.at,
         history=[
             SelfAssessmentVersion(
-                levels=e.payload["levels"], version=e.version, sent_at=e.at
+                levels={
+                    point: PointLevel(level=level.level, link=level.link)
+                    for point, level in e.payload.levels.items()
+                },
+                version=e.version,
+                sent_at=e.at,
             )
             for e in history
         ],
     )
 
 
-def _plan_version(entry: Entry) -> EvidencePlanVersion:
+def _levels_now(record: Record, competency: str) -> dict[str, PointLevelPayload]:
+    assessment = record.latest(SelfAssessmentPayload, competency)
+    return assessment.payload.levels if assessment else {}
+
+
+def _plan_version(entry: Entry[EvidencePlanPayload]) -> EvidencePlanVersion:
     return EvidencePlanVersion(
-        text=entry.payload["text"],
-        drafted=entry.payload.get("drafted", False),
-        example=entry.payload.get("example"),
-        confirmed=entry.payload.get("confirmed", False),
+        text=entry.payload.text,
+        drafted=entry.payload.drafted,
+        example=entry.payload.example,
+        confirmed=entry.payload.confirmed,
         version=entry.version,
         sent_at=entry.at,
     )
 
 
 def _evidence_plan(record: Record, competency: str) -> EvidencePlan | None:
-    history = record.history(Kind.EVIDENCE_PLAN, competency)
+    history = record.history(EvidencePlanPayload, competency)
     if not history:
         return None
     return EvidencePlan(
@@ -85,13 +104,13 @@ def _evidence_project(record: Record) -> str | None:
 def _transfer(page: Page, record: Record) -> closing.Transfer | None:
     for step in page.steps:
         sent = (
-            record.latest(Kind.ANSWER, page.competency, step.id)
+            record.latest(AnswerPayload, page.competency, step.id)
             if step.kind == "transfer" and step.fills
             else None
         )
         if sent is None or step.fills is None:
             continue
-        fields = sent.payload["fields"]
+        fields = sent.payload.fields
         project = (
             fields.get("project", "").strip()
             or _evidence_project(record)
@@ -106,7 +125,7 @@ def _transfer(page: Page, record: Record) -> closing.Transfer | None:
     return None
 
 
-def _draft(page: Page, record: Record, levels: dict[str, Any]) -> str:
+def _draft(page: Page, record: Record, levels: dict[str, PointLevelPayload]) -> str:
     return closing.draft(
         _points(page),
         levels,
@@ -115,17 +134,12 @@ def _draft(page: Page, record: Record, levels: dict[str, Any]) -> str:
     )
 
 
-def _drafted(page: Page, record: Record, text: str, flagged: bool) -> dict[str, bool]:
-    assessment = record.latest(Kind.SELF_ASSESSMENT, page.competency)
-    levels = assessment.payload["levels"] if assessment else {}
-    return (
-        {"drafted": True}
-        if flagged or text.strip() == _draft(page, record, levels).strip()
-        else {}
-    )
+def _drafted(page: Page, record: Record, text: str, flagged: bool) -> bool:
+    levels = _levels_now(record, page.competency)
+    return flagged or text.strip() == _draft(page, record, levels).strip()
 
 
-def _levels(page: Page, levels: dict[str, PointLevel]) -> dict[str, dict[str, Any]]:
+def _levels(page: Page, levels: dict[str, PointLevel]) -> dict[str, PointLevelPayload]:
     try:
         return closing.clean_levels(
             {p: v.model_dump() for p, v in levels.items()},
@@ -152,7 +166,7 @@ def _ticks(
             raise HTTPException(
                 422, f"Not a check point of {drawing}: {', '.join(sorted(unknown))}"
             )
-        if record.latest(Kind.DRAWING, page.competency, drawing) is None:
+        if record.latest(DrawingPayload, page.competency, drawing) is None:
             raise HTTPException(
                 409,
                 "Send your drawing first: the check points come with the Reference "
