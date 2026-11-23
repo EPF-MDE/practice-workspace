@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -248,12 +247,7 @@ def create_app(
         )
         return JSONResponse({"detail": SEND_TOO_LARGE}, status_code=422)
 
-    @app.exception_handler(RequestValidationError)
-    async def too_long(request: Request, error: RequestValidationError) -> Response:
-        sentences = [e["msg"] for e in error.errors() if e["type"] == practice.TOO_LONG]
-        if not sentences:
-            return await request_validation_exception_handler(request, error)
-        return JSONResponse({"detail": sentences[0]}, status_code=422)
+    app.exception_handler(RequestValidationError)(practice.validation_error)
 
     app.add_middleware(
         SessionMiddleware,

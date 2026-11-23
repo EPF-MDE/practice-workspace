@@ -1,5 +1,5 @@
 from ._internal import answers, closing, evidence_panel  # noqa: F401
-from ._internal.models import TOO_LONG
 from ._internal.router import router
+from ._internal.too_long import validation_error
 
-__all__ = ["TOO_LONG", "router"]
+__all__ = ["router", "validation_error"]
