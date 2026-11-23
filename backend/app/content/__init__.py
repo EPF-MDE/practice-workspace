@@ -44,7 +44,7 @@ __all__ = [
 
 
 def load_content(
-    directory: str | Path, to_get_there_levels: Collection[str] | None = None
+    directory: str | Path, *, to_get_there_levels: Collection[str] | None
 ) -> dict[str, CompetencyContent]:
     directory = Path(directory).resolve()
 
@@ -58,7 +58,10 @@ def load_content(
     content: dict[str, CompetencyContent] = {}
     for path in sorted(directory.glob("c[0-9].md")):
         competency = parse_competency(
-            path.read_text(encoding="utf-8"), path.name, drawings, to_get_there_levels
+            path.read_text(encoding="utf-8"),
+            path.name,
+            drawings,
+            to_get_there_levels=to_get_there_levels,
         )
         if path.name != f"{competency.id.lower()}.md":
             raise ContentError(

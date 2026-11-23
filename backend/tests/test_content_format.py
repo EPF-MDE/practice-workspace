@@ -5,10 +5,11 @@ import pytest
 from app.content import CompetencyContent, ContentError, Html, Waiting, parse_competency
 
 HEAD = "---\ncompetency: C1\n---\n\n"
+BELOW_THE_TOP = ("not-yet", "understand", "redo")
 
 
 def parse(body: str) -> CompetencyContent:
-    return parse_competency(HEAD + body)
+    return parse_competency(HEAD + body, to_get_there_levels=BELOW_THE_TOP)
 
 
 @pytest.mark.parametrize(
@@ -143,7 +144,11 @@ CLOSING = (
 
 
 def parse_drawing(body: str) -> CompetencyContent:
-    return parse_competency(HEAD + body, drawings=lambda src: SNAPSHOTS[src])
+    return parse_competency(
+        HEAD + body,
+        drawings=lambda src: SNAPSHOTS[src],
+        to_get_there_levels=BELOW_THE_TOP,
+    )
 
 
 def test_a_drawing_step_has_an_example_a_canvas_and_a_reference_with_its_check_points() -> (  # noqa: E501
@@ -250,7 +255,12 @@ def test_a_drawing_is_read_from_the_content_folder_and_never_outside_it(
     text = HEAD + drawing_step().replace("src=", "src=drawings/") + CLOSING
     (tmp_path / "c1.md").write_text(text)
 
-    reference = load_content(tmp_path)["C1"].for_group("OcéENS").steps[0].reference
+    reference = (
+        load_content(tmp_path, to_get_there_levels=BELOW_THE_TOP)["C1"]
+        .for_group("OcéENS")
+        .steps[0]
+        .reference
+    )
     assert reference is not None
     assert reference.snapshot == SNAPSHOTS["oceens.json"]
 
@@ -258,7 +268,7 @@ def test_a_drawing_is_read_from_the_content_folder_and_never_outside_it(
         text.replace("src=drawings/example.json", "src=../c1.md")
     )
     with pytest.raises(ContentError):
-        load_content(tmp_path)
+        load_content(tmp_path, to_get_there_levels=BELOW_THE_TOP)
 
 
 TRANSFER = (

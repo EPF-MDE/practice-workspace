@@ -81,7 +81,8 @@ def parse_competency(
     text: str,
     source: str = "content",
     drawings: Drawings = _no_drawings,
-    to_get_there_levels: Collection[str] | None = None,
+    *,
+    to_get_there_levels: Collection[str] | None,
 ) -> CompetencyContent:
     text = text.replace("\r\n", "\n")
     front = _FRONT_MATTER.match(text)

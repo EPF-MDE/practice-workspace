@@ -47,7 +47,9 @@ def load_course(folder: str | Path) -> Loading:
         else Scale(tuple(Level(level.id, level.label) for level in settings.levels))
     )
     try:
-        content = load_content(folder, None if scale is None else scale.below_top)
+        content = load_content(
+            folder, to_get_there_levels=None if scale is None else scale.below_top
+        )
     except ContentError as error:
         problems.append(str(error))
     else:
