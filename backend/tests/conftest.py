@@ -21,7 +21,6 @@ from app.roster import RosterSource
 from app.settings import Settings
 from app.store import GitHubStore, InMemoryStore, Store
 
-
 FIXTURE_TIME_ZONE = ZoneInfo("Europe/Paris")
 FIXTURE_CLOSE = datetime(2030, 6, 14, 23, 59, tzinfo=FIXTURE_TIME_ZONE)
 FIXTURE_READING_DAY = datetime(2030, 7, 4, 23, 59, tzinfo=FIXTURE_TIME_ZONE)
