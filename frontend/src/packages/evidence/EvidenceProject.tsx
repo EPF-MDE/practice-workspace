@@ -6,9 +6,9 @@ import { errorMessage } from "@/packages/shared/errorMessage";
 import {
   evidencePanelKey,
   evidencePanelsKey,
-  Sentence,
   useEvidencePanel,
-} from "./EvidencePanel";
+} from "./lib/panel";
+import { Sentence } from "./lib/Sentence";
 import { pathsKey } from "@/packages/shared/pathKeys";
 
 function AccessView({ access }: { access: Access }) {
