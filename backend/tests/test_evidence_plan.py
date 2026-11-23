@@ -100,7 +100,7 @@ def test_the_transfer_defaults_to_the_evidence_project(
 ) -> None:
     ada.post(
         "/api/evidence-project/declaration",
-        json={"url": "https://github.com/ada/best", "note": "The README"},
+        json={"url": "https://github.com/ada/best", "what_to_read": "The README"},
     )
 
     assert ada.get(PAGE).json()["evidence_project"] == "https://github.com/ada/best"

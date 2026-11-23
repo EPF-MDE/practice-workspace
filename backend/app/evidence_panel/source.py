@@ -40,7 +40,7 @@ def read_panel(
     declaration: Declaration | None,
     refresh: bool = False,
 ) -> EvidencePanel:
-    if declaration is not None and not declaration.is_roster_evidence_project:
+    if declaration is not None and not declaration.declares_roster_evidence_project:
         if declaration.access.status != READABLE_ACCESS:
             return unavailable_panel(
                 competency,

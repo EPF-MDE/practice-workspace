@@ -118,6 +118,35 @@ def test_an_empty_declaration_withdraws_the_last_one(store: Store) -> None:
     assert store.record(ADA_OF_OCEENS).declaration() is None
 
 
+def test_a_declaration_stored_with_a_note_reads_back_what_to_read(
+    store: Store,
+) -> None:
+    alone = declared("https://github.com/ada/a")
+    alone["note"] = alone.pop("what_to_read")
+    store.save_declaration(ADA_OF_OCEENS, alone)
+    assert (declaration := store.record(ADA_OF_OCEENS).declaration()) is not None
+    assert declaration.what_to_read == "n"
+
+    in_a_plan = declared("https://github.com/ada/b", "the README")
+    in_a_plan["note"] = in_a_plan.pop("what_to_read")
+    store.save_evidence_plan(
+        ADA_OF_OCEENS, "C2", {"text": "p", "declaration": in_a_plan}
+    )
+    assert (declaration := store.record(ADA_OF_OCEENS).declaration()) is not None
+    assert declaration.what_to_read == "the README"
+
+
+def test_a_declaration_reads_back_what_to_read(store: Store) -> None:
+    store.save_declaration(
+        ADA_OF_OCEENS, declared("https://github.com/ada/a", "the README")
+    )
+
+    declaration = store.record(ADA_OF_OCEENS).declaration()
+
+    assert declaration is not None
+    assert declaration.what_to_read == "the README"
+
+
 def test_one_declaration_per_student_the_latest_sent_alone_or_with_any_closing_step(
     store: Store,
 ) -> None:

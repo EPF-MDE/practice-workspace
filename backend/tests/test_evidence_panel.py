@@ -211,11 +211,11 @@ def test_a_repository_that_cannot_be_read_now_is_said_plainly_never_a_zero(
     panel = client.get("/api/competencies/C1/evidence-panel")
 
     assert panel.status_code == 200
-    assert panel.json()["available"] is False
+    assert panel.json()["unavailable"] is not None
     assert "could not be read just now" in panel.json()["unavailable"]
     assert (
-        client.post("/api/competencies/C1/evidence-panel/refresh").json()["available"]
-        is False
+        client.post("/api/competencies/C1/evidence-panel/refresh").json()["unavailable"]
+        is not None
     )
 
 
@@ -237,4 +237,4 @@ def test_with_the_real_repository_reading_the_app_starts_even_before_the_student
 
     panel = client.get("/api/competencies/C1/evidence-panel").json()
 
-    assert panel["available"] is False
+    assert panel["unavailable"] is not None

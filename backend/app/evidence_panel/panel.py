@@ -98,15 +98,15 @@ GITLAB_ACCESS: AccessStatus = "gitlab"
 class Access(BaseModel):
     status: AccessStatus
     message: str
-    how: str | None
+    how_to_make_readable: str | None
 
 
 class Declaration(BaseModel):
     url: str
-    note: str
+    what_to_read: str
     repository: str
     host: Host
-    is_roster_evidence_project: bool
+    declares_roster_evidence_project: bool
     declared_at: datetime
     access: Access
 
@@ -120,7 +120,6 @@ class DeclarationHelp(BaseModel):
 class EvidencePanel(BaseModel):
     competency: str
     evidence_project: str
-    available: bool
     unavailable: str | None
     facts_computed_at: datetime | None
     last_checked_at: datetime | None
@@ -160,7 +159,6 @@ def build_panel(
     return EvidencePanel(
         competency=competency,
         evidence_project=reading.student.evidence_project,
-        available=True,
         unavailable=None,
         facts_computed_at=reading.facts_computed_at,
         last_checked_at=reading.last_checked_at,
@@ -201,7 +199,6 @@ def unavailable_panel(
     return EvidencePanel(
         competency=competency,
         evidence_project=evidence_project,
-        available=False,
         unavailable=unavailable,
         facts_computed_at=None,
         last_checked_at=None,

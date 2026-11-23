@@ -4,6 +4,7 @@ from .access import (
     FakeAccessCheck,
     NotAProject,
     Project,
+    Readability,
     access,
     parse_project,
 )
@@ -44,6 +45,7 @@ __all__ = [
     "OfflineRepositoryReading",
     "PanelFact",
     "Project",
+    "Readability",
     "access",
     "parse_project",
     "read_panel",

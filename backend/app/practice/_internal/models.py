@@ -174,7 +174,7 @@ MAX_FIELD_CHARS = 4_000
 MAX_QUESTION_CHARS = 4_000
 MAX_PLAN_CHARS = 12_000
 MAX_EXAMPLE_CHARS = 2_000
-MAX_NOTE_CHARS = 2_000
+MAX_WHAT_TO_READ_CHARS = 2_000
 MAX_URL_CHARS = 500
 
 TOO_LONG = "too_long"
@@ -213,7 +213,9 @@ QuestionText = Annotated[
 ]
 PlanText = Annotated[str, _at_most(MAX_PLAN_CHARS, "Your Evidence Plan")]
 ExampleText = Annotated[str, _at_most(MAX_EXAMPLE_CHARS, "Your example for the Eval")]
-NoteText = Annotated[str, _at_most(MAX_NOTE_CHARS, "Your note on what to read")]
+WhatToReadText = Annotated[
+    str, _at_most(MAX_WHAT_TO_READ_CHARS, "Your note on what to read")
+]
 EvidenceProjectUrl = Annotated[
     str, _at_most(MAX_URL_CHARS, "The Evidence Project's URL")
 ]
@@ -297,7 +299,7 @@ class EvidencePlanIn(BaseModel):
 
 class DeclarationIn(BaseModel):
     url: EvidenceProjectUrl
-    note: NoteText
+    what_to_read: WhatToReadText
 
 
 class ProjectIn(BaseModel):
