@@ -85,8 +85,8 @@ def a_course(folder: Path, settings: str, to_get_there: str) -> Path:
     return folder
 
 
-def test_the_api_serves_the_courses_levels_in_order(ada: TestClient) -> None:
-    assert ada.get("/api/course").json()["levels"] == [
+def test_the_api_serves_the_courses_scale_in_order(ada: TestClient) -> None:
+    assert ada.get("/api/course").json()["scale"] == [
         {"id": "seen", "label": "Seen it"},
         {"id": "tried", "label": "Tried it"},
         {"id": "shipped", "label": "Shipped it"},

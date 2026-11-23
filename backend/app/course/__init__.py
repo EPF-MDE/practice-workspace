@@ -86,7 +86,7 @@ class CompetencyOut(BaseModel):
 class CourseOut(BaseModel):
     name: str
     competencies: list[CompetencyOut]
-    levels: list[LevelOut]
+    scale: list[LevelOut]
 
 
 router = APIRouter()
@@ -101,5 +101,5 @@ def course(request: Request) -> CourseOut:
             CompetencyOut(id=c.id, title=c.title, minutes=c.minutes)
             for c in loaded.competencies.values()
         ],
-        levels=[LevelOut(id=lv.id, label=lv.label) for lv in loaded.scale.levels],
+        scale=[LevelOut(id=lv.id, label=lv.label) for lv in loaded.scale.levels],
     )

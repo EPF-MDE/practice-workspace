@@ -250,9 +250,9 @@ export type CourseOut = {
      */
     competencies: Array<CompetencyOut>;
     /**
-     * Levels
+     * Scale
      */
-    levels: Array<LevelOut>;
+    scale: Array<LevelOut>;
 };
 
 /**

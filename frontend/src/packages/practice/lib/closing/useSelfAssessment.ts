@@ -67,7 +67,7 @@ export function useLevels(
   page: CompetencyPage,
   course: Course
 ) {
-  const { levels: scale, topLevel } = course;
+  const { scale, topLevel } = course;
   const sent = page.self_assessment?.levels ?? {};
   const [levels, setLevels] = useState<Record<string, LevelDraft>>(() => ({
     ...Object.fromEntries(
