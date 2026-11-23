@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import datetime
-from typing import Any
 
 import yaml
 
@@ -13,6 +12,7 @@ from ..reading import (
     StudentToRead,
 )
 from .cached_github import _CachedGitHub
+from .ref_analysis import RefAnalysis, Workflow
 
 
 class _ReadingState:
@@ -20,7 +20,7 @@ class _ReadingState:
     linked_to_upstream: bool
     ref_names: dict[str, list[str]]
     upstream: dict[str, str]
-    analyses: dict[str, dict[str, Any]]
+    analyses: dict[str, RefAnalysis]
 
     def __init__(
         self,
@@ -35,28 +35,29 @@ class _ReadingState:
         self.previous = previous
         self.facts: dict[str, list[Fact]] = {c: [] for c in COMPETENCIES}
 
-    def _workflow(self, sha: str, path: str) -> dict[str, Any] | None:
+    def _workflow(self, sha: str, path: str) -> Workflow | None:
         text = self.github.file_at(self.s.evidence_project, sha, path)
         if text is None:
             return None
         try:
             doc = yaml.safe_load(text) or {}
         except yaml.YAMLError:
-            return {"unparsed": True}
+            return Workflow()
         jobs = doc.get("jobs") or {} if isinstance(doc, dict) else {}
-        out: dict[str, Any] = {"architecture": False, "deploy_needs": {}}
+        architecture = False
+        deploy_needs: dict[str, list[str]] = {}
         for job_id, job in jobs.items():
             job = job if isinstance(job, dict) else {}
             if job_id == "architecture" or job.get("name") == "architecture":
-                out["architecture"] = True
+                architecture = True
             if "deploy" in str(job_id).lower():
                 needs = job.get("needs") or []
-                out["deploy_needs"][job_id] = (
+                deploy_needs[job_id] = (
                     [needs] if isinstance(needs, str) else list(needs)
                 )
-        return out
+        return Workflow(architecture=architecture, deploy_needs=deploy_needs)
 
-    def _all_workflows(self, sha: str) -> dict[str, dict[str, Any]]:
+    def _all_workflows(self, sha: str) -> dict[str, Workflow]:
         r = self.github.get(
             f"repos/{self.s.evidence_project}/contents/.github/workflows?ref={sha}"
         )

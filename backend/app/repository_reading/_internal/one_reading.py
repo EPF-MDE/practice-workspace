@@ -14,6 +14,7 @@ from .analysis import _Analysis
 from .c1 import _C1Facts
 from .c2 import _C2Facts
 from .c3 import _C3Facts
+from .ref_analysis import RefAnalysis
 from .rules import (
     _ref_shas,
 )
@@ -50,20 +51,12 @@ class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
                 f"pull request #{p['number']}"
             )
         self.upstream = self.github.upstream_branches(s.upstream)
-        reusable = {}
-        if self.previous and self.previous.upstream_shas == self.upstream:
-            reusable = self.previous.refs.get("analyses", {})
-        self.analyses = {}
+        reusable = self._reusable_analyses()
         default_sha = branches_by_name.get(self.default)
-        for sha in {*branches_by_name.values(), *pulls_by_number.values()}:
-            a = reusable.get(sha) or self._analyse(sha)
-            if sha == default_sha and "fallback" not in a:
-                a = {
-                    **a,
-                    "fallback": self._fallback_on(sha),
-                    "workflows": self._all_workflows(sha),
-                }
-            self.analyses[sha] = a
+        self.analyses = {
+            sha: self._analysis_of(sha, reusable, sha == default_sha)
+            for sha in {*branches_by_name.values(), *pulls_by_number.values()}
+        }
 
         self._c1(branch_list, pull_list, branches_by_name)
         runs = self._runs()
@@ -101,7 +94,17 @@ class _Reading(_Analysis, _C1Facts, _C2Facts, _C3Facts):
             refs={
                 "branches": branches_by_name,
                 "pulls": pulls_by_number,
-                "analyses": self.analyses,
+                "analyses": {sha: a.to_dict() for sha, a in self.analyses.items()},
             },
             upstream_shas=self.upstream,
         )
+
+    def _reusable_analyses(self) -> dict[str, RefAnalysis]:
+        if not self.previous or self.previous.upstream_shas != self.upstream:
+            return {}
+        stored = self.previous.refs.get("analyses", {})
+        return {
+            sha: a
+            for sha, d in stored.items()
+            if (a := RefAnalysis.from_dict(d)) is not None
+        }

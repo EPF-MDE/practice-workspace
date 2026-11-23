@@ -171,3 +171,18 @@ def test_a_reading_stored_before_its_times_were_renamed_still_reads(
     stored["checked_at"] = stored.pop("last_checked_at")
 
     assert RepositoryReading.from_dict(stored) == reading
+
+
+def test_ref_analyses_stored_before_they_had_a_type_are_read_again(
+    recorded: type[Recorded],
+) -> None:
+    r = recorded("placeholder-email")
+    reading = r.reader.read(r.student)
+    stored = reading.to_dict()
+    stored["refs"]["analyses"] = {
+        sha: {"files": [], "closest": None} for sha in stored["refs"]["analyses"]
+    }
+
+    again = r.reader.read_now(r.student, previous=RepositoryReading.from_dict(stored))
+
+    assert again.competencies == reading.competencies

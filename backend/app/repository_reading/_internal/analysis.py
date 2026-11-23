@@ -5,6 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from ..reading import ChangedFile
+from .ref_analysis import UNREADABLE, HowRead, RefAnalysis
 from .rules import (
     FALLBACK_CHAIN,
     IDENTITY,
@@ -13,9 +15,6 @@ from .rules import (
     _date,
 )
 from .state import _ReadingState
-
-OWN_HISTORY = "own_history"
-UNREADABLE: dict[str, Any] = {"files": [], "closest": None, "unreadable": True}
 
 
 class _TreeEntry(BaseModel):
@@ -36,9 +35,30 @@ class _Commit(BaseModel):
 
 
 class _Analysis(_ReadingState):
-    def _analyse(self, sha: str) -> dict[str, Any]:
+    def _analysis_of(
+        self, sha: str, reusable: dict[str, RefAnalysis], on_default_branch: bool
+    ) -> RefAnalysis:
+        a = reusable.get(sha) or self._analyse(sha)
+        if on_default_branch and not a.read_as_default_branch:
+            a = a.model_copy(
+                update={
+                    "read_as_default_branch": True,
+                    "fallback": self._fallback_on(sha),
+                    "workflows": {**self._all_workflows(sha), **a.workflows},
+                }
+            )
+        unread = {
+            path: w
+            for path in a.workflow_paths
+            if path not in a.workflows and (w := self._workflow(sha, path))
+        }
+        if unread:
+            a = a.model_copy(update={"workflows": {**a.workflows, **unread}})
+        return a
+
+    def _analyse(self, sha: str) -> RefAnalysis:
         if sha in self.upstream.values():
-            return {"files": [], "closest": None}
+            return RefAnalysis(read=HowRead.AGAINST_UPSTREAM)
         comparisons = {}
         for name, usha in self.upstream.items():
             c = self.github.compare(self.s.evidence_project, usha, sha)
@@ -46,12 +66,8 @@ class _Analysis(_ReadingState):
                 comparisons[name] = c
         if not comparisons:
             return UNREADABLE if self.linked_to_upstream else self._own_history(sha)
-        merge_bases = {
-            n: (c.get("merge_base_commit") or {}).get("sha")
-            for n, c in comparisons.items()
-        }
         if any(c["ahead_by"] == 0 for c in comparisons.values()):
-            return {"files": [], "closest": None, "merge_bases": merge_bases}
+            return RefAnalysis(read=HowRead.AGAINST_UPSTREAM)
 
         def counted(c: dict[str, Any]) -> dict[str, dict[str, Any]]:
             return {
@@ -87,24 +103,26 @@ class _Analysis(_ReadingState):
             for line in f["patch"].splitlines()
             if line.startswith("+")
         ]
-        return {
-            "closest": closest,
-            "files": [
-                {k: f[k] for k in ("path", "additions", "changes")} for f in files
-            ],
-            "lines_added": sum(f["additions"] for f in files),
-            "last_change": self._last_change(c, sha, self.upstream[closest]),
-            "link": c.get("html_url"),
-            "posthog_identity": any(POSTHOG.search(line) for line in added)
+        return RefAnalysis(
+            read=HowRead.AGAINST_UPSTREAM,
+            closest=closest,
+            files=tuple(
+                ChangedFile(
+                    path=f["path"], additions=f["additions"], changes=f["changes"]
+                )
+                for f in files
+            ),
+            lines_added=sum(f["additions"] for f in files),
+            last_change=self._last_change(c, sha, self.upstream[closest]),
+            link=c.get("html_url"),
+            posthog_identity=any(POSTHOG.search(line) for line in added)
             and any(IDENTITY.search(line) for line in added),
-            "posthog_files": [f["path"] for f in files if IDENTITY.search(f["patch"])],
-            "workflow_files": [
-                f["path"] for f in files if f["path"].startswith(".github/workflows/")
-            ],
-            "merge_bases": merge_bases,
-        }
+            posthog_files=tuple(
+                f["path"] for f in files if IDENTITY.search(f["patch"])
+            ),
+        )
 
-    def _own_history(self, sha: str) -> dict[str, Any]:
+    def _own_history(self, sha: str) -> RefAnalysis:
         repo = self.s.evidence_project
         tree = self.github.get(f"repos/{repo}/git/trees/{sha}?recursive=1")
         commit = self.github.get(f"repos/{repo}/git/commits/{sha}")
@@ -116,20 +134,12 @@ class _Analysis(_ReadingState):
             if e.type == "blob" and e.path.rsplit("/", 1)[-1] not in LOCKFILES
         )
         committed = _Commit.model_validate(commit.body).committer.date
-        return {
-            "closest": None,
-            OWN_HISTORY: True,
-            "files": [{"path": path} for path in paths],
-            "lines_added": None,
-            "last_change": _date(committed),
-            "link": f"https://github.com/{repo}/tree/{sha}",
-            "posthog_identity": False,
-            "posthog_files": [],
-            "workflow_files": [
-                path for path in paths if path.startswith(".github/workflows/")
-            ],
-            "merge_bases": {},
-        }
+        return RefAnalysis(
+            read=HowRead.OWN_HISTORY,
+            files=tuple(ChangedFile(path=path) for path in paths),
+            last_change=_date(committed),
+            link=f"https://github.com/{repo}/tree/{sha}",
+        )
 
     def _last_change(self, c: dict[str, Any], sha: str, base: str) -> str | None:
         commits = c.get("commits", [])

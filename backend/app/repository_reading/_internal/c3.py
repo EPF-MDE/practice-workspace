@@ -17,21 +17,21 @@ from .state import _ReadingState
 class _C3Facts(_ReadingState):
     def _c3b(self, default_sha: str | None) -> None:
         for sha, a in self.analyses.items():
-            if a.get("posthog_identity"):
+            if a.posthog_identity:
                 self.facts["C3"].append(
                     Fact(
                         point=PointId.C3_B,
                         text="Your code on "
                         f"{', '.join(self.ref_names.get(sha, [])[:3])} "
                         "sends errors to PostHog with an identity "
-                        f"({', '.join(f'`{p}`' for p in a['posthog_files'][:3])}).",
-                        link=a.get("link"),
-                        detail={"files": a["posthog_files"]},
+                        f"({', '.join(f'`{p}`' for p in a.posthog_files[:3])}).",
+                        link=a.link,
+                        detail={"files": list(a.posthog_files)},
                     )
                 )
                 break
         on_default = self.analyses.get(default_sha) if default_sha else None
-        if on_default and on_default.get("fallback") == POSTHOG_FALLBACK:
+        if on_default and on_default.fallback == POSTHOG_FALLBACK:
             self.facts["C3"].append(
                 Fact(
                     point=PointId.C3_B,
