@@ -29,7 +29,7 @@ function schedule(steps: StepOut[]) {
   });
 }
 
-function session(competencies: CompetencyOut[]) {
+function pathTimes(competencies: CompetencyOut[]) {
   return competencies.map((competency, index) => {
     const from = competencies
       .slice(0, index)
@@ -38,17 +38,10 @@ function session(competencies: CompetencyOut[]) {
   });
 }
 
-type Slot = ReturnType<typeof session>[number];
-
-function slotOf(competencies: CompetencyOut[], competency: string) {
-  return session(competencies).find(
-    (slot) => slot.competency.id === competency
-  );
-}
+type PathTime = ReturnType<typeof pathTimes>[number];
 
 type PathProps = {
   competency: string;
-  competencies: CompetencyOut[];
   steps: StepOut[];
   finished: Set<string>;
   greyed: Set<string>;
@@ -102,12 +95,11 @@ function PathStep({
 
 function PathSection({
   competency,
-  competencies,
   steps,
   finished,
   greyed,
-}: PathProps) {
-  const offset = slotOf(competencies, competency)?.from ?? 0;
+  offset,
+}: PathProps & { offset: number }) {
   return (
     <section className="rounded-lg border p-4">
       <h2 className="font-semibold">Your path in {competency}</h2>
@@ -153,33 +145,31 @@ function PlanSection({
 }
 
 function TimeSection({
-  competency,
-  competencies,
+  mine,
+  times,
   startedAt,
 }: {
-  competency: string;
-  competencies: CompetencyOut[];
+  mine: PathTime;
+  times: PathTime[];
   startedAt: number;
 }) {
   const spent = useMinutesSince(startedAt);
-  const slots = session(competencies);
-  const total = slots.at(-1)?.to ?? 0;
   return (
     <section className="rounded-lg border p-4 text-sm">
       <h2 className="font-semibold">Time</h2>
       <p data-testid="time-spent">
-        You have spent {spent} min on {competency}, out of{" "}
-        {slotOf(competencies, competency)?.competency.minutes}.
+        You have spent {spent} min on {mine.competency.id}, out of{" "}
+        {mine.competency.minutes}.
       </p>
-      <p className="mt-2 text-muted-foreground">
+      <p className="mt-2 text-muted-foreground" data-testid="time-session">
         The session:{" "}
-        {slots
+        {times
           .map(
-            (slot: Slot) =>
-              `${slot.competency.id} ${clock(slot.from)}–${clock(slot.to)}`
+            (time) =>
+              `${time.competency.id} ${clock(time.from)}–${clock(time.to)}`
           )
           .join(", ")}
-        , {clock(total)} in all.
+        , {clock(times.at(-1)?.to ?? 0)} in all.
       </p>
     </section>
   );
@@ -191,27 +181,28 @@ export function Sidebar({
   currentStep,
   ...path
 }: PathProps & {
+  competencies: CompetencyOut[];
   startedAt: number;
   evidencePlan: string;
   currentStep: string | undefined;
 }) {
-  const { competency, competencies } = path;
+  const { competencies, ...ownPath } = path;
+  const { competency } = ownPath;
+  const times = pathTimes(competencies);
+  const mine = times.find((time) => time.competency.id === competency);
+  if (!mine) throw new Error(`No Competency ${competency} in the Course`);
   return (
     <aside
       aria-label="Your path"
       className="flex flex-col gap-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto"
     >
-      <PathSection {...path} />
+      <PathSection {...ownPath} offset={mine.from} />
       <EvidencePanelView
         competency={competency}
         onMyWorkMissing={() => currentStep && openQuestion(currentStep)}
       />
       <PlanSection competency={competency} evidencePlan={evidencePlan} />
-      <TimeSection
-        competency={competency}
-        competencies={competencies}
-        startedAt={startedAt}
-      />
+      <TimeSection mine={mine} times={times} startedAt={startedAt} />
     </aside>
   );
 }
