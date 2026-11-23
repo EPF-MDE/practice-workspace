@@ -1,52 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
-import { Fragment } from "react";
 import { type EvidencePanel, type PanelFact, PracticeService } from "@/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { errorMessage } from "../progress";
+import { errorMessage } from "@/packages/shared/errorMessage";
+import { evidencePanelKey, useEvidencePanel } from "./lib/panel";
+import { Sentence } from "./lib/Sentence";
 
-export const evidencePanelsKey = ["evidence-panel"];
-
-export const evidencePanelKey = (competency: string) => [
-  ...evidencePanelsKey,
-  competency,
-];
-
-export function useEvidencePanel(competency: string) {
-  return useQuery({
-    queryKey: evidencePanelKey(competency),
-    queryFn: async () =>
-      (await PracticeService.evidencePanelView({ path: { competency } })).data,
-  });
-}
-
-function sentenceParts(text: string) {
-  const parts = text.split("`");
-  return parts.map((part, index) => ({
-    part,
-    code: index % 2 === 1,
-    at: parts
-      .slice(0, index)
-      .reduce((sum, before) => sum + before.length + 1, 0),
-  }));
-}
-
-export function Sentence({ text }: { text: string }) {
-  return (
-    <>
-      {sentenceParts(text).map(({ part, code, at }) =>
-        code ? (
-          <code key={at} className="rounded bg-muted px-1 text-[0.9em]">
-            {part}
-          </code>
-        ) : (
-          <Fragment key={at}>{part}</Fragment>
-        )
-      )}
-    </>
-  );
-}
+export { evidencePanelsKey } from "./lib/panel";
 
 function when(iso: string | null | undefined) {
   return iso ? new Date(iso).toLocaleString() : "never";

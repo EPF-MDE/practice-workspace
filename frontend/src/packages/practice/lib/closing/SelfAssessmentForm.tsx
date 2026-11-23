@@ -1,7 +1,7 @@
 import type { CheckPointOut, CompetencyPage, PointBlock } from "@/client";
 import { Button } from "@/components/ui/button";
-import { Html } from "../Html";
-import { errorMessage } from "../progress";
+import { Html } from "@/packages/shared/Html";
+import { errorMessage } from "@/packages/shared/errorMessage";
 import {
   DONE,
   LEVELS,

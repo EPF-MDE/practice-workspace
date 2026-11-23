@@ -1,7 +1,10 @@
 import type { CompetencyPage, PointBlock, StepOut } from "@/client";
-import { EvidenceProject } from "../evidence/EvidenceProject";
-import { EvidencePanelView, openQuestion } from "../evidence/EvidencePanel";
-import { type DraftScope } from "../progress";
+import { EvidenceProject } from "@/packages/evidence/EvidenceProject";
+import {
+  EvidencePanelView,
+  openQuestion,
+} from "@/packages/evidence/EvidencePanel";
+import { type DraftScope } from "@/packages/shared/drafts";
 import { ExampleField, PlanEditor, PlanSendBar } from "./EvidencePlanForm";
 import { SelfAssessmentForm } from "./SelfAssessmentForm";
 import {

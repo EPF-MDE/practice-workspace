@@ -3,8 +3,8 @@ import {
   ExampleDrawingView,
   ReferenceDrawingView,
   StudentCanvas,
-} from "./drawing/DrawingBlocks";
-import { Html, plainText } from "./Html";
+} from "@/packages/drawing/DrawingBlocks";
+import { Html, plainText } from "@/packages/shared/Html";
 
 type Fields = {
   fields: Record<string, string>;

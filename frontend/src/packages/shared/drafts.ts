@@ -1,6 +1,3 @@
-import { AxiosError } from "axios";
-import type { StepOut } from "@/client";
-
 export type DraftScope = { studentId: number; competency: string };
 
 function key(scope: DraftScope, ...rest: string[]) {
@@ -103,46 +100,4 @@ export function startedAt(scope: DraftScope): number {
   const now = Date.now();
   write(name, now);
   return now;
-}
-
-const isSent = (step: StepOut) => Boolean(step.sent || step.drawing);
-
-export function finishedSteps(steps: StepOut[], read: string[]): Set<string> {
-  const finished = new Set<string>();
-  const lastSent = steps.reduce(
-    (last, step, index) => (isSent(step) && !step.optional ? index : last),
-    -1
-  );
-  steps.forEach((step, index) => {
-    if (isSent(step)) finished.add(step.id);
-    else if (
-      step.kind === "read" &&
-      (read.includes(step.id) || index < lastSent)
-    )
-      finished.add(step.id);
-  });
-  return finished;
-}
-
-export function greyedSteps(
-  steps: StepOut[],
-  finished: Set<string>
-): Set<string> {
-  const first = steps.findIndex(
-    (step) => !step.optional && !finished.has(step.id)
-  );
-  if (first === -1) return new Set();
-  return new Set(
-    steps.filter((_, index) => index > first + 1).map((s) => s.id)
-  );
-}
-
-export function errorMessage(error: unknown): string {
-  if (error instanceof AxiosError) {
-    const detail = error.response?.data?.detail;
-    if (typeof detail === "string") return detail;
-    if (!error.response)
-      return "The workspace cannot be reached: your text is kept, try again.";
-  }
-  return "Sending failed: your text is kept, try again.";
 }

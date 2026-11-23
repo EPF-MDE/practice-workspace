@@ -4,9 +4,11 @@ import { type CompetencyPage, PracticeService, type StepOut } from "@/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ClosingStep } from "./closing/ClosingStep";
-import { type DraftScope, drafts, errorMessage, readSteps } from "./progress";
+import { type DraftScope, drafts, readSteps } from "@/packages/shared/drafts";
+import { errorMessage } from "@/packages/shared/errorMessage";
 import { QuestionField } from "./QuestionField";
 import { StepBlock } from "./StepBlock";
+import { pathKey } from "@/packages/shared/pathKeys";
 
 type Props = DraftScope & {
   step: StepOut;
@@ -34,7 +36,7 @@ function useAnswer({ studentId, competency, step }: Props) {
         })
       ).data,
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["competency", competency] }),
+      queryClient.invalidateQueries({ queryKey: pathKey(competency) }),
   });
   const update = (id: string, value: string) => {
     const next = { ...fields, [id]: value };

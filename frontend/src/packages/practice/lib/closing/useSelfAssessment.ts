@@ -5,7 +5,12 @@ import {
   type CompetencyPage,
   PracticeService,
 } from "@/client";
-import { closingDrafts, type DraftScope, type LevelDraft } from "../progress";
+import {
+  closingDrafts,
+  type DraftScope,
+  type LevelDraft,
+} from "@/packages/shared/drafts";
+import { pathKey } from "@/packages/shared/pathKeys";
 
 export const DONE = "done";
 
@@ -119,7 +124,7 @@ export function useSendLevels(
     onSuccess: () => {
       for (const s of page.steps) closingDrafts.clearTicks(scope, s.id);
       return queryClient.invalidateQueries({
-        queryKey: ["competency", scope.competency],
+        queryKey: pathKey(scope.competency),
       });
     },
   });

@@ -2,7 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { PracticeService, type StepOut } from "@/client";
 import { Button } from "@/components/ui/button";
-import { type DraftScope, drafts, errorMessage } from "./progress";
+import { type DraftScope, drafts } from "@/packages/shared/drafts";
+import { errorMessage } from "@/packages/shared/errorMessage";
+import { pathKey } from "@/packages/shared/pathKeys";
 
 type Props = DraftScope & { step: StepOut; closed: boolean };
 
@@ -25,7 +27,7 @@ function useQuestion({ studentId, competency, step }: Props) {
     onSuccess: () => {
       type("");
       return queryClient.invalidateQueries({
-        queryKey: ["competency", competency],
+        queryKey: pathKey(competency),
       });
     },
   });
