@@ -23,7 +23,7 @@ class CourseSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     name: str = Field(min_length=1)
-    competencies: dict[str, CompetencySettings]
+    competencies: dict[str, CompetencySettings] = {}
 
 
 def competency_problems(

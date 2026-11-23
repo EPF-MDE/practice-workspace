@@ -154,6 +154,20 @@ def test_verify_names_a_competency_the_settings_miss_and_one_they_hold_beyond_c3
     assert any("C4" in p and "course.toml" in p for p in problems(result))
 
 
+def test_verify_names_each_competency_when_the_settings_hold_none(
+    tmp_path: Path,
+) -> None:
+    folder = write_course_folder(tmp_path, with_every_competency())
+    (folder / "course.toml").write_text('name = "Fixture course"\n')
+
+    result = verify(folder)
+
+    assert result.returncode != 0
+    assert len(problems(result)) == 3
+    for competency in ("C1", "C2", "C3"):
+        assert any(competency in p and "course.toml" in p for p in problems(result))
+
+
 def test_verify_refuses_a_title_in_a_competencys_front_matter(tmp_path: Path) -> None:
     folder = write_course_folder(tmp_path, with_every_competency())
     (folder / "c1.md").write_text("---\ncompetency: C1\ntitle: T\n---\n\n" + ONE_STEP)
