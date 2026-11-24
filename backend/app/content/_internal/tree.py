@@ -4,6 +4,8 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
+from .model import DIRECTIVES
+
 
 @dataclass
 class _Directive:
@@ -11,6 +13,10 @@ class _Directive:
     attrs: dict[str, str]
     children: list[_Node] = field(default_factory=list)
     snapshot: dict[str, Any] | None = None
+
+    @property
+    def is_group_block(self) -> bool:
+        return self.name not in DIRECTIVES
 
 
 _Node = str | _Directive

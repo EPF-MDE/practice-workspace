@@ -6,7 +6,6 @@ from collections.abc import Collection
 from .model import (
     BANDS,
     CHECK_POINTS,
-    DIRECTIVES,
     DRAWING_DIRECTIVES,
     FIELD_KINDS,
     INSTRUCTOR_MARKERS,
@@ -63,7 +62,7 @@ def _check(
             d.name in DRAWING_DIRECTIVES for d in directives
         ):
             raise ContentError(f"{where}: drawings belong in a step with kind=drawing")
-        blocks = {d.name for d in directives if d.name not in DIRECTIVES}
+        blocks = {d.name for d in directives if d.is_group_block}
         missing = [name for name, block in views.items() if block not in blocks]
         if blocks and missing:
             raise ContentError(

@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from markdown_it import MarkdownIt
 
 from .model import (
-    DIRECTIVES,
     Answer,
     Block,
     Canvas,
@@ -95,7 +94,7 @@ def _flatten(nodes: Iterable[_Node], group: str | None, out: list[Block]) -> Non
         if isinstance(node, str):
             pending.append(node)
             continue
-        if node.name not in DIRECTIVES:
+        if node.is_group_block:
             if node.name == group:
                 flush()
                 _flatten(node.children, group, out)
