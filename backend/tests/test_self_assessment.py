@@ -341,7 +341,7 @@ def test_after_the_reading_day_nothing_changes(at: At) -> None:
 
     assert first.status_code == 403
     assert done.status_code == 403
-    assert "Reading Day" in done.json()["detail"]
+    assert "4 July 2030 at 23:59" in done.json()["detail"]
 
 
 def test_the_page_says_whether_the_close_and_the_reading_day_passed(at: At) -> None:
