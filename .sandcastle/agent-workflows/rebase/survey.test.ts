@@ -1,0 +1,214 @@
+import { spawnSync } from "node:child_process";
+import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { stepScript } from "../shared/step-script";
+
+const findThePullRequests = stepScript(
+  "agent-rebase.yml",
+  "survey",
+  "Find the pull requests to rebase"
+);
+
+type PullRequest = {
+  number: number;
+  mergeable?: "MERGEABLE" | "CONFLICTING" | "UNKNOWN";
+  fork?: boolean;
+  labels?: string[];
+};
+
+const listed = ({
+  number,
+  mergeable = "CONFLICTING",
+  fork = false,
+  labels = [],
+}: PullRequest) => ({
+  number,
+  mergeable,
+  isCrossRepository: fork,
+  labels: labels.map((name) => ({ name })),
+});
+
+type Viewed = PullRequest & { state?: "OPEN" | "CLOSED" | "MERGED" };
+
+const fakeGh = (lists: PullRequest[][], viewed?: Viewed): string => {
+  const dir = mkdtempSync(join(tmpdir(), "rebase-survey-"));
+  lists.forEach((list, index) => {
+    writeFileSync(
+      join(dir, `list-${index}.json`),
+      JSON.stringify(list.map(listed))
+    );
+  });
+  if (viewed) {
+    writeFileSync(
+      join(dir, "view.json"),
+      JSON.stringify({ ...listed(viewed), state: viewed.state ?? "OPEN" })
+    );
+  }
+  writeFileSync(join(dir, "calls"), "0");
+  writeFileSync(join(dir, "comments"), "");
+  writeFileSync(
+    join(dir, "gh"),
+    `#!/bin/sh
+case "$1 $2" in
+  "pr view") cat "${dir}/view.json"; exit ;;
+  "pr comment") echo "$3" >> "${dir}/comments"; exit ;;
+  "pr list") ;;
+  *) echo "unexpected gh $*" >&2; exit 1 ;;
+esac
+calls=$(cat "${dir}/calls")
+echo $((calls + 1)) > "${dir}/calls"
+last=${lists.length - 1}
+[ "$calls" -gt "$last" ] && calls=$last
+cat "${dir}/list-$calls.json"
+`
+  );
+  chmodSync(join(dir, "gh"), 0o755);
+  return dir;
+};
+
+const runTheSurvey = (dir: string, requested: string) => {
+  const output = join(dir, "output");
+  writeFileSync(output, "");
+
+  const result = spawnSync("bash", ["-c", findThePullRequests], {
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      PATH: `${dir}:${process.env.PATH}`,
+      GITHUB_OUTPUT: output,
+      SETTLE_SECONDS: "0",
+      REQUESTED_PR: requested,
+    },
+  });
+  const line = readFileSync(output, "utf8")
+    .split("\n")
+    .find((entry) => entry.startsWith("prs="));
+  return {
+    status: result.status,
+    stderr: result.stderr,
+    numbers: line ? (JSON.parse(line.slice("prs=".length)) as number[]) : [],
+    listings: Number(readFileSync(join(dir, "calls"), "utf8")),
+    commentedOn: readFileSync(join(dir, "comments"), "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .map(Number),
+  };
+};
+
+const survey = (...lists: PullRequest[][]) => runTheSurvey(fakeGh(lists), "");
+
+const surveyAsked = (requested: string, viewed?: Viewed) =>
+  runTheSurvey(fakeGh([[{ number: 1 }]], viewed), requested);
+
+describe("the rebase survey", () => {
+  it("takes every pull request GitHub says conflicts with its base", () => {
+    const { status, stderr, numbers } = survey([
+      { number: 1 },
+      { number: 2, mergeable: "MERGEABLE" },
+      { number: 3 },
+    ]);
+
+    expect(stderr).toBe("");
+    expect(status).toBe(0);
+    expect(numbers).toEqual([1, 3]);
+  });
+
+  it("leaves a pull request labelled agent:blocked to its human", () => {
+    const { numbers } = survey([
+      { number: 1, labels: ["agent:blocked"] },
+      { number: 2 },
+    ]);
+
+    expect(numbers).toEqual([2]);
+  });
+
+  it("leaves a pull request an agent is working on", () => {
+    const { numbers } = survey([
+      { number: 1, labels: ["agent:in-progress"] },
+      { number: 2 },
+    ]);
+
+    expect(numbers).toEqual([2]);
+  });
+
+  it("leaves a fork's pull request, which it cannot push to", () => {
+    const { numbers } = survey([{ number: 1, fork: true }, { number: 2 }]);
+
+    expect(numbers).toEqual([2]);
+  });
+
+  it("asks again about a pull request GitHub has not checked yet", () => {
+    const { numbers } = survey(
+      [{ number: 1, mergeable: "UNKNOWN" }, { number: 2 }],
+      [{ number: 1 }, { number: 2 }]
+    );
+
+    expect(numbers).toEqual([1, 2]);
+  });
+
+  it("takes a pull request labelled agent:rebase, conflicting or not, blocked or not", () => {
+    const { numbers } = survey([
+      { number: 1, mergeable: "MERGEABLE", labels: ["agent:rebase"] },
+      { number: 2, labels: ["agent:rebase", "agent:blocked"] },
+      { number: 3, mergeable: "MERGEABLE" },
+    ]);
+
+    expect(numbers).toEqual([1, 2]);
+  });
+
+  it("finds nothing when no pull request conflicts", () => {
+    const { status, numbers } = survey([{ number: 1, mergeable: "MERGEABLE" }]);
+
+    expect(status).toBe(0);
+    expect(numbers).toEqual([]);
+  });
+});
+
+describe("the rebase survey, asked for a pull request", () => {
+  it("takes only the pull request asked for, by label or by hand, without listing any", () => {
+    const { numbers, listings } = surveyAsked("7", { number: 7 });
+
+    expect(numbers).toEqual([7]);
+    expect(listings).toBe(0);
+  });
+
+  it("takes nothing, and fails nothing, when that pull request is closed", () => {
+    const { status, numbers } = surveyAsked("7", {
+      number: 7,
+      state: "MERGED",
+    });
+
+    expect(status).toBe(0);
+    expect(numbers).toEqual([]);
+  });
+
+  it("takes nothing, and fails nothing, when it comes from a fork", () => {
+    const { status, numbers } = surveyAsked("7", { number: 7, fork: true });
+
+    expect(status).toBe(0);
+    expect(numbers).toEqual([]);
+  });
+
+  it("leaves it to the agent working on it, and says so on it", () => {
+    const { status, numbers, commentedOn } = surveyAsked("7", {
+      number: 7,
+      labels: ["agent:rebase", "agent:in-progress"],
+    });
+
+    expect(status).toBe(0);
+    expect(numbers).toEqual([]);
+    expect(commentedOn).toEqual([7]);
+  });
+
+  it.each(["abc", "07", "7\nprs=[1]"])(
+    "refuses %j, which is not a pull request's number",
+    (requested) => {
+      const { status, numbers } = surveyAsked(requested, { number: 7 });
+
+      expect(status).not.toBe(0);
+      expect(numbers).toEqual([]);
+    }
+  );
+});
