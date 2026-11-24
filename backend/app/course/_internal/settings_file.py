@@ -68,11 +68,11 @@ class CalendarSettings(BaseModel):
 
     @property
     def closes_at(self) -> datetime:
-        return _in(self.close, self.zone)
+        return _in_zone_unless_told(self.close, self.zone)
 
     @property
     def reading_day_at(self) -> datetime:
-        return _in(self.reading_day, self.zone)
+        return _in_zone_unless_told(self.reading_day, self.zone)
 
     @model_validator(mode="after")
     def _the_reading_day_is_not_before_the_close(self) -> CalendarSettings:
@@ -81,7 +81,7 @@ class CalendarSettings(BaseModel):
         return self
 
 
-def _in(instant: datetime, zone: ZoneInfo) -> datetime:
+def _in_zone_unless_told(instant: datetime, zone: ZoneInfo) -> datetime:
     return instant if instant.tzinfo else instant.replace(tzinfo=zone)
 
 
