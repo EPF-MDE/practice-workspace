@@ -45,7 +45,7 @@ def _tree(lines: list[str], where: str, blocks: Collection[str]) -> list[_Node]:
             if name not in DIRECTIVES and name not in blocks:
                 raise ContentError(
                     f"{where}: unknown block '::: {name}', neither a directive nor "
-                    "the block of a Group in the Course's settings"
+                    "a Group block the Course's settings name"
                 )
             directive = _Directive(name, _attrs(opened.group(2)))
             stack[-1].children.append(directive)
@@ -91,7 +91,7 @@ def parse_competency(
     clashing = sorted(set(groups.values()) & DIRECTIVES)
     if clashing:
         raise ContentError(
-            f"{source}: a Group's block is named like a directive: {clashing}"
+            f"{source}: a Group block is named like a directive: {clashing}"
         )
     text = text.replace("\r\n", "\n")
     front = _FRONT_MATTER.match(text)

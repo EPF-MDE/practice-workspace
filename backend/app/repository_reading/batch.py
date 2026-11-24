@@ -12,7 +12,7 @@ Project, one file per Student.
     uv run python -m app.repository_reading.batch --roster-only ...
 
 Settings come from `app.settings` (this repository's `.env`, or the environment), and
-each Group's upstream repository from the Course folder they name.
+each Group's Upstream repository from the Course folder they name.
 Repositories are read with the Student Connector App's installation on each one, else
 its installation `WORKSPACE_GITHUB_APP_INSTALLATION_ID` (`WORKSPACE_GITHUB_APP_*`), or
 with `gh auth token` given `--gh-token`. The roster is read from, and the readings
