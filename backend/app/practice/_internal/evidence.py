@@ -40,7 +40,7 @@ def _declaration_payload(
     return DeclarationPayload(
         url=project.url,
         what_to_read=sent.what_to_read.strip(),
-        repository=project.repository,
+        repository_path=project.repository,
         host=project.host,
         access_when_declared=checked.status,
     )

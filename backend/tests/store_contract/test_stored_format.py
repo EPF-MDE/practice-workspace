@@ -38,7 +38,7 @@ WRITTEN: dict[Kind, dict[str, Any]] = {
         "declaration": {
             "url": "https://github.com/ada/bakery",
             "what_to_read": "été",
-            "repository": "ada/bakery",
+            "repository_path": "ada/bakery",
             "host": "github",
             "access_when_declared": "readable",
         },
@@ -51,7 +51,7 @@ WRITTEN: dict[Kind, dict[str, Any]] = {
     Kind.DECLARATION: {
         "url": "https://gitlab.com/a/b",
         "what_to_read": "été",
-        "repository": "a/b",
+        "repository_path": "a/b",
         "host": "gitlab",
         "access_when_declared": "gitlab",
     },

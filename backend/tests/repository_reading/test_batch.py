@@ -67,7 +67,7 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
         DeclarationPayload(
             url="https://github.com/radia/notes",
             what_to_read="n",
-            repository="radia/notes",
+            repository_path="radia/notes",
             host="github",
             access_when_declared="readable",
         ),
@@ -77,7 +77,7 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
         DeclarationPayload(
             url="https://gitlab.com/b/api",
             what_to_read="n",
-            repository="b/api",
+            repository_path="b/api",
             host="gitlab",
             access_when_declared="gitlab",
         ),

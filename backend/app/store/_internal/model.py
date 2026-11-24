@@ -45,7 +45,7 @@ class Entry[P: Payload]:
 class StoredDeclaration:
     url: str
     what_to_read: str
-    repository: Repository
+    repository_path: Repository
     host: Host
     access_when_declared: str
     at: datetime
@@ -57,7 +57,7 @@ class StoredDeclaration:
         return cls(
             url=payload.url,
             what_to_read=payload.what_to_read,
-            repository=payload.repository,
+            repository_path=payload.repository_path,
             host=payload.host,
             access_when_declared=payload.access_when_declared,
             at=at,

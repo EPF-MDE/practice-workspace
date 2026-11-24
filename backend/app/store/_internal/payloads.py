@@ -67,7 +67,9 @@ class DeclarationPayload(Payload):
     KIND = Kind.DECLARATION
     url: str
     what_to_read: str = Field(validation_alias=AliasChoices("what_to_read", "note"))
-    repository: Repository
+    repository_path: Repository = Field(
+        validation_alias=AliasChoices("repository_path", "repository")
+    )
     host: Host
     access_when_declared: str = Field(
         validation_alias=AliasChoices("access_when_declared", "access")

@@ -175,7 +175,7 @@ def test_one_declaration_per_student_the_latest_sent_alone_or_with_any_closing_s
 
     declaration = store.record(ADA_OF_OCEENS).declaration()
     assert declaration is not None
-    assert (declaration.url, declaration.repository, declaration.host) == (
+    assert (declaration.url, declaration.repository_path, declaration.host) == (
         "https://github.com/ada/b",
         "ada/b",
         "github",
