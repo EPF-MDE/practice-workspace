@@ -7,6 +7,7 @@ from conftest import ADA_OF_OCEENS, FIXTURES, MakeClient, sign_in
 from course_folders import (
     A_SCALE,
     ONE_STEP,
+    TWO_GROUPS,
     front_matter,
     with_every_competency,
     write_course_folder,
@@ -174,7 +175,9 @@ def test_verify_names_each_competency_when_the_settings_hold_none(
     tmp_path: Path,
 ) -> None:
     folder = write_course_folder(tmp_path, with_every_competency())
-    (folder / "course.toml").write_text('name = "Fixture course"\n' + A_SCALE)
+    (folder / "course.toml").write_text(
+        'name = "Fixture course"\n' + TWO_GROUPS + A_SCALE, encoding="utf-8"
+    )
 
     result = verify(folder)
 
@@ -209,26 +212,24 @@ def test_verify_reports_a_content_problem_beside_a_settings_problem(
     assert "c1.md" in result.stdout
 
 
-TWO_GROUPS = (
-    'name = "Two-Group course"\n'
-    '[[groups]]\nname = "Harbour"\nblock = "harbour"\n'
-    '[[groups]]\nname = "Lighthouse"\nblock = "lighthouse"\n'
+SEA_GROUPS = (
+    '\n[[groups]]\nname = "Harbour"\nblock = "harbour"\n'
+    '\n[[groups]]\nname = "Lighthouse"\nblock = "lighthouse"\n'
 )
 
 
-def course_folder(folder: Path, settings: str, step: str) -> Path:
-    (folder / "course.toml").write_text(settings, encoding="utf-8")
-    (folder / "c1.md").write_text(
-        f"---\ncompetency: C1\ntitle: T\n---\n\n## S {{#s minutes=5}}\n\n{step}",
-        encoding="utf-8",
+def course_folder(folder: Path, groups: str, step: str) -> Path:
+    return write_course_folder(
+        folder,
+        with_every_competency(C1=f"## S {{#s minutes=5}}\n\n{step}"),
+        groups=groups,
     )
-    return folder
 
 
 def test_verify_reports_a_group_block_for_a_group_the_settings_do_not_hold(
     tmp_path: Path,
 ) -> None:
-    folder = course_folder(tmp_path, TWO_GROUPS, "::: quay\nx\n:::\n")
+    folder = course_folder(tmp_path, SEA_GROUPS, "::: quay\nx\n:::\n")
 
     result = verify(folder)
 
@@ -239,7 +240,7 @@ def test_verify_reports_a_group_block_for_a_group_the_settings_do_not_hold(
 def test_verify_reports_a_step_with_one_groups_block_and_not_anothers(
     tmp_path: Path,
 ) -> None:
-    folder = course_folder(tmp_path, TWO_GROUPS, "::: harbour\nx\n:::\n")
+    folder = course_folder(tmp_path, SEA_GROUPS, "::: harbour\nx\n:::\n")
 
     result = verify(folder)
 
@@ -250,7 +251,7 @@ def test_verify_reports_a_step_with_one_groups_block_and_not_anothers(
 
 def test_verify_passes_a_step_with_every_groups_block(tmp_path: Path) -> None:
     folder = course_folder(
-        tmp_path, TWO_GROUPS, "::: harbour\nx\n:::\n\n::: lighthouse\ny\n:::\n"
+        tmp_path, SEA_GROUPS, "::: harbour\nx\n:::\n\n::: lighthouse\ny\n:::\n"
     )
 
     result = verify(folder)
@@ -262,10 +263,10 @@ def test_verify_passes_a_step_with_every_groups_block(tmp_path: Path) -> None:
     "settings",
     [
         pytest.param(
-            TWO_GROUPS.replace('"Lighthouse"', '"Harbour"'), id="two Groups, one name"
+            SEA_GROUPS.replace('"Lighthouse"', '"Harbour"'), id="two Groups, one name"
         ),
         pytest.param(
-            TWO_GROUPS.replace('"lighthouse"', '"harbour"'), id="two Groups, one block"
+            SEA_GROUPS.replace('"lighthouse"', '"harbour"'), id="two Groups, one block"
         ),
     ],
 )
@@ -281,7 +282,7 @@ def test_verify_reports_two_groups_sharing_an_id(tmp_path: Path, settings: str) 
 def test_the_app_refuses_to_start_on_a_group_block_the_settings_do_not_hold(
     make_client: MakeClient, test_settings: Settings, tmp_path: Path
 ) -> None:
-    folder = course_folder(tmp_path, TWO_GROUPS, "::: quay\nx\n:::\n")
+    folder = course_folder(tmp_path, SEA_GROUPS, "::: quay\nx\n:::\n")
 
     with pytest.raises(ConfigurationError, match="quay"):
         make_client(settings=on(test_settings, folder))

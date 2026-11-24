@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 from conftest import ADA_OF_OCEENS, FIXTURES, MakeClient, sign_in
-from course_folders import ONE_STEP, front_matter
+from course_folders import ONE_STEP, TWO_GROUPS, front_matter
 from fastapi.testclient import TestClient
 
 from app.course import COMPETENCIES
@@ -23,8 +23,8 @@ NAME = 'name = "A course"\n'
 TITLES = "".join(
     f'\n[competencies.{c}]\ntitle = "{c}"\nminutes = 40\n' for c in COMPETENCIES
 )
-SETTINGS = NAME + TITLES
-NO_LEVEL = NAME + "levels = []\n" + TITLES
+SETTINGS = NAME + TWO_GROUPS + TITLES
+NO_LEVEL = NAME + "levels = []\n" + TWO_GROUPS + TITLES
 TWO_LEVELS = (
     SETTINGS
     + '\n[[levels]]\nid = "started"\nlabel = "Started"\n\n'
@@ -87,7 +87,7 @@ def verify(folder: Path) -> subprocess.CompletedProcess[str]:
 
 
 def a_course(folder: Path, settings: str, to_get_there: str) -> Path:
-    (folder / "course.toml").write_text(settings)
+    (folder / "course.toml").write_text(settings, encoding="utf-8")
     (folder / "c1.md").write_text(CLOSING_WITH.format(level=to_get_there))
     for competency in COMPETENCIES[1:]:
         (folder / f"{competency.lower()}.md").write_text(

@@ -70,7 +70,7 @@ def filled(step: dict[str, Any]) -> dict[str, str]:
 
 
 def test_the_course_is_served_under_its_name(client: TestClient, shape: Shape) -> None:
-    assert client.get("/api/course").json() == {"name": shape.name}
+    assert client.get("/api/course").json()["name"] == shape.name
 
 
 def test_each_groups_student_signs_in_with_their_group(
