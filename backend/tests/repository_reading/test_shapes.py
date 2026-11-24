@@ -189,7 +189,7 @@ def test_ref_analyses_stored_before_they_had_a_type_are_read_again(
     assert again.competencies == reading.competencies
 
 
-def test_a_readings_student_is_stored_with_its_group(
+def test_a_readings_student_is_stored_under_the_keys_it_always_had(
     recorded: type[Recorded],
 ) -> None:
     r = recorded("placeholder-email")
@@ -197,19 +197,9 @@ def test_a_readings_student_is_stored_with_its_group(
 
     assert reading.to_dict()["student"] == {
         "login": r.student.login,
-        "group": r.student.group,
+        "project": r.student.group,
         "evidence_project": r.student.evidence_project,
     }
-
-
-def test_a_reading_stored_with_its_group_under_project_reads_back(
-    recorded: type[Recorded],
-) -> None:
-    r = recorded("placeholder-email")
-    stored = r.reader.read(r.student).to_dict()
-    stored["student"]["project"] = stored["student"].pop("group")
-
-    assert RepositoryReading.from_dict(stored).student.group == r.student.group
 
 
 def test_a_group_without_an_upstream_repository_is_read_on_its_own_history(

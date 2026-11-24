@@ -50,8 +50,7 @@ class ChangedFile(BaseModel):
     changes: int | None = None
 
 
-_STORED_GROUP = "group"
-_FORMER_GROUP = "project"
+_STORED_GROUP = "project"
 _KEYS_BEFORE_RENAME = {"facts_computed_at": "read_at", "last_checked_at": "checked_at"}
 
 
@@ -161,9 +160,7 @@ class RepositoryReading:
 
 def _stored_student(d: dict[str, Any]) -> StudentToRead:
     return StudentToRead(
-        d["login"],
-        d[_STORED_GROUP] if _STORED_GROUP in d else d[_FORMER_GROUP],
-        Repository(d["evidence_project"]),
+        d["login"], d[_STORED_GROUP], Repository(d["evidence_project"])
     )
 
 
