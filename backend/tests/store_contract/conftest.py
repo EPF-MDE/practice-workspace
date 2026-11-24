@@ -62,9 +62,9 @@ def declared(url: str, what_to_read: str = "n") -> DeclarationPayload:
         {
             "url": url,
             "what_to_read": what_to_read,
-            "repository": repository,
+            "repository_path": repository,
             "host": host,
-            "access": "gitlab" if host == "gitlab" else "readable",
+            "access_when_declared": "gitlab" if host == "gitlab" else "readable",
         }
     )
 

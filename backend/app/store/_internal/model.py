@@ -27,7 +27,7 @@ EVERY_COMPETENCY = None
 @dataclass(frozen=True)
 class Entry[P: Payload]:
     competency: str | None
-    key: str | None
+    step_or_drawing: str | None
     payload: P
     version: int
     at: datetime
@@ -36,14 +36,18 @@ class Entry[P: Payload]:
     def kind(self) -> Kind:
         return self.payload.KIND
 
+    @property
+    def series(self) -> tuple[Kind, str | None, str | None]:
+        return (self.kind, self.competency, self.step_or_drawing)
+
 
 @dataclass(frozen=True)
 class StoredDeclaration:
     url: str
     what_to_read: str
-    repository: Repository
+    repository_path: Repository
     host: Host
-    access: str
+    access_when_declared: str
     at: datetime
 
     @classmethod
@@ -53,9 +57,9 @@ class StoredDeclaration:
         return cls(
             url=payload.url,
             what_to_read=payload.what_to_read,
-            repository=payload.repository,
+            repository_path=payload.repository_path,
             host=payload.host,
-            access=payload.access,
+            access_when_declared=payload.access_when_declared,
             at=at,
         )
 
@@ -104,18 +108,24 @@ class Record:
     entries: tuple[Entry[Payload], ...] = ()
 
     def history[P: Payload](
-        self, payload: type[P], competency: str | None, key: str | None = None
+        self,
+        payload: type[P],
+        competency: str | None,
+        step_or_drawing: str | None = None,
     ) -> list[Entry[P]]:
         return [
             e
             for e in self.all(payload, competency)
-            if (e.competency, e.key) == (competency, key)
+            if (e.competency, e.step_or_drawing) == (competency, step_or_drawing)
         ]
 
     def latest[P: Payload](
-        self, payload: type[P], competency: str | None, key: str | None = None
+        self,
+        payload: type[P],
+        competency: str | None,
+        step_or_drawing: str | None = None,
     ) -> Entry[P] | None:
-        versions = self.history(payload, competency, key)
+        versions = self.history(payload, competency, step_or_drawing)
         return versions[-1] if versions else None
 
     def all[P: Payload](
@@ -145,7 +155,7 @@ class Record:
             if entry.competency != competency:
                 continue
             match entry.payload:
-                case CheckPointsPayload() if entry.key == drawing:
+                case CheckPointsPayload() if entry.step_or_drawing == drawing:
                     missed = entry.payload.missed
                 case SelfAssessmentPayload() if (
                     drawing in entry.payload.missed_check_points

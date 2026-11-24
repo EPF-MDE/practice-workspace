@@ -224,7 +224,7 @@ def _step_out(
         questions=[
             Question(text=e.payload.text, asked_at=e.at)
             for e in record.all(QuestionPayload, competency)
-            if e.key == step.id
+            if e.step_or_drawing == step.id
         ],
     )
 

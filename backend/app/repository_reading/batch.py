@@ -65,9 +65,9 @@ def evidence_projects(
         if declared is None:
             to_read.append(roster)
         elif declared.host == GITLAB:
-            gitlab[student.github_login] = declared.repository
+            gitlab[student.github_login] = declared.repository_path
         else:
-            to_read.append(replace(roster, evidence_project=declared.repository))
+            to_read.append(replace(roster, evidence_project=declared.repository_path))
     return to_read, gitlab
 
 

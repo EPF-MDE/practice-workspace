@@ -38,9 +38,9 @@ WRITTEN: dict[Kind, dict[str, Any]] = {
         "declaration": {
             "url": "https://github.com/ada/bakery",
             "what_to_read": "été",
-            "repository": "ada/bakery",
+            "repository_path": "ada/bakery",
             "host": "github",
-            "access": "readable",
+            "access_when_declared": "readable",
         },
         "evidence_panel_snapshot": {
             "competency": "C1",
@@ -51,9 +51,9 @@ WRITTEN: dict[Kind, dict[str, Any]] = {
     Kind.DECLARATION: {
         "url": "https://gitlab.com/a/b",
         "what_to_read": "été",
-        "repository": "a/b",
+        "repository_path": "a/b",
         "host": "gitlab",
-        "access": "gitlab",
+        "access_when_declared": "gitlab",
     },
     Kind.QUESTION: {"text": "Why 10?\nAnd why ``` here?"},
     Kind.EVIDENCE_PANEL_SNAPSHOT: {"empty": False, "facts": [{"point": "C2.c"}]},
@@ -152,6 +152,41 @@ def test_entries_written_before_read_back_typed(github: FakeGitHub) -> None:
     )
     assert record.latest(WithdrawalPayload, EVERY_COMPETENCY) is not None
     assert record.declaration() is None
+
+
+def test_a_declaration_stored_under_its_former_names_reads_back(
+    github: FakeGitHub,
+) -> None:
+    former = {
+        "url": "https://gitlab.com/a/b",
+        "note": "été",
+        "repository": "a/b",
+        "host": "gitlab",
+        "access": "gitlab",
+    }
+    github_store(github).open_record(ADA_OF_OCEENS)
+    _sent_before(
+        github,
+        {"kind": "declaration", "competency": None, "version": 1, "payload": former},
+    )
+    _sent_before(
+        github,
+        {
+            "kind": "evidence-plan",
+            "competency": "C1",
+            "version": 1,
+            "payload": {"text": "p", "declaration": former},
+        },
+    )
+
+    record = github_store(github).record(ADA_OF_OCEENS)
+
+    declaration = record.latest(DeclarationPayload, EVERY_COMPETENCY)
+    plan = record.latest(EvidencePlanPayload, "C1")
+    assert declaration is not None
+    assert plan is not None
+    assert declaration.payload.stored() == WRITTEN[Kind.DECLARATION]
+    assert plan.payload.declaration == declaration.payload
 
 
 def test_a_drawing_written_without_its_commit_reads_from_the_data_branch(

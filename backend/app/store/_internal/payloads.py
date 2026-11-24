@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any, ClassVar, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, ValidationError
 
 from app.roster import Repository
 
@@ -66,10 +66,14 @@ class SelfAssessmentPayload(Payload):
 class DeclarationPayload(Payload):
     KIND = Kind.DECLARATION
     url: str
-    what_to_read: str
-    repository: Repository
+    what_to_read: str = Field(validation_alias=AliasChoices("what_to_read", "note"))
+    repository_path: Repository = Field(
+        validation_alias=AliasChoices("repository_path", "repository")
+    )
     host: Host
-    access: str
+    access_when_declared: str = Field(
+        validation_alias=AliasChoices("access_when_declared", "access")
+    )
 
 
 class WithdrawalPayload(Payload):

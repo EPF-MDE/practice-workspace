@@ -96,7 +96,7 @@ class InMemoryStore:
         self,
         student: Student,
         competency: str | None,
-        key: str | None,
+        step_or_drawing: str | None,
         payload: P,
     ) -> Entry[P]:
         check_size(payload)
@@ -105,9 +105,9 @@ class InMemoryStore:
             version = 1 + sum(
                 1
                 for e in entries
-                if (e.kind, e.competency, e.key) == (payload.KIND, competency, key)
+                if e.series == (payload.KIND, competency, step_or_drawing)
             )
-            entry = Entry(competency, key, payload, version, self.clock())
+            entry = Entry(competency, step_or_drawing, payload, version, self.clock())
             entries.append(entry)
             self.writes += 1
             return entry
