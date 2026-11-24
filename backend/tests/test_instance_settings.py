@@ -41,3 +41,10 @@ def test_the_github_store_names_every_instance_setting_it_misses(start: Start) -
         match=r"WORKSPACE_REPOSITORY and WORKSPACE_STORE_APP_SLUG$",
     ):
         start(store="github")
+
+
+def test_the_roster_without_a_roster_file_or_a_repository_refuses_to_start(
+    start: Start,
+) -> None:
+    with pytest.raises(ConfigurationError, match=r"WORKSPACE_REPOSITORY\b"):
+        start(roster_file="")

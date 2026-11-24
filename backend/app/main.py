@@ -71,6 +71,7 @@ def default_roster(settings: Settings, course: Course) -> RosterSource:
     groups = set(course.groups)
     if settings.roster_file:
         return StaticRoster.from_file(settings.roster_file, groups)
+    settings.require("Reading the roster from the Store's repository", "repository")
     client = installation_client(
         settings.store_app_id,
         settings.store_app_private_key_base64,
