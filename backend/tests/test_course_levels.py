@@ -128,10 +128,12 @@ def test_after_the_close_a_point_only_moves_up_to_the_top_level(
     after = on_three_levels(make_client, test_settings, past, future)
 
     down = after.post(SELF, json=rated(a="seen", b="seen"))
+    short_of_the_top = after.post(SELF, json=rated(a="tried", b="tried"))
     up = after.post(SELF, json=rated(a=("shipped", LINK), b="tried"))
 
     assert down.status_code == 403
     assert '"Shipped it"' in down.json()["detail"]
+    assert short_of_the_top.status_code == 403
     assert up.status_code == 200
     mine = after.get(PAGE).json()["self_assessment"]["levels"]
     assert (mine["C1.a"]["level"], mine["C1.b"]["level"]) == ("shipped", "tried")
