@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from conftest import ADA_OF_OCEENS, FIXTURES, MakeClient, sign_in
+from conftest import MakeClient, sign_in
 from course_folders import (
     A_SCALE,
     ONE_STEP,
@@ -12,6 +12,7 @@ from course_folders import (
     with_every_competency,
     write_course_folder,
 )
+from courses_under_test import FIXTURES, TWO_GROUP_FIXTURE, CourseFolder
 from fastapi.testclient import TestClient
 
 from app.main import ConfigurationError
@@ -20,6 +21,11 @@ from app.settings import Settings
 BACKEND = Path(__file__).resolve().parents[1]
 DEMO_COURSE = BACKEND.parent / "demo-course"
 COURSES = FIXTURES / "courses"
+
+
+@pytest.fixture
+def course() -> CourseFolder:
+    return TWO_GROUP_FIXTURE
 
 
 def verify(folder: Path) -> subprocess.CompletedProcess[str]:
@@ -69,7 +75,7 @@ def test_a_competencys_page_takes_its_title_from_the_settings(
         {"C1": ("First", 10), "C2": ("Second", 20), "C3": ("Third", 30)},
     )
     client = make_client(settings=on(test_settings, folder))
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, TWO_GROUP_FIXTURE.student.github_id)
 
     assert client.get("/api/competencies/C2").json()["title"] == "Second"
 

@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Any
 
-import pytest
-from conftest import ADA_OF_OCEENS, GRACE_OF_MATHUTRICE, MakeClient, sign_in
+from conftest import MakeClient, sign_in
+from courses_under_test import CourseFolder, OnTheRoster, on_the_two_group_fixture
 from fastapi.testclient import TestClient
 
 from app.settings import Settings
@@ -20,22 +20,16 @@ def blocks(page: dict[str, Any], step_id: str, kind: str) -> list[dict[str, Any]
     return [b for b in step(page, step_id)["blocks"] if b["type"] == kind]
 
 
-@pytest.fixture
-def ada(client: TestClient) -> TestClient:
-    sign_in(client, ADA_OF_OCEENS)
-    return client
-
-
 def test_the_page_needs_a_signed_in_student(client: TestClient) -> None:
     assert client.get(PAGE).status_code == 401
 
 
-def test_an_unknown_competency_is_not_found(ada: TestClient) -> None:
-    assert ada.get("/api/competencies/C9").status_code == 404
+def test_an_unknown_competency_is_not_found(signed_in: TestClient) -> None:
+    assert signed_in.get("/api/competencies/C9").status_code == 404
 
 
-def test_the_page_lists_the_steps_with_their_timings(ada: TestClient) -> None:
-    page = ada.get(PAGE).json()
+def test_the_page_lists_the_steps_with_their_timings(signed_in: TestClient) -> None:
+    page = signed_in.get(PAGE).json()
 
     assert page["competency"] == "C1"
     assert [(s["id"], s["minutes"]) for s in page["steps"]] == [
@@ -52,20 +46,20 @@ def test_the_page_lists_the_steps_with_their_timings(ada: TestClient) -> None:
     assert step(page, "redraw")["kind"] == "drawing"
 
 
-def test_a_student_receives_their_groups_content_only(client: TestClient) -> None:
-    sign_in(client, ADA_OF_OCEENS)
-    ada_page = client.get(PAGE).text
-    assert "OCEENS-ONLY" in ada_page
-    assert "MATHUTRICE-ONLY" not in ada_page
+def test_a_student_receives_their_groups_content_only(
+    client: TestClient, course: CourseFolder
+) -> None:
+    for student in course.one_per_group:
+        sign_in(client, student.github_id)
+        page = client.get(PAGE).text
 
-    sign_in(client, GRACE_OF_MATHUTRICE)
-    grace_page = client.get(PAGE).text
-    assert "MATHUTRICE-ONLY" in grace_page
-    assert "OCEENS-ONLY" not in grace_page
+        assert student.marked("ONLY") in page
+        for other in course.others_marked(student, "ONLY"):
+            assert other not in page
 
 
-def test_the_fields_of_a_step_come_with_their_labels(ada: TestClient) -> None:
-    fields = blocks(ada.get(PAGE).json(), "guided-calculation", "field")
+def test_the_fields_of_a_step_come_with_their_labels(signed_in: TestClient) -> None:
+    fields = blocks(signed_in.get(PAGE).json(), "guided-calculation", "field")
 
     assert [(f["id"], f["kind"]) for f in fields] == [
         ("sentence", "line"),
@@ -75,9 +69,9 @@ def test_the_fields_of_a_step_come_with_their_labels(ada: TestClient) -> None:
 
 
 def test_every_answer_block_is_locked_before_the_students_answer(
-    ada: TestClient,
+    signed_in: TestClient, course: CourseFolder
 ) -> None:
-    response = ada.get(PAGE)
+    response = signed_in.get(PAGE)
     page = response.json()
 
     assert blocks(page, "guided-calculation", "answer") == [
@@ -86,12 +80,15 @@ def test_every_answer_block_is_locked_before_the_students_answer(
     assert blocks(page, "the-number-changes", "answer") == [
         {"type": "answer", "locked": True, "html": None}
     ]
-    for withheld in ("OCEENS-ANSWER", "MATHUTRICE-ANSWER", "CHANGES-ANSWER"):
+    every_group = [s.marked("ANSWER") for s in course.one_per_group]
+    for withheld in [*every_group, "CHANGES-ANSWER"]:
         assert withheld not in response.text
 
 
-def test_sending_an_answer_returns_the_block_it_unlocks(ada: TestClient) -> None:
-    response = ada.post(
+def test_sending_an_answer_returns_the_block_it_unlocks(
+    signed_in: TestClient, student: OnTheRoster
+) -> None:
+    response = signed_in.post(
         ANSWER,
         json={
             "fields": {"sentence": "10 summaries is at most 2 hours", "step-1": "10"}
@@ -101,19 +98,23 @@ def test_sending_an_answer_returns_the_block_it_unlocks(ada: TestClient) -> None
     assert response.status_code == 200
     sent = response.json()
     assert sent["version"] == 1
-    assert len(sent["unlocked"]) == 1 and "OCEENS-ANSWER" in sent["unlocked"][0]
+    assert (
+        len(sent["unlocked"]) == 1 and student.marked("ANSWER") in sent["unlocked"][0]
+    )
     assert "CHANGES-ANSWER" not in response.text
 
 
 def test_once_sent_the_page_shows_the_answer_and_what_the_student_sent(
-    ada: TestClient,
+    signed_in: TestClient, student: OnTheRoster
 ) -> None:
-    ada.post(ANSWER, json={"fields": {"sentence": "my sentence", "step-1": "my step"}})
+    signed_in.post(
+        ANSWER, json={"fields": {"sentence": "my sentence", "step-1": "my step"}}
+    )
 
-    page = ada.get(PAGE).json()
+    page = signed_in.get(PAGE).json()
 
     [answer] = blocks(page, "guided-calculation", "answer")
-    assert answer["locked"] is False and "OCEENS-ANSWER" in answer["html"]
+    assert answer["locked"] is False and student.marked("ANSWER") in answer["html"]
     assert step(page, "guided-calculation")["sent"]["fields"] == {
         "sentence": "my sentence",
         "step-1": "my step",
@@ -122,84 +123,87 @@ def test_once_sent_the_page_shows_the_answer_and_what_the_student_sent(
 
 
 def test_sending_again_stores_a_new_version_and_keeps_every_version(
-    ada: TestClient,
+    signed_in: TestClient,
 ) -> None:
-    ada.post(ANSWER, json={"fields": {"sentence": "first"}})
-    second = ada.post(ANSWER, json={"fields": {"sentence": "second"}}).json()
+    signed_in.post(ANSWER, json={"fields": {"sentence": "first"}})
+    second = signed_in.post(ANSWER, json={"fields": {"sentence": "second"}}).json()
 
     assert second["version"] == 2
-    sent = step(ada.get(PAGE).json(), "guided-calculation")["sent"]
+    sent = step(signed_in.get(PAGE).json(), "guided-calculation")["sent"]
     assert sent["fields"] == {"sentence": "second"}
     assert sent["version"] == 2
     assert [v["fields"]["sentence"] for v in sent["history"]] == ["first", "second"]
 
 
-def test_one_students_answer_unlocks_nothing_for_another(client: TestClient) -> None:
-    sign_in(client, ADA_OF_OCEENS)
+def test_one_students_answer_unlocks_nothing_for_another(
+    client: TestClient, course: CourseFolder
+) -> None:
+    sign_in(client, course.student.github_id)
     client.post(ANSWER, json={"fields": {"sentence": "mine"}})
 
-    sign_in(client, GRACE_OF_MATHUTRICE)
+    sign_in(client, course.another.github_id)
     response = client.get(PAGE)
 
     assert blocks(response.json(), "guided-calculation", "answer")[0]["locked"] is True
-    assert "MATHUTRICE-ANSWER" not in response.text
+    assert course.another.marked("ANSWER") not in response.text
 
 
-def test_an_answer_names_only_the_steps_fields(ada: TestClient) -> None:
-    assert ada.post(ANSWER, json={"fields": {"nope": "x"}}).status_code == 422, (
+def test_an_answer_names_only_the_steps_fields(signed_in: TestClient) -> None:
+    assert signed_in.post(ANSWER, json={"fields": {"nope": "x"}}).status_code == 422, (
         "a field no step has"
     )
-    assert ada.post(ANSWER, json={"fields": {"sentence": "  "}}).status_code == 422, (
-        "a blank field"
-    )
     assert (
-        ada.post(
+        signed_in.post(ANSWER, json={"fields": {"sentence": "  "}}).status_code == 422
+    ), "a blank field"
+    assert (
+        signed_in.post(
             "/api/competencies/C1/steps/read-the-chain/answer",
             json={"fields": {"sentence": "x"}},
         ).status_code
         == 422
     ), "a field of another step"
     assert (
-        ada.post(
+        signed_in.post(
             "/api/competencies/C1/steps/nowhere/answer", json={"fields": {"x": "y"}}
         ).status_code
         == 404
     ), "a step that does not exist"
 
 
-def test_a_field_of_the_other_groups_block_is_not_one_of_the_students(
-    client: TestClient,
+@on_the_two_group_fixture
+def test_on_two_groups_a_field_of_the_other_groups_block_is_not_one_of_the_students(
+    client: TestClient, course: CourseFolder
 ) -> None:
-    sign_in(client, GRACE_OF_MATHUTRICE)
+    sign_in(client, course.another.github_id)
 
     sent = client.post(ANSWER, json={"fields": {"sentence": "x", "step-1": "y"}})
 
     assert sent.status_code == 422
 
 
-def test_no_response_contains_instructor_notes(ada: TestClient) -> None:
-    responses = [ada.get(PAGE)]
+def test_no_response_contains_instructor_notes(signed_in: TestClient) -> None:
+    responses = [signed_in.get(PAGE)]
     responses.append(
-        ada.post(ANSWER, json={"fields": {"sentence": "x", "step-1": "y"}})
+        signed_in.post(ANSWER, json={"fields": {"sentence": "x", "step-1": "y"}})
     )
-    responses.append(ada.get(PAGE))
+    responses.append(signed_in.get(PAGE))
 
     for response in responses:
         assert "SECRET-COMMENT" not in response.text
         assert "SECRET-INSTRUCTOR-NOTE" not in response.text
 
 
-def test_links_to_the_instructors_material_are_links(ada: TestClient) -> None:
-    page = ada.get(PAGE).json()
+def test_links_to_the_instructors_material_are_links(signed_in: TestClient) -> None:
+    page = signed_in.get(PAGE).json()
 
     [reading] = blocks(page, "read-the-chain", "markdown")
     assert '<a href="https://github.com/EPF-MDE/OceENS/issues/105"' in reading["html"]
 
 
 def test_nothing_is_written_before_a_send(
-    client: TestClient, store: InMemoryStore
+    signed_in: TestClient, store: InMemoryStore
 ) -> None:
-    sign_in(client, ADA_OF_OCEENS)
+    client = signed_in
     client.get(PAGE)
     client.get(PAGE)
 
@@ -210,10 +214,13 @@ def test_nothing_is_written_before_a_send(
 
 
 def test_an_answer_after_the_workspace_closed_is_refused(
-    make_client: MakeClient, test_settings: Settings, past: datetime
+    make_client: MakeClient,
+    test_settings: Settings,
+    past: datetime,
+    student: OnTheRoster,
 ) -> None:
     client = make_client(settings=test_settings.model_copy(update={"closes_at": past}))
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
 
     response = client.post(ANSWER, json={"fields": {"sentence": "late"}})
 
@@ -224,9 +231,9 @@ def test_an_answer_after_the_workspace_closed_is_refused(
 
 
 def test_the_page_says_when_the_workspace_closes(
-    ada: TestClient, test_settings: Settings
+    signed_in: TestClient, test_settings: Settings
 ) -> None:
-    page = ada.get(PAGE).json()
+    page = signed_in.get(PAGE).json()
 
     assert page["closed"] is False
     assert datetime.fromisoformat(page["closes_at"]) == test_settings.closes_at

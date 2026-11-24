@@ -1,13 +1,16 @@
 import base64
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
 import pytest
-from conftest import ADA_OF_OCEENS, MakeClient, c1_levels, sign_in
+from conftest import MakeClient, c1_levels, sign_in
+from courses_under_test import CourseFolder, OnTheRoster, on_the_two_group_fixture
 from fastapi.testclient import TestClient
 
 from app.settings import Settings
 
+At = Callable[[datetime, datetime], TestClient]
 PAGE = "/api/competencies/C1"
 SELF = f"{PAGE}/self-assessment"
 LINK = "https://github.com/ada/notes/blob/main/README.md#L3"
@@ -25,29 +28,28 @@ def points(page: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {b["id"]: b for b in closing(page)["blocks"] if b["type"] == "point"}
 
 
+def redraw(page: dict[str, Any]) -> dict[str, Any]:
+    return next(s for s in page["steps"] if s["id"] == "redraw")
+
+
 @pytest.fixture
-def ada(client: TestClient) -> TestClient:
-    sign_in(client, ADA_OF_OCEENS)
-    return client
-
-
 def at(
-    make_client: MakeClient,
-    test_settings: Settings,
-    closes_at: datetime,
-    reading_day_at: datetime,
-) -> TestClient:
-    client = make_client(
-        settings=test_settings.model_copy(
-            update={"closes_at": closes_at, "reading_day_at": reading_day_at}
+    make_client: MakeClient, test_settings: Settings, student: OnTheRoster
+) -> Callable[[datetime, datetime], TestClient]:
+    def signed_in_at(closes_at: datetime, reading_day_at: datetime) -> TestClient:
+        client = make_client(
+            settings=test_settings.model_copy(
+                update={"closes_at": closes_at, "reading_day_at": reading_day_at}
+            )
         )
-    )
-    sign_in(client, ADA_OF_OCEENS)
-    return client
+        sign_in(client, student.github_id)
+        return client
+
+    return signed_in_at
 
 
-def test_each_point_shows_its_id_band_and_proof_sentence(ada: TestClient) -> None:
-    shown = points(ada.get(PAGE).json())
+def test_each_point_shows_its_id_band_and_proof_sentence(signed_in: TestClient) -> None:
+    shown = points(signed_in.get(PAGE).json())
 
     assert [(p["id"], p["band"]) for p in shown.values()] == [
         ("C1.a", "Basic"),
@@ -57,15 +59,19 @@ def test_each_point_shows_its_id_band_and_proof_sentence(ada: TestClient) -> Non
     assert "WHERE-PROOF" in shown["C1.b"]["proof_html"]
 
 
-def test_the_page_has_no_self_assessment_before_the_first_send(ada: TestClient) -> None:
-    assert ada.get(PAGE).json()["self_assessment"] is None
+def test_the_page_has_no_self_assessment_before_the_first_send(
+    signed_in: TestClient,
+) -> None:
+    assert signed_in.get(PAGE).json()["self_assessment"] is None
 
 
-def test_levels_sent_are_read_back_dated_with_their_version(ada: TestClient) -> None:
-    sent = ada.post(SELF, json=c1_levels(a="understand", b="redo", e="not-yet"))
+def test_levels_sent_are_read_back_dated_with_their_version(
+    signed_in: TestClient,
+) -> None:
+    sent = signed_in.post(SELF, json=c1_levels(a="understand", b="redo", e="not-yet"))
 
     assert sent.status_code == 200
-    mine = ada.get(PAGE).json()["self_assessment"]
+    mine = signed_in.get(PAGE).json()["self_assessment"]
     assert mine["version"] == 1
     assert {p: v["level"] for p, v in mine["levels"].items()} == {
         "C1.a": "understand",
@@ -75,25 +81,25 @@ def test_levels_sent_are_read_back_dated_with_their_version(ada: TestClient) -> 
     assert mine["sent_at"] == sent.json()["sent_at"]
 
 
-def test_a_level_is_one_of_the_four(ada: TestClient) -> None:
-    response = ada.post(SELF, json=c1_levels(a="mastered"))
+def test_a_level_is_one_of_the_four(signed_in: TestClient) -> None:
+    response = signed_in.post(SELF, json=c1_levels(a="mastered"))
 
     assert response.status_code == 422
 
 
-def test_a_point_not_of_the_competency_is_refused(ada: TestClient) -> None:
-    response = ada.post(SELF, json=c1_levels(z="understand"))
+def test_a_point_not_of_the_competency_is_refused(signed_in: TestClient) -> None:
+    response = signed_in.post(SELF, json=c1_levels(z="understand"))
 
     assert response.status_code == 422
     assert "C1.z" in response.json()["detail"]
 
 
-def test_i_have_done_it_needs_a_github_or_gitlab_link(ada: TestClient) -> None:
-    without = ada.post(SELF, json=c1_levels(b="done"))
-    elsewhere = ada.post(
+def test_i_have_done_it_needs_a_github_or_gitlab_link(signed_in: TestClient) -> None:
+    without = signed_in.post(SELF, json=c1_levels(b="done"))
+    elsewhere = signed_in.post(
         SELF, json=c1_levels(b=("done", "https://example.com/my/work"))
     )
-    gitlab = ada.post(
+    gitlab = signed_in.post(
         SELF, json=c1_levels(b=("done", "https://gitlab.com/ada/notes/-/issues/2"))
     )
 
@@ -103,109 +109,114 @@ def test_i_have_done_it_needs_a_github_or_gitlab_link(ada: TestClient) -> None:
     assert gitlab.status_code == 200
 
 
-def test_a_link_is_kept_only_for_i_have_done_it(ada: TestClient) -> None:
-    ada.post(SELF, json=c1_levels(a=("understand", LINK), b=("done", LINK)))
+def test_a_link_is_kept_only_for_i_have_done_it(signed_in: TestClient) -> None:
+    signed_in.post(SELF, json=c1_levels(a=("understand", LINK), b=("done", LINK)))
 
-    mine = ada.get(PAGE).json()["self_assessment"]["levels"]
+    mine = signed_in.get(PAGE).json()["self_assessment"]["levels"]
     assert mine["C1.a"]["link"] is None
     assert mine["C1.b"]["link"] == LINK
 
 
 def test_until_the_workspace_closes_every_level_moves_both_ways(
-    ada: TestClient,
+    signed_in: TestClient,
 ) -> None:
-    ada.post(SELF, json=c1_levels(a="redo", b=("done", LINK)))
-    sent = ada.post(SELF, json=c1_levels(a="not-yet", b="understand"))
+    signed_in.post(SELF, json=c1_levels(a="redo", b=("done", LINK)))
+    sent = signed_in.post(SELF, json=c1_levels(a="not-yet", b="understand"))
 
     assert sent.status_code == 200
-    mine = ada.get(PAGE).json()["self_assessment"]
+    mine = signed_in.get(PAGE).json()["self_assessment"]
     assert mine["version"] == 2
     assert mine["levels"]["C1.a"]["level"] == "not-yet"
     assert len(mine["history"]) == 2
 
 
 def test_missed_check_points_ride_with_the_self_assessment_and_show_beside_their_point(
-    ada: TestClient,
+    signed_in: TestClient, student: OnTheRoster
 ) -> None:
-    ada.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
+    signed_in.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
+    missed = [student.check_point(2)]
 
-    sent = ada.post(
+    sent = signed_in.post(
         SELF,
-        json=c1_levels(a="understand")
-        | {"missed_check_points": {"redraw": ["oceens-2"]}},
+        json=c1_levels(a="understand") | {"missed_check_points": {"redraw": missed}},
     )
 
     assert sent.status_code == 200
-    page = ada.get(PAGE).json()
-    assert next(s for s in page["steps"] if s["id"] == "redraw")[
-        "missed_check_points"
-    ] == ["oceens-2"]
+    page = signed_in.get(PAGE).json()
+    assert redraw(page)["missed_check_points"] == missed
     hints = points(page)["C1.b"]["missed_check_points"]
-    assert [h["id"] for h in hints] == ["oceens-2"]
-    assert "OCEENS-CHECK-2" in hints[0]["html"]
+    assert [h["id"] for h in hints] == missed
+    assert student.marked("CHECK-2") in hints[0]["html"]
     assert points(page)["C1.a"]["missed_check_points"] == []
 
 
-def test_check_points_before_the_drawing_is_sent_are_refused(ada: TestClient) -> None:
-    response = ada.post(
+def test_check_points_before_the_drawing_is_sent_are_refused(
+    signed_in: TestClient, student: OnTheRoster
+) -> None:
+    response = signed_in.post(
         SELF,
         json=c1_levels(a="understand")
-        | {"missed_check_points": {"redraw": ["oceens-2"]}},
+        | {"missed_check_points": {"redraw": [student.check_point(2)]}},
     )
 
     assert response.status_code == 409
 
 
-def test_an_unknown_check_point_is_refused(ada: TestClient) -> None:
-    ada.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
+@on_the_two_group_fixture
+def test_on_two_groups_another_groups_check_point_is_refused(
+    signed_in: TestClient, course: CourseFolder
+) -> None:
+    signed_in.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
 
-    response = ada.post(
+    response = signed_in.post(
         SELF,
         json=c1_levels(a="understand")
-        | {"missed_check_points": {"redraw": ["math-1"]}},
+        | {"missed_check_points": {"redraw": [course.another.check_point(1)]}},
     )
 
     assert response.status_code == 422
 
 
 def test_the_latest_ticks_win_whether_sent_alone_or_with_the_self_assessment(
-    ada: TestClient,
+    signed_in: TestClient, student: OnTheRoster
 ) -> None:
-    ada.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
-    ada.post(
+    signed_in.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
+    signed_in.post(
         SELF,
         json=c1_levels(a="understand")
-        | {"missed_check_points": {"redraw": ["oceens-1"]}},
+        | {"missed_check_points": {"redraw": [student.check_point(1)]}},
     )
-    ada.post(f"{PAGE}/steps/redraw/check-points", json={"missed": ["oceens-3"]})
+    ticks = {"missed": [student.check_point(3)]}
+    signed_in.post(f"{PAGE}/steps/redraw/check-points", json=ticks)
 
-    redraw = next(s for s in ada.get(PAGE).json()["steps"] if s["id"] == "redraw")
-    assert redraw["missed_check_points"] == ["oceens-3"]
+    assert redraw(signed_in.get(PAGE).json())["missed_check_points"] == ticks["missed"]
 
-    ada.post(SELF, json=c1_levels(a="redo") | {"missed_check_points": {"redraw": []}})
-    redraw = next(s for s in ada.get(PAGE).json()["steps"] if s["id"] == "redraw")
-    assert redraw["missed_check_points"] == []
+    signed_in.post(
+        SELF, json=c1_levels(a="redo") | {"missed_check_points": {"redraw": []}}
+    )
+    assert redraw(signed_in.get(PAGE).json())["missed_check_points"] == []
 
 
-def test_a_self_assessment_without_ticks_leaves_the_last_ticks(ada: TestClient) -> None:
-    ada.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
-    ada.post(
+def test_a_self_assessment_without_ticks_leaves_the_last_ticks(
+    signed_in: TestClient, student: OnTheRoster
+) -> None:
+    signed_in.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
+    missed = [student.check_point(1)]
+    signed_in.post(
         SELF,
-        json=c1_levels(a="understand")
-        | {"missed_check_points": {"redraw": ["oceens-1"]}},
+        json=c1_levels(a="understand") | {"missed_check_points": {"redraw": missed}},
     )
-    ada.post(SELF, json=c1_levels(a="redo"))
+    signed_in.post(SELF, json=c1_levels(a="redo"))
 
-    redraw = next(s for s in ada.get(PAGE).json()["steps"] if s["id"] == "redraw")
-    assert redraw["missed_check_points"] == ["oceens-1"]
+    assert redraw(signed_in.get(PAGE).json())["missed_check_points"] == missed
 
 
 def test_after_the_close_a_level_can_only_move_up_to_i_have_done_it_with_a_link(
-    make_client: MakeClient, test_settings: Settings, past: datetime, future: datetime
+    at: At, past: datetime, future: datetime
 ) -> None:
-    before = at(make_client, test_settings, future, future)
+    before = at(future, future)
     before.post(SELF, json=c1_levels(a="understand", b="redo"))
-    after = at(make_client, test_settings, past, future)
+    after = at(past, future)
 
     down = after.post(SELF, json=c1_levels(a="not-yet", b="redo"))
     sideways = after.post(SELF, json=c1_levels(a="redo", b="redo"))
@@ -226,15 +237,14 @@ def test_after_the_close_a_level_can_only_move_up_to_i_have_done_it_with_a_link(
 
 @pytest.mark.parametrize("first", ["not-yet", "understand", "redo", ("done", LINK)])
 def test_after_the_close_a_point_never_rated_takes_its_first_level_freely(
-    make_client: MakeClient,
-    test_settings: Settings,
+    at: At,
     past: datetime,
     future: datetime,
     first: str | tuple[str, str],
 ) -> None:
-    before = at(make_client, test_settings, future, future)
+    before = at(future, future)
     before.post(SELF, json=c1_levels(a="understand"))
-    after = at(make_client, test_settings, past, future)
+    after = at(past, future)
 
     rated = after.post(SELF, json=c1_levels(a="understand", e=first))
 
@@ -249,17 +259,17 @@ def test_after_the_close_a_point_never_rated_takes_its_first_level_freely(
 
 
 def test_after_the_close_a_first_level_still_needs_its_link_for_i_have_done_it(
-    make_client: MakeClient, test_settings: Settings, past: datetime, future: datetime
+    at: At, past: datetime, future: datetime
 ) -> None:
-    after = at(make_client, test_settings, past, future)
+    after = at(past, future)
 
     assert after.post(SELF, json=c1_levels(e="done")).status_code == 422
 
 
 def test_after_the_close_a_student_who_never_rated_can_rate_every_point(
-    make_client: MakeClient, test_settings: Settings, past: datetime, future: datetime
+    at: At, past: datetime, future: datetime
 ) -> None:
-    after = at(make_client, test_settings, past, future)
+    after = at(past, future)
 
     response = after.post(SELF, json=c1_levels(a="not-yet", b="redo", e=("done", LINK)))
 
@@ -267,9 +277,9 @@ def test_after_the_close_a_student_who_never_rated_can_rate_every_point(
 
 
 def test_after_the_close_a_point_rated_in_the_window_only_moves_up_to_i_have_done_it(
-    make_client: MakeClient, test_settings: Settings, past: datetime, future: datetime
+    at: At, past: datetime, future: datetime
 ) -> None:
-    after = at(make_client, test_settings, past, future)
+    after = at(past, future)
     after.post(SELF, json=c1_levels(e="understand"))
 
     down = after.post(SELF, json=c1_levels(e="not-yet"))
@@ -285,32 +295,25 @@ def test_after_the_close_a_point_rated_in_the_window_only_moves_up_to_i_have_don
 
 
 def test_after_the_close_a_rated_point_cannot_be_dropped(
-    make_client: MakeClient, test_settings: Settings, past: datetime, future: datetime
+    at: At, past: datetime, future: datetime
 ) -> None:
-    before = at(make_client, test_settings, future, future)
+    before = at(future, future)
     before.post(SELF, json=c1_levels(a="understand", b="redo"))
-    after = at(make_client, test_settings, past, future)
+    after = at(past, future)
 
     assert after.post(SELF, json=c1_levels(b=("done", LINK))).status_code == 403
 
 
 def test_after_the_close_the_ticks_no_longer_change(
-    make_client: MakeClient, test_settings: Settings, past: datetime, future: datetime
+    at: At, past: datetime, future: datetime, student: OnTheRoster
 ) -> None:
-    before = at(make_client, test_settings, future, future)
+    missed = {"missed_check_points": {"redraw": [student.check_point(1)]}}
+    before = at(future, future)
     before.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
-    before.post(
-        SELF,
-        json=c1_levels(a="understand")
-        | {"missed_check_points": {"redraw": ["oceens-1"]}},
-    )
-    after = at(make_client, test_settings, past, future)
+    before.post(SELF, json=c1_levels(a="understand") | missed)
+    after = at(past, future)
 
-    same = after.post(
-        SELF,
-        json=c1_levels(a=("done", LINK))
-        | {"missed_check_points": {"redraw": ["oceens-1"]}},
-    )
+    same = after.post(SELF, json=c1_levels(a=("done", LINK)) | missed)
     other = after.post(
         SELF, json=c1_levels(a=("done", LINK)) | {"missed_check_points": {"redraw": []}}
     )
@@ -320,11 +323,11 @@ def test_after_the_close_the_ticks_no_longer_change(
 
 
 def test_each_move_is_dated_and_the_levels_unchanged_keep_their_date(
-    make_client: MakeClient, test_settings: Settings, past: datetime, future: datetime
+    at: At, past: datetime, future: datetime
 ) -> None:
-    before = at(make_client, test_settings, future, future)
+    before = at(future, future)
     first = before.post(SELF, json=c1_levels(a="understand", b="redo")).json()
-    after = at(make_client, test_settings, past, future)
+    after = at(past, future)
     moved = after.post(SELF, json=c1_levels(a="understand", b=("done", LINK))).json()
 
     mine = after.get(PAGE).json()["self_assessment"]
@@ -333,10 +336,8 @@ def test_each_move_is_dated_and_the_levels_unchanged_keep_their_date(
     assert [v["version"] for v in mine["history"]] == [1, 2]
 
 
-def test_after_the_reading_day_nothing_changes(
-    make_client: MakeClient, test_settings: Settings, past: datetime
-) -> None:
-    after = at(make_client, test_settings, past, past)
+def test_after_the_reading_day_nothing_changes(at: At, past: datetime) -> None:
+    after = at(past, past)
 
     first = after.post(SELF, json=c1_levels(a="understand"))
     done = after.post(SELF, json=c1_levels(a=("done", LINK)))
@@ -346,10 +347,8 @@ def test_after_the_reading_day_nothing_changes(
     assert "Reading Day" in done.json()["detail"]
 
 
-def test_the_page_says_both_cut_offs(
-    make_client: MakeClient, test_settings: Settings, past: datetime, future: datetime
-) -> None:
-    page = at(make_client, test_settings, past, future).get(PAGE).json()
+def test_the_page_says_both_cut_offs(at: At, past: datetime, future: datetime) -> None:
+    page = at(past, future).get(PAGE).json()
 
     assert page["closed"] is True
     assert page["reading_day_passed"] is False

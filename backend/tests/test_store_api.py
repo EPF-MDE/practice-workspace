@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import base64
 
-from conftest import ADA_OF_OCEENS, Counted, MakeClient, sign_in
+from conftest import Counted, MakeClient, sign_in
+from courses_under_test import OnTheRoster
 from fake_github import FakeGitHub
 
 from app.main import default_store
@@ -17,13 +18,13 @@ DRAWING = {
 
 
 def test_a_full_competency_path_makes_at_most_10_writes_and_none_before_a_send(
-    counted: Counted,
+    counted: Counted, student: OnTheRoster
 ) -> None:
     client, writes = counted
     after_sign_in = writes()
 
     page = client.get(PAGE).json()
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
     client.get(PAGE)
     assert writes() == after_sign_in, "no write before a send"
 
@@ -65,30 +66,30 @@ def test_a_full_competency_path_makes_at_most_10_writes_and_none_before_a_send(
 
 
 def test_the_first_sign_in_opens_the_students_issue_and_later_ones_do_not(
-    make_client: MakeClient,
+    make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = FakeGitHub()
     client = make_client(store=GitHubStore(github.client(), github.repository))
 
-    sign_in(client, ADA_OF_OCEENS)
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
+    sign_in(client, student.github_id)
 
     assert github.write_requests == 1
     assert len(github.issues) == 1
 
 
 def test_sends_through_the_github_store_are_read_back_after_a_restart(
-    make_client: MakeClient,
+    make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = FakeGitHub()
     client = make_client(store=GitHubStore(github.client(), github.repository))
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
     client.post(
         f"{PAGE}/steps/the-number-changes/answer", json={"fields": {"what-moves": "D"}}
     )
 
     restarted = make_client(store=GitHubStore(github.client(), github.repository))
-    sign_in(restarted, ADA_OF_OCEENS)
+    sign_in(restarted, student.github_id)
     step = next(
         s
         for s in restarted.get(PAGE).json()["steps"]
@@ -99,15 +100,15 @@ def test_sends_through_the_github_store_are_read_back_after_a_restart(
 
 
 def test_a_drawing_sent_through_the_github_store_is_read_back_after_a_restart(
-    make_client: MakeClient,
+    make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = FakeGitHub()
     client = make_client(store=GitHubStore(github.client(), github.repository))
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
     client.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
 
     restarted = make_client(store=GitHubStore(github.client(), github.repository))
-    sign_in(restarted, ADA_OF_OCEENS)
+    sign_in(restarted, student.github_id)
 
     assert (
         restarted.get(f"{PAGE}/steps/redraw/drawing").json()["snapshot"]
@@ -120,11 +121,11 @@ def test_a_drawing_sent_through_the_github_store_is_read_back_after_a_restart(
 
 
 def test_when_github_fails_a_drawing_send_gets_a_clear_503(
-    make_client: MakeClient,
+    make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = FakeGitHub()
     client = make_client(store=GitHubStore(github.client(), github.repository))
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
     github.fail_every_request_with = 502
 
     response = client.post(f"{PAGE}/steps/redraw/drawing", json=DRAWING)
@@ -133,10 +134,12 @@ def test_when_github_fails_a_drawing_send_gets_a_clear_503(
     assert "try again" in response.json()["detail"]
 
 
-def test_when_github_fails_a_send_gets_a_clear_503(make_client: MakeClient) -> None:
+def test_when_github_fails_a_send_gets_a_clear_503(
+    make_client: MakeClient, student: OnTheRoster
+) -> None:
     github = FakeGitHub()
     client = make_client(store=GitHubStore(github.client(), github.repository))
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
     github.fail_every_request_with = 502
 
     response = client.post(
@@ -148,12 +151,12 @@ def test_when_github_fails_a_send_gets_a_clear_503(make_client: MakeClient) -> N
 
 
 def test_when_github_fails_a_page_needing_the_record_gets_a_clear_503(
-    make_client: MakeClient,
+    make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = FakeGitHub()
     github.fail_every_request_with = 503
     client = make_client(store=GitHubStore(github.client(), github.repository))
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
 
     response = client.get(PAGE)
 
@@ -162,16 +165,16 @@ def test_when_github_fails_a_page_needing_the_record_gets_a_clear_503(
 
 
 def test_when_github_fails_at_sign_in_the_student_still_signs_in(
-    make_client: MakeClient,
+    make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = FakeGitHub()
     github.fail_every_request_with = 503
     client = make_client(store=GitHubStore(github.client(), github.repository))
 
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
     github.fail_every_request_with = None
 
-    assert client.get("/api/me").json()["github_id"] == ADA_OF_OCEENS
+    assert client.get("/api/me").json()["github_id"] == student.github_id
 
 
 def test_the_store_is_a_setting(test_settings: Settings) -> None:

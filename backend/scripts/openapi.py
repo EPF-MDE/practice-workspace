@@ -10,7 +10,7 @@ app = create_app(
     Settings(
         _env_file=None,
         sign_in="fake",
-        roster_file=str(fixtures / "roster.csv"),
+        roster_file=str(fixtures / "content" / "roster.csv"),
         course_folder=str(fixtures / "content"),
     )
 )

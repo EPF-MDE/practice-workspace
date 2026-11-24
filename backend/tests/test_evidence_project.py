@@ -5,7 +5,8 @@ from typing import Any
 
 import httpx
 import pytest
-from conftest import ADA_OF_OCEENS, Counted, MakeClient, sign_in
+from conftest import Counted, MakeClient, sign_in
+from courses_under_test import OnTheRoster
 from fastapi.testclient import TestClient
 
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading, Readability
@@ -35,8 +36,11 @@ def access() -> FakeAccessCheck:
 
 
 @pytest.fixture
-def ada(
-    make_client: MakeClient, access: FakeAccessCheck, test_settings: Settings
+def signed_in(
+    make_client: MakeClient,
+    access: FakeAccessCheck,
+    test_settings: Settings,
+    student: OnTheRoster,
 ) -> TestClient:
     settings = test_settings.model_copy(
         update={"github_app_slug": "cws-student-connector"}
@@ -46,14 +50,14 @@ def ada(
         repository_reading=OfflineRepositoryReading(),
         access_check=access,
     )
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
     return client
 
 
 def test_the_panel_tells_the_student_who_reads_a_declared_project_and_what_cannot_be_read(  # noqa: E501
-    ada: TestClient,
+    signed_in: TestClient,
 ) -> None:
-    help = ada.get(f"{C2}/evidence-panel").json()["help"]
+    help = signed_in.get(f"{C2}/evidence-panel").json()["help"]
 
     assert help["notice"].startswith(
         "The Instructor and an AI tool (Mistral, which may train on what it reads)"
@@ -64,28 +68,28 @@ def test_the_panel_tells_the_student_who_reads_a_declared_project_and_what_canno
 
 
 def test_a_readable_github_project_is_declared_once_for_every_competency(
-    ada: TestClient, store: InMemoryStore
+    signed_in: TestClient, store: InMemoryStore
 ) -> None:
     before = store.writes
 
-    declared = ada.post(DECLARATION, json=BAKERY).json()
+    declared = signed_in.post(DECLARATION, json=BAKERY).json()
 
     assert store.writes == before + 1
     assert declared["url"] == "https://github.com/ada/bakery"
     assert declared["what_to_read"] == BAKERY["what_to_read"]
     assert declared["access"]["status"] == "readable"
     for competency in ("C1", "C2", "C3"):
-        panel = ada.get(f"/api/competencies/{competency}/evidence-panel").json()
+        panel = signed_in.get(f"/api/competencies/{competency}/evidence-panel").json()
         assert panel["declaration"]["repository"] == "ada/bakery"
         assert panel["evidence_project"] == "ada/bakery"
-    page = ada.get("/api/competencies/C1").json()
+    page = signed_in.get("/api/competencies/C1").json()
     assert page["evidence_project"] == "https://github.com/ada/bakery"
 
 
 def test_a_private_github_project_not_readable_yet_says_how_to_grant_read_only_access(
-    ada: TestClient,
+    signed_in: TestClient,
 ) -> None:
-    declared = ada.post(
+    declared = signed_in.post(
         DECLARATION,
         json={
             "url": "https://github.com/ada/secret/tree/main/docs",
@@ -105,26 +109,28 @@ def test_a_private_github_project_not_readable_yet_says_how_to_grant_read_only_a
 
 
 def test_access_is_checked_again_on_each_view_so_a_grant_shows_without_declaring_again(
-    ada: TestClient, access: FakeAccessCheck
+    signed_in: TestClient, access: FakeAccessCheck
 ) -> None:
-    ada.post(
+    signed_in.post(
         DECLARATION,
         json={"url": "https://github.com/ada/secret", "what_to_read": "docs"},
     )
     access.rule = installed_meanwhile
 
     assert (
-        ada.get(f"{C2}/evidence-panel").json()["declaration"]["access"]["status"]
+        signed_in.get(f"{C2}/evidence-panel").json()["declaration"]["access"]["status"]
         == "readable"
     )
 
 
 def test_when_access_cannot_be_checked_it_reads_not_readable_yet_and_says_why(
-    ada: TestClient, access: FakeAccessCheck
+    signed_in: TestClient, access: FakeAccessCheck
 ) -> None:
     access.rule = could_not_ask
 
-    checked = ada.post(CHECK, json={"url": "https://github.com/ada/secret"}).json()
+    checked = signed_in.post(
+        CHECK, json={"url": "https://github.com/ada/secret"}
+    ).json()
 
     assert checked["status"] == "not-readable"
     assert checked["message"].startswith("Not readable yet")
@@ -132,9 +138,9 @@ def test_when_access_cannot_be_checked_it_reads_not_readable_yet_and_says_why(
 
 
 def test_a_gitlab_project_is_told_to_give_the_instructor_reporter_access_and_is_not_checked(  # noqa: E501
-    ada: TestClient, access: FakeAccessCheck
+    signed_in: TestClient, access: FakeAccessCheck
 ) -> None:
-    declared = ada.post(
+    declared = signed_in.post(
         DECLARATION,
         json={
             "url": "https://gitlab.com/epf/team/api/-/tree/main",
@@ -149,11 +155,11 @@ def test_a_gitlab_project_is_told_to_give_the_instructor_reporter_access_and_is_
 
 
 def test_checking_access_before_declaring_stores_nothing(
-    ada: TestClient, store: InMemoryStore, access: FakeAccessCheck
+    signed_in: TestClient, store: InMemoryStore, access: FakeAccessCheck
 ) -> None:
     before = store.writes
 
-    checked = ada.post(CHECK, json={"url": "https://github.com/ada/bakery"})
+    checked = signed_in.post(CHECK, json={"url": "https://github.com/ada/bakery"})
 
     assert checked.json()["status"] == "readable"
     assert store.writes == before
@@ -161,17 +167,17 @@ def test_checking_access_before_declaring_stores_nothing(
 
 
 def test_declaring_the_rosters_evidence_project_reads_it_as_before(
-    ada: TestClient,
+    signed_in: TestClient, student: OnTheRoster
 ) -> None:
-    declared = ada.post(
-        DECLARATION,
-        json={"url": "https://github.com/ada-oceens/OceENS", "what_to_read": "all"},
+    url = f"https://github.com/{student.evidence_project}"
+    declared = signed_in.post(
+        DECLARATION, json={"url": url, "what_to_read": "all"}
     ).json()
 
     assert declared["declares_roster_evidence_project"] is True
     assert declared["access"]["status"] == "readable"
-    assert ada.get(f"{C2}/evidence-panel").json()["evidence_project"] == (
-        "ada-oceens/OceENS"
+    assert signed_in.get(f"{C2}/evidence-panel").json()["evidence_project"] == (
+        student.evidence_project
     )
 
 
@@ -185,35 +191,41 @@ def test_declaring_the_rosters_evidence_project_reads_it_as_before(
     ],
 )
 def test_a_declaration_needs_a_github_or_gitlab_repository_and_a_note(
-    ada: TestClient, sent: dict[str, str], store: InMemoryStore
+    signed_in: TestClient, sent: dict[str, str], store: InMemoryStore
 ) -> None:
     before = store.writes
-    assert ada.post(DECLARATION, json=sent).status_code == 422
+    assert signed_in.post(DECLARATION, json=sent).status_code == 422
     assert store.writes == before
 
 
 def test_a_declaration_can_be_changed_then_withdrawn_back_to_the_rosters(
-    ada: TestClient,
+    signed_in: TestClient, student: OnTheRoster
 ) -> None:
-    ada.post(DECLARATION, json=BAKERY)
-    changed = ada.post(
+    signed_in.post(DECLARATION, json=BAKERY)
+    changed = signed_in.post(
         DECLARATION,
         json={"url": "https://github.com/ada/oven", "what_to_read": "README"},
     ).json()
     assert changed["repository"] == "ada/oven"
-    assert ada.get(f"{C2}/evidence-panel").json()["evidence_project"] == "ada/oven"
+    assert (
+        signed_in.get(f"{C2}/evidence-panel").json()["evidence_project"] == "ada/oven"
+    )
 
-    withdrawn = ada.delete(DECLARATION)
+    withdrawn = signed_in.delete(DECLARATION)
 
     assert withdrawn.status_code == 200
-    panel = ada.get(f"{C2}/evidence-panel").json()
+    panel = signed_in.get(f"{C2}/evidence-panel").json()
     assert panel["declaration"] is None
-    assert panel["evidence_project"] == "ada-oceens/OceENS"
-    assert ada.delete(DECLARATION).status_code == 409
+    assert panel["evidence_project"] == student.evidence_project
+    assert signed_in.delete(DECLARATION).status_code == 409
 
 
 def test_a_declaration_changes_until_the_reading_day_and_no_later(
-    make_client: MakeClient, test_settings: Settings, past: datetime, future: datetime
+    make_client: MakeClient,
+    test_settings: Settings,
+    past: datetime,
+    future: datetime,
+    student: OnTheRoster,
 ) -> None:
     def client(reading_day: datetime) -> TestClient:
         c = make_client(
@@ -223,7 +235,7 @@ def test_a_declaration_changes_until_the_reading_day_and_no_later(
             repository_reading=OfflineRepositoryReading(),
             access_check=FakeAccessCheck(),
         )
-        sign_in(c, ADA_OF_OCEENS)
+        sign_in(c, student.github_id)
         return c
 
     open_until_reading_day = client(future)

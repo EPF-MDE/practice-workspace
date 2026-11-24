@@ -1,2 +1,4 @@
 github_login,github_id,name,group,evidence_project
 nell-lighthouse,4001,Nell Keeper,Lighthouse,nell-lighthouse/Lighthouse
+ezra-lighthouse,4002,Ezra Wick,Lighthouse,ezra-lighthouse/Lighthouse
+ruth-lighthouse,4011,Ruth Lantern,Lighthouse,ruth-lighthouse/Lighthouse

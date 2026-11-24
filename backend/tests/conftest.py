@@ -1,15 +1,14 @@
 from collections.abc import Callable
 from datetime import datetime
-from pathlib import Path
 from typing import Any, NamedTuple, Protocol
 
 import httpx
 import pytest
+from courses_under_test import EVERY_FIXTURE, CourseFolder, OnTheRoster
 from fake_github import FakeGitHub
 from fastapi.testclient import TestClient
 
 from app.auth import FakeIdentity, Identity
-from app.course import load_course
 from app.evidence_panel import (
     AccessCheck,
     FakeAccessCheck,
@@ -17,36 +16,36 @@ from app.evidence_panel import (
     RepositoryReadingSource,
 )
 from app.main import create_app
-from app.roster import Roster, RosterSource, parse_roster
+from app.roster import RosterSource
 from app.settings import PARIS, Settings
 from app.store import GitHubStore, InMemoryStore, Store
 
-FIXTURES = Path(__file__).parent / "fixtures"
 
-ADA_OF_OCEENS = 1001
-GRACE_OF_MATHUTRICE = 1002
-
-
-def fixture_roster(csv_text: str) -> Roster:
-    course = load_course(FIXTURES / "content").course
-    assert course is not None
-    return parse_roster(csv_text, course.groups)
+@pytest.fixture(params=EVERY_FIXTURE, ids=lambda course: course.label)
+def course(request: pytest.FixtureRequest) -> CourseFolder:
+    chosen: CourseFolder = request.param
+    return chosen
 
 
 @pytest.fixture
-def roster_csv() -> str:
-    return (FIXTURES / "roster.csv").read_text(encoding="utf-8")
+def student(course: CourseFolder) -> OnTheRoster:
+    return course.student
 
 
 @pytest.fixture
-def test_settings() -> Settings:
+def roster_csv(course: CourseFolder) -> str:
+    return course.roster_csv
+
+
+@pytest.fixture
+def test_settings(course: CourseFolder) -> Settings:
     return Settings(
         _env_file=None,
         session_secret="test-secret",
         sign_in="fake",
         public_url="http://testserver",
-        course_folder=str(FIXTURES / "content"),
-        roster_file=str(FIXTURES / "roster.csv"),
+        course_folder=str(course.folder),
+        roster_file=str(course.roster_file),
     )
 
 
@@ -112,13 +111,21 @@ def sign_in(client: TestClient, github_id: int) -> httpx.Response:
     return response
 
 
+@pytest.fixture
+def signed_in(client: TestClient, student: OnTheRoster) -> TestClient:
+    sign_in(client, student.github_id)
+    return client
+
+
 class Counted(NamedTuple):
     client: TestClient
     writes: Callable[[], int]
 
 
 @pytest.fixture(params=["memory", "github"])
-def counted(request: pytest.FixtureRequest, make_client: MakeClient) -> Counted:
+def counted(
+    request: pytest.FixtureRequest, make_client: MakeClient, student: OnTheRoster
+) -> Counted:
     store: Store
     writes: Callable[[], int]
     if request.param == "memory":
@@ -133,7 +140,7 @@ def counted(request: pytest.FixtureRequest, make_client: MakeClient) -> Counted:
         repository_reading=OfflineRepositoryReading(),
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
     return Counted(client, writes)
 
 

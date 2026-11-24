@@ -22,5 +22,13 @@ id = "not-yet"
 label = "Not yet"
 
 [[levels]]
+id = "understand"
+label = "I understand"
+
+[[levels]]
+id = "redo"
+label = "I can redo"
+
+[[levels]]
 id = "done"
 label = "I have done it"

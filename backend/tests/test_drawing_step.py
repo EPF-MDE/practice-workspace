@@ -4,7 +4,8 @@ from datetime import datetime
 from typing import Any
 
 import pytest
-from conftest import ADA_OF_OCEENS, GRACE_OF_MATHUTRICE, MakeClient, sign_in
+from conftest import MakeClient, sign_in
+from courses_under_test import CourseFolder, OnTheRoster, on_the_two_group_fixture
 from fastapi.testclient import TestClient
 
 from app.settings import Settings
@@ -28,23 +29,17 @@ def block(page: dict[str, Any], kind: str, step_id: str = "redraw") -> dict[str,
     return next(b for b in step(page, step_id)["blocks"] if b["type"] == kind)
 
 
-@pytest.fixture
-def ada(client: TestClient) -> TestClient:
-    sign_in(client, ADA_OF_OCEENS)
-    return client
-
-
 def test_before_the_drawing_the_example_and_the_prompt_show_and_the_reference_is_withheld(  # noqa: E501
-    ada: TestClient,
+    signed_in: TestClient, student: OnTheRoster
 ) -> None:
-    response = ada.get(PAGE)
+    response = signed_in.get(PAGE)
     page = response.json()
 
     assert step(page)["kind"] == "drawing"
     example = block(page, "example-drawing")
     assert "EXAMPLE-SNAPSHOT" in json.dumps(example["snapshot"]["document"])
     assert "EXAMPLE-CAPTION" in example["caption_html"]
-    assert "OCEENS-PROMPT" in block(page, "canvas")["prompt_html"]
+    assert student.marked("PROMPT") in block(page, "canvas")["prompt_html"]
     assert block(page, "reference-drawing") == {
         "type": "reference-drawing",
         "locked": True,
@@ -58,9 +53,9 @@ def test_before_the_drawing_the_example_and_the_prompt_show_and_the_reference_is
 
 
 def test_sending_the_drawing_returns_the_reference_and_its_check_points(
-    ada: TestClient,
+    signed_in: TestClient, student: OnTheRoster
 ) -> None:
-    sent = ada.post(DRAWING, json=SEND)
+    sent = signed_in.post(DRAWING, json=SEND)
 
     assert sent.status_code == 200
     body = sent.json()
@@ -68,22 +63,23 @@ def test_sending_the_drawing_returns_the_reference_and_its_check_points(
     assert body["png_bytes"] == len(PNG)
     reference = body["reference"]
     assert reference["locked"] is False
-    assert "OCEENS-REFERENCE-SNAPSHOT" in json.dumps(reference["snapshot"]["document"])
-    assert "OCEENS-REFERENCE-CAPTION" in reference["caption_html"]
+    snapshot = json.dumps(reference["snapshot"]["document"])
+    assert student.marked("REFERENCE-SNAPSHOT") in snapshot
+    assert student.marked("REFERENCE-CAPTION") in reference["caption_html"]
     assert [(c["id"], c["point"]) for c in reference["check_points"]] == [
-        ("oceens-1", "C1.b"),
-        ("oceens-2", "C1.b"),
-        ("oceens-3", "C1.b"),
+        (student.check_point(1), "C1.b"),
+        (student.check_point(2), "C1.b"),
+        (student.check_point(3), "C1.b"),
     ]
-    assert "OCEENS-CHECK-2" in reference["check_points"][1]["html"]
+    assert student.marked("CHECK-2") in reference["check_points"][1]["html"]
 
 
 def test_once_sent_the_page_shows_the_reference_and_the_drawing_sent(
-    ada: TestClient,
+    signed_in: TestClient,
 ) -> None:
-    ada.post(DRAWING, json=SEND)
+    signed_in.post(DRAWING, json=SEND)
 
-    page = ada.get(PAGE).json()
+    page = signed_in.get(PAGE).json()
 
     assert block(page, "reference-drawing")["locked"] is False
     assert step(page)["drawing"]["version"] == 1
@@ -92,55 +88,73 @@ def test_once_sent_the_page_shows_the_reference_and_the_drawing_sent(
     )
 
 
-def test_a_student_receives_their_groups_reference(client: TestClient) -> None:
-    sign_in(client, GRACE_OF_MATHUTRICE)
+def test_a_student_receives_their_groups_reference(
+    client: TestClient, course: CourseFolder
+) -> None:
+    for student in course.one_per_group:
+        sign_in(client, student.github_id)
 
-    reference = client.post(DRAWING, json=SEND).json()["reference"]
+        reference = client.post(DRAWING, json=SEND).json()["reference"]
 
-    assert "MATHUTRICE-REFERENCE-CAPTION" in reference["caption_html"]
-    assert len(reference["check_points"]) == 4
+        assert student.marked("REFERENCE-CAPTION") in reference["caption_html"]
+        for other in course.others_marked(student, "REFERENCE-CAPTION"):
+            assert other not in reference["caption_html"]
+        assert {c["id"].rsplit("-", 1)[0] for c in reference["check_points"]} == {
+            student.block
+        }
 
 
-def test_a_new_version_replaces_the_drawing_and_is_read_back(ada: TestClient) -> None:
-    ada.post(DRAWING, json=SEND)
+def test_a_new_version_replaces_the_drawing_and_is_read_back(
+    signed_in: TestClient,
+) -> None:
+    signed_in.post(DRAWING, json=SEND)
     second = {
         "document": {"store": {"shape:v2": {"id": "shape:v2"}}, "schema": {}},
         "session": {},
     }
 
-    sent = ada.post(DRAWING, json={**SEND, "snapshot": second}).json()
+    sent = signed_in.post(DRAWING, json={**SEND, "snapshot": second}).json()
 
     assert sent["version"] == 2
-    mine = ada.get(DRAWING).json()
+    mine = signed_in.get(DRAWING).json()
     assert mine["snapshot"] == second and mine["version"] == 2
-    assert step(ada.get(PAGE).json())["drawing"]["version"] == 2
+    assert step(signed_in.get(PAGE).json())["drawing"]["version"] == 2
 
 
-def test_a_drawing_never_sent_is_not_found(ada: TestClient) -> None:
-    assert ada.get(DRAWING).status_code == 404
+def test_a_drawing_never_sent_is_not_found(signed_in: TestClient) -> None:
+    assert signed_in.get(DRAWING).status_code == 404
 
 
 def test_the_student_ticks_the_check_points_their_drawing_missed(
-    ada: TestClient,
+    signed_in: TestClient, student: OnTheRoster
 ) -> None:
-    ada.post(DRAWING, json=SEND)
+    signed_in.post(DRAWING, json=SEND)
+    missed = [student.check_point(1), student.check_point(3)]
 
-    ticked = ada.post(CHECK_POINTS, json={"missed": ["oceens-1", "oceens-3"]})
+    ticked = signed_in.post(CHECK_POINTS, json={"missed": missed})
 
     assert ticked.status_code == 200
-    assert step(ada.get(PAGE).json())["missed_check_points"] == ["oceens-1", "oceens-3"]
-    ada.post(CHECK_POINTS, json={"missed": []})
-    assert step(ada.get(PAGE).json())["missed_check_points"] == []
+    assert step(signed_in.get(PAGE).json())["missed_check_points"] == missed
+    signed_in.post(CHECK_POINTS, json={"missed": []})
+    assert step(signed_in.get(PAGE).json())["missed_check_points"] == []
 
 
-def test_check_points_wait_for_the_drawing(ada: TestClient) -> None:
-    assert ada.post(CHECK_POINTS, json={"missed": ["oceens-1"]}).status_code == 409
+def test_check_points_wait_for_the_drawing(
+    signed_in: TestClient, student: OnTheRoster
+) -> None:
+    missed = {"missed": [student.check_point(1)]}
+
+    assert signed_in.post(CHECK_POINTS, json=missed).status_code == 409
 
 
-def test_only_the_references_check_points_can_be_ticked(ada: TestClient) -> None:
-    ada.post(DRAWING, json=SEND)
+@on_the_two_group_fixture
+def test_on_two_groups_only_the_references_check_points_can_be_ticked(
+    signed_in: TestClient, course: CourseFolder
+) -> None:
+    signed_in.post(DRAWING, json=SEND)
+    another_groups = {"missed": [course.another.check_point(1)]}
 
-    assert ada.post(CHECK_POINTS, json={"missed": ["math-1"]}).status_code == 422
+    assert signed_in.post(CHECK_POINTS, json=another_groups).status_code == 422
 
 
 @pytest.mark.parametrize(
@@ -161,29 +175,36 @@ def test_only_the_references_check_points_can_be_ticked(ada: TestClient) -> None
     ],
 )
 def test_a_drawing_that_is_not_one_is_refused(
-    ada: TestClient, body: dict[str, Any]
+    signed_in: TestClient, body: dict[str, Any]
 ) -> None:
-    assert ada.post(DRAWING, json=body).status_code == 422
+    assert signed_in.post(DRAWING, json=body).status_code == 422
 
 
-def test_a_drawing_sent_to_a_step_without_canvas_is_refused(ada: TestClient) -> None:
+def test_a_drawing_sent_to_a_step_without_canvas_is_refused(
+    signed_in: TestClient,
+) -> None:
     assert (
-        ada.post(f"{PAGE}/steps/guided-calculation/drawing", json=SEND).status_code
+        signed_in.post(
+            f"{PAGE}/steps/guided-calculation/drawing", json=SEND
+        ).status_code
         == 422
     )
 
 
-def test_a_drawing_too_large_is_refused(ada: TestClient) -> None:
+def test_a_drawing_too_large_is_refused(signed_in: TestClient) -> None:
     huge = base64.b64encode(PNG + b"\x00" * 6_000_000).decode()
 
-    assert ada.post(DRAWING, json={**SEND, "png_base64": huge}).status_code == 413
+    assert signed_in.post(DRAWING, json={**SEND, "png_base64": huge}).status_code == 413
 
 
 def test_after_the_close_no_drawing_and_no_tick_is_sent(
-    make_client: MakeClient, test_settings: Settings, past: datetime
+    make_client: MakeClient,
+    test_settings: Settings,
+    past: datetime,
+    student: OnTheRoster,
 ) -> None:
     client = make_client(settings=test_settings.model_copy(update={"closes_at": past}))
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
 
     drawing = client.post(DRAWING, json=SEND)
 
@@ -191,19 +212,21 @@ def test_after_the_close_no_drawing_and_no_tick_is_sent(
     assert client.post(CHECK_POINTS, json={"missed": []}).status_code == 403
 
 
-def test_the_optional_redraw_says_so_and_nothing_waits_for_it(ada: TestClient) -> None:
-    page = ada.get(PAGE).json()
+def test_the_optional_redraw_says_so_and_nothing_waits_for_it(
+    signed_in: TestClient,
+) -> None:
+    page = signed_in.get(PAGE).json()
 
     assert step(page, "redraw-more")["optional"] is True
     assert step(page)["optional"] is False
 
 
 def test_the_page_carries_the_tldraw_licence_key(
-    make_client: MakeClient, test_settings: Settings
+    make_client: MakeClient, test_settings: Settings, student: OnTheRoster
 ) -> None:
     client = make_client(
         settings=test_settings.model_copy(update={"tldraw_license_key": "tldraw-key"})
     )
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
 
     assert client.get(PAGE).json()["tldraw_license_key"] == "tldraw-key"

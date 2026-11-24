@@ -1,4 +1,5 @@
-from conftest import FIXTURES, MakeClient
+from conftest import MakeClient
+from courses_under_test import CourseFolder
 from fastapi.testclient import TestClient
 
 from app.settings import Settings
@@ -9,13 +10,15 @@ def test_the_error_check_is_closed_without_its_key(client: TestClient) -> None:
     assert client.get("/api/health/error", params={"key": "guess"}).status_code == 404
 
 
-def test_the_error_check_raises_with_its_key(make_client: MakeClient) -> None:
+def test_the_error_check_raises_with_its_key(
+    make_client: MakeClient, course: CourseFolder
+) -> None:
     settings = Settings(
         _env_file=None,
         sign_in="fake",
         error_check_key="k",
-        course_folder=str(FIXTURES / "content"),
-        roster_file=str(FIXTURES / "roster.csv"),
+        course_folder=str(course.folder),
+        roster_file=str(course.roster_file),
     )
     client = make_client(settings=settings)
     client = type(client)(client.app, raise_server_exceptions=False)
