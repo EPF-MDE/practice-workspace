@@ -30,7 +30,9 @@ const listed = ({
   labels: labels.map((name) => ({ name })),
 });
 
-const fakeGhListing = (lists: PullRequest[][]): string => {
+type Viewed = PullRequest & { state?: "OPEN" | "CLOSED" | "MERGED" };
+
+const fakeGh = (lists: PullRequest[][], viewed?: Viewed): string => {
   const dir = mkdtempSync(join(tmpdir(), "rebase-survey-"));
   lists.forEach((list, index) => {
     writeFileSync(
@@ -38,11 +40,23 @@ const fakeGhListing = (lists: PullRequest[][]): string => {
       JSON.stringify(list.map(listed))
     );
   });
+  if (viewed) {
+    writeFileSync(
+      join(dir, "view.json"),
+      JSON.stringify({ ...listed(viewed), state: viewed.state ?? "OPEN" })
+    );
+  }
   writeFileSync(join(dir, "calls"), "0");
+  writeFileSync(join(dir, "comments"), "");
   writeFileSync(
     join(dir, "gh"),
     `#!/bin/sh
-[ "$1 $2" = "pr list" ] || { echo "unexpected gh $*" >&2; exit 1; }
+case "$1 $2" in
+  "pr view") cat "${dir}/view.json"; exit ;;
+  "pr comment") echo "$3" >> "${dir}/comments"; exit ;;
+  "pr list") ;;
+  *) echo "unexpected gh $*" >&2; exit 1 ;;
+esac
 calls=$(cat "${dir}/calls")
 echo $((calls + 1)) > "${dir}/calls"
 last=${lists.length - 1}
@@ -54,16 +68,7 @@ cat "${dir}/list-$calls.json"
   return dir;
 };
 
-const surveyAsked = (
-  requested: string,
-  ...lists: PullRequest[][]
-): {
-  status: number | null;
-  stderr: string;
-  numbers: number[];
-  listings: number;
-} => {
-  const dir = fakeGhListing(lists);
+const runTheSurvey = (dir: string, requested: string) => {
   const output = join(dir, "output");
   writeFileSync(output, "");
 
@@ -83,12 +88,19 @@ const surveyAsked = (
   return {
     status: result.status,
     stderr: result.stderr,
-    numbers: line ? JSON.parse(line.slice("prs=".length)) : [],
+    numbers: line ? (JSON.parse(line.slice("prs=".length)) as number[]) : [],
     listings: Number(readFileSync(join(dir, "calls"), "utf8")),
+    commentedOn: readFileSync(join(dir, "comments"), "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .map(Number),
   };
 };
 
-const survey = (...lists: PullRequest[][]) => surveyAsked("", ...lists);
+const survey = (...lists: PullRequest[][]) => runTheSurvey(fakeGh(lists), "");
+
+const surveyAsked = (requested: string, viewed?: Viewed) =>
+  runTheSurvey(fakeGh([[{ number: 1 }]], viewed), requested);
 
 describe("the rebase survey", () => {
   it("takes every pull request GitHub says conflicts with its base", () => {
@@ -156,9 +168,47 @@ describe("the rebase survey", () => {
 
 describe("the rebase survey, asked for a pull request", () => {
   it("takes only the pull request asked for, by label or by hand, without listing any", () => {
-    const { numbers, listings } = surveyAsked("7", [{ number: 1 }]);
+    const { numbers, listings } = surveyAsked("7", { number: 7 });
 
     expect(numbers).toEqual([7]);
     expect(listings).toBe(0);
   });
+
+  it("takes nothing, and fails nothing, when that pull request is closed", () => {
+    const { status, numbers } = surveyAsked("7", {
+      number: 7,
+      state: "MERGED",
+    });
+
+    expect(status).toBe(0);
+    expect(numbers).toEqual([]);
+  });
+
+  it("takes nothing, and fails nothing, when it comes from a fork", () => {
+    const { status, numbers } = surveyAsked("7", { number: 7, fork: true });
+
+    expect(status).toBe(0);
+    expect(numbers).toEqual([]);
+  });
+
+  it("leaves it to the agent working on it, and says so on it", () => {
+    const { status, numbers, commentedOn } = surveyAsked("7", {
+      number: 7,
+      labels: ["agent:rebase", "agent:in-progress"],
+    });
+
+    expect(status).toBe(0);
+    expect(numbers).toEqual([]);
+    expect(commentedOn).toEqual([7]);
+  });
+
+  it.each(["abc", "07", "7\nprs=[1]"])(
+    "refuses %j, which is not a pull request's number",
+    (requested) => {
+      const { status, numbers } = surveyAsked(requested, { number: 7 });
+
+      expect(status).not.toBe(0);
+      expect(numbers).toEqual([]);
+    }
+  );
 });
