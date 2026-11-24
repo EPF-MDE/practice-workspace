@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 
 from app.auth import FakeIdentity
 from app.main import ConfigurationError
+from app.roster import RefreshingRoster
 from app.settings import Settings
 
 
@@ -143,3 +144,15 @@ def test_a_roster_naming_a_group_the_course_does_not_hold_refuses_start(
         make_client(
             settings=test_settings.model_copy(update={"roster_file": str(roster)})
         )
+
+
+def test_a_data_branch_roster_naming_a_group_the_course_does_not_hold_refuses_start(
+    make_client: MakeClient, roster_csv: str
+) -> None:
+    unknown_group = roster_csv.replace("Ada Lovelace,OcéENS,", "Ada Lovelace,OceENS,")
+    read_from_the_data_branch = RefreshingRoster(
+        lambda: unknown_group, ["OcéENS", "MATHutrice"]
+    )
+
+    with pytest.raises(ConfigurationError, match="line 2: the Group 'OceENS'"):
+        make_client(roster=read_from_the_data_branch)

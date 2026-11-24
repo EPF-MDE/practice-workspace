@@ -15,6 +15,7 @@ def test_the_error_check_raises_with_its_key(make_client: MakeClient) -> None:
         sign_in="fake",
         error_check_key="k",
         course_folder=str(FIXTURES / "content"),
+        roster_file=str(FIXTURES / "roster.csv"),
     )
     client = make_client(settings=settings)
     client = type(client)(client.app, raise_server_exceptions=False)

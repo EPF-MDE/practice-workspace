@@ -73,12 +73,7 @@ def _revision() -> str:
 def default_roster(settings: Settings, course: Course) -> RosterSource:
     groups = set(course.groups)
     if settings.roster_file:
-        try:
-            return StaticRoster.from_file(settings.roster_file, groups)
-        except RosterError as error:
-            raise ConfigurationError(
-                f"The Roster {settings.roster_file} cannot be served: {error}"
-            ) from error
+        return StaticRoster.from_file(settings.roster_file, groups)
     client = installation_client(
         settings.store_app_id,
         settings.store_app_private_key_base64,
@@ -90,6 +85,17 @@ def default_roster(settings: Settings, course: Course) -> RosterSource:
         ),
         groups,
     )
+
+
+def started_roster(
+    roster: RosterSource | None, settings: Settings, course: Course
+) -> RosterSource:
+    try:
+        source = roster or default_roster(settings, course)
+        source.current()
+    except RosterError as error:
+        raise ConfigurationError(f"The Roster cannot be served: {error}") from error
+    return source
 
 
 def default_identity(settings: Settings) -> Identity:
@@ -209,7 +215,7 @@ def create_app(
     )
     app.state.settings = settings
     app.state.course = default_course(settings)
-    app.state.roster = roster or default_roster(settings, app.state.course)
+    app.state.roster = started_roster(roster, settings, app.state.course)
     app.state.identity = identity or default_identity(settings)
     app.state.store = store if store is not None else default_store(settings)
     app.state.repository_reading = (
