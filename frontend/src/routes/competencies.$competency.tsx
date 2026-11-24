@@ -4,10 +4,11 @@ import { Path } from "@/packages/practice/Path";
 import { requireStudent } from "@/session";
 
 export const Route = createFileRoute("/competencies/$competency")({
-  beforeLoad: async ({ context }) => ({
-    student: await requireStudent(context.queryClient),
-    course: await context.queryClient.ensureQueryData(courseQuery),
-  }),
+  beforeLoad: async ({ context }) => {
+    const student = await requireStudent(context.queryClient);
+    await context.queryClient.ensureQueryData(courseQuery);
+    return { student };
+  },
   component: CompetencyRoute,
 });
 
