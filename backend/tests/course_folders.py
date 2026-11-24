@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from conftest import FIXTURE_CLOSE, FIXTURE_READING_DAY, FIXTURE_TIME_ZONE
+
 from app.course import COMPETENCIES
 
 ONE_STEP = "## Read {#read minutes=5}\n\nA Step to read.\n"
@@ -13,8 +15,9 @@ A_SCALE = (
 )
 
 CALENDAR = (
-    '\n[calendar]\ntime_zone = "Europe/Paris"\n'
-    "close = 2030-06-14T23:59:00\nreading_day = 2030-07-04T23:59:00\n"
+    f'\n[calendar]\ntime_zone = "{FIXTURE_TIME_ZONE.key}"\n'
+    f"close = {FIXTURE_CLOSE.replace(tzinfo=None).isoformat()}\n"
+    f"reading_day = {FIXTURE_READING_DAY.replace(tzinfo=None).isoformat()}\n"
 )
 
 
