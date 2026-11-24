@@ -6,8 +6,10 @@ from typing import Any
 
 import pytest
 from conftest import ADA_OF_OCEENS, FIXTURES, MakeClient, sign_in
+from course_folders import ONE_STEP, front_matter
 from fastapi.testclient import TestClient
 
+from app.course import COMPETENCIES
 from app.main import ConfigurationError
 from app.settings import Settings
 
@@ -17,14 +19,19 @@ PAGE = "/api/competencies/C1"
 SELF = f"{PAGE}/self-assessment"
 DRAFT = f"{PAGE}/evidence-plan/draft"
 LINK = "https://github.com/ada/notes/pull/4"
-SETTINGS = 'name = "A course"\n\n'
+NAME = 'name = "A course"\n'
+TITLES = "".join(
+    f'\n[competencies.{c}]\ntitle = "{c}"\nminutes = 40\n' for c in COMPETENCIES
+)
+SETTINGS = NAME + TITLES
+NO_LEVEL = NAME + "levels = []\n" + TITLES
 TWO_LEVELS = (
     SETTINGS
-    + '[[levels]]\nid = "started"\nlabel = "Started"\n\n'
+    + '\n[[levels]]\nid = "started"\nlabel = "Started"\n\n'
     + '[[levels]]\nid = "finished"\nlabel = "Finished"\n'
 )
 CLOSING_WITH = (
-    "---\ncompetency: C1\ntitle: T\n---\n\n"
+    "---\ncompetency: C1\n---\n\n"
     "## Close C1 {{#closing minutes=0 kind=closing}}\n\n"
     "::: point {{#C1.a band=Basic}}\nA statement.\n\n"
     "::: to-get-there {{level={level}}}\nA way there.\n:::\n:::\n"
@@ -82,6 +89,10 @@ def verify(folder: Path) -> subprocess.CompletedProcess[str]:
 def a_course(folder: Path, settings: str, to_get_there: str) -> Path:
     (folder / "course.toml").write_text(settings)
     (folder / "c1.md").write_text(CLOSING_WITH.format(level=to_get_there))
+    for competency in COMPETENCIES[1:]:
+        (folder / f"{competency.lower()}.md").write_text(
+            front_matter(competency) + ONE_STEP
+        )
     return folder
 
 
@@ -159,7 +170,7 @@ def test_verify_passes_a_to_get_there_level_below_the_top(tmp_path: Path) -> Non
 
 
 def test_verify_reports_an_empty_level_list(tmp_path: Path) -> None:
-    result = verify(a_course(tmp_path, SETTINGS + "levels = []\n", "started"))
+    result = verify(a_course(tmp_path, NO_LEVEL, "started"))
 
     assert result.returncode != 0
     assert "'levels'" in result.stdout
@@ -178,7 +189,7 @@ def test_verify_reports_two_levels_sharing_an_id(tmp_path: Path) -> None:
 def test_the_app_refuses_to_start_on_an_empty_level_list(
     make_client: MakeClient, test_settings: Settings, tmp_path: Path
 ) -> None:
-    folder = a_course(tmp_path, SETTINGS + "levels = []\n", "started")
+    folder = a_course(tmp_path, NO_LEVEL, "started")
 
     with pytest.raises(ConfigurationError, match="no Self-assessment level"):
         make_client(
@@ -191,7 +202,7 @@ def test_a_stored_level_the_scale_no_longer_holds_still_serves_the_page(
 ) -> None:
     ada = on_three_levels(make_client, test_settings, future, future)
     ada.post(SELF, json=rated(a="seen", b="tried"))
-    for name in ("course.toml", "c1.md"):
+    for name in ("course.toml", "c1.md", "c2.md", "c3.md"):
         text = (THREE_LEVELS / name).read_text(encoding="utf-8")
         (tmp_path / name).write_text(text.replace("seen", "glimpsed"))
     renamed = make_client(

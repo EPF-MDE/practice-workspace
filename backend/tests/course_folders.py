@@ -3,6 +3,10 @@ from pathlib import Path
 from app.course import COMPETENCIES
 
 ONE_STEP = "## Read {#read minutes=5}\n\nA Step to read.\n"
+A_SCALE = (
+    '\n[[levels]]\nid = "not-yet"\nlabel = "Not yet"\n'
+    '\n[[levels]]\nid = "done"\nlabel = "I have done it"\n'
+)
 
 
 def front_matter(competency: str) -> str:
@@ -21,6 +25,7 @@ def write_course_folder(
             f'\n[competencies.{c}]\ntitle = "{title}"\nminutes = {minutes}\n'
             for c, (title, minutes) in titled.items()
         )
+        + A_SCALE
     )
     for competency, body in content.items():
         (folder / f"{competency.lower()}.md").write_text(

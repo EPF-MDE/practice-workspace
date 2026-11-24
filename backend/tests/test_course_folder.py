@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from conftest import ADA_OF_OCEENS, FIXTURES, MakeClient, sign_in
 from course_folders import (
+    A_SCALE,
     ONE_STEP,
     front_matter,
     with_every_competency,
@@ -173,7 +174,7 @@ def test_verify_names_each_competency_when_the_settings_hold_none(
     tmp_path: Path,
 ) -> None:
     folder = write_course_folder(tmp_path, with_every_competency())
-    (folder / "course.toml").write_text('name = "Fixture course"\n')
+    (folder / "course.toml").write_text('name = "Fixture course"\n' + A_SCALE)
 
     result = verify(folder)
 
