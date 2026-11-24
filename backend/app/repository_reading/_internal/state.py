@@ -5,8 +5,9 @@ from datetime import datetime
 
 import yaml
 
+from app.course import COMPETENCIES
+
 from ..reading import (
-    COMPETENCIES,
     Fact,
     RepositoryReading,
     StudentToRead,

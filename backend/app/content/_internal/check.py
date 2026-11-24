@@ -18,11 +18,11 @@ from .model import (
     ReferenceDrawing,
     _options,
 )
-from .render import Competency, _step_for
+from .render import CompetencyContent, _step_for
 from .tree import _Directive, _RawStep, _walk
 
 
-def _check(competency: Competency, source: str) -> None:
+def _check(competency: CompetencyContent, source: str) -> None:
     step_ids = [s.id for s in competency._steps]
     if len(set(step_ids)) != len(step_ids):
         raise ContentError(f"{source}: two steps share an id")

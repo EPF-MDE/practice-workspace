@@ -2,12 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from app.content import Competency, ContentError, Html, Waiting, parse_competency
+from app.content import CompetencyContent, ContentError, Html, Waiting, parse_competency
 
-HEAD = "---\ncompetency: C1\ntitle: T\n---\n\n"
+HEAD = "---\ncompetency: C1\n---\n\n"
 
 
-def parse(body: str) -> Competency:
+def parse(body: str) -> CompetencyContent:
     return parse_competency(HEAD + body)
 
 
@@ -142,7 +142,7 @@ CLOSING = (
 )
 
 
-def parse_drawing(body: str) -> Competency:
+def parse_drawing(body: str) -> CompetencyContent:
     return parse_competency(HEAD + body, drawings=lambda src: SNAPSHOTS[src])
 
 

@@ -137,7 +137,6 @@ class Step:
 @dataclass(frozen=True)
 class Page:
     competency: str
-    title: str
     intro_html: str
     steps: tuple[Step, ...]
 

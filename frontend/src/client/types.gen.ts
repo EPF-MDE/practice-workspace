@@ -168,6 +168,24 @@ export type ClosingIn = {
 };
 
 /**
+ * CompetencyOut
+ */
+export type CompetencyOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Minutes
+     */
+    minutes: number;
+};
+
+/**
  * CompetencyPage
  */
 export type CompetencyPage = {
@@ -227,6 +245,10 @@ export type CourseOut = {
      * Name
      */
     name: string;
+    /**
+     * Competencies
+     */
+    competencies: Array<CompetencyOut>;
 };
 
 /**

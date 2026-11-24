@@ -25,9 +25,8 @@ from .tree import _Directive, _Node, _RawStep
 
 
 @dataclass(frozen=True)
-class Competency:
+class CompetencyContent:
     id: str
-    title: str
     intro: str
     _steps: tuple[_RawStep, ...]
 
@@ -37,7 +36,7 @@ class Competency:
         steps = tuple(
             _step_for(s, name, titles.get(s.after or "", "")) for s in self._steps
         )
-        return Page(self.id, self.title, _render(self.intro), steps)
+        return Page(self.id, _render(self.intro), steps)
 
 
 _markdown = MarkdownIt("commonmark", {"html": False}).enable("table")

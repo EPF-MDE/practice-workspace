@@ -1,14 +1,11 @@
 import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { StepOut } from "@/client";
+import type { CompetencyOut, StepOut } from "@/client";
 import { cn } from "@/lib/utils";
 import {
   EvidencePanelView,
   openQuestion,
 } from "@/packages/evidence/EvidencePanel";
-
-const SESSION = ["C1", "C2", "C3"];
-const MINUTES_PER_COMPETENCY = 40;
 
 function clock(minutes: number) {
   return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
@@ -31,6 +28,17 @@ function schedule(steps: StepOut[]) {
     return { step, from, to: from + step.minutes };
   });
 }
+
+function pathTimes(competencies: CompetencyOut[]) {
+  return competencies.map((competency, index) => {
+    const from = competencies
+      .slice(0, index)
+      .reduce((sum, before) => sum + before.minutes, 0);
+    return { competency, from, to: from + competency.minutes };
+  });
+}
+
+type PathTime = ReturnType<typeof pathTimes>[number];
 
 type PathProps = {
   competency: string;
@@ -85,8 +93,13 @@ function PathStep({
   );
 }
 
-function PathSection({ competency, steps, finished, greyed }: PathProps) {
-  const offset = SESSION.indexOf(competency) * MINUTES_PER_COMPETENCY;
+function PathSection({
+  competency,
+  steps,
+  finished,
+  greyed,
+  offset,
+}: PathProps & { offset: number }) {
   return (
     <section className="rounded-lg border p-4">
       <h2 className="font-semibold">Your path in {competency}</h2>
@@ -132,10 +145,12 @@ function PlanSection({
 }
 
 function TimeSection({
-  competency,
+  mine,
+  times,
   startedAt,
 }: {
-  competency: string;
+  mine: PathTime;
+  times: PathTime[];
   startedAt: number;
 }) {
   const spent = useMinutesSince(startedAt);
@@ -143,16 +158,18 @@ function TimeSection({
     <section className="rounded-lg border p-4 text-sm">
       <h2 className="font-semibold">Time</h2>
       <p data-testid="time-spent">
-        You have spent {spent} min on {competency}, out of{" "}
-        {MINUTES_PER_COMPETENCY}.
+        You have spent {spent} min on {mine.competency.id}, out of{" "}
+        {mine.competency.minutes}.
       </p>
-      <p className="mt-2 text-muted-foreground">
+      <p className="mt-2 text-muted-foreground" data-testid="time-session">
         The session:{" "}
-        {SESSION.map(
-          (c, i) =>
-            `${c} ${clock(i * MINUTES_PER_COMPETENCY)}–${clock((i + 1) * MINUTES_PER_COMPETENCY)}`
-        ).join(", ")}
-        . Two hours in all.
+        {times
+          .map(
+            (time) =>
+              `${time.competency.id} ${clock(time.from)}–${clock(time.to)}`
+          )
+          .join(", ")}
+        , {clock(times.at(-1)?.to ?? 0)} in all.
       </p>
     </section>
   );
@@ -164,23 +181,28 @@ export function Sidebar({
   currentStep,
   ...path
 }: PathProps & {
+  competencies: CompetencyOut[];
   startedAt: number;
   evidencePlan: string;
   currentStep: string | undefined;
 }) {
-  const { competency } = path;
+  const { competencies, ...ownPath } = path;
+  const { competency } = ownPath;
+  const times = pathTimes(competencies);
+  const mine = times.find((time) => time.competency.id === competency);
+  if (!mine) throw new Error(`No Competency ${competency} in the Course`);
   return (
     <aside
       aria-label="Your path"
       className="flex flex-col gap-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto"
     >
-      <PathSection {...path} />
+      <PathSection {...ownPath} offset={mine.from} />
       <EvidencePanelView
         competency={competency}
         onMyWorkMissing={() => currentStep && openQuestion(currentStep)}
       />
       <PlanSection competency={competency} evidencePlan={evidencePlan} />
-      <TimeSection competency={competency} startedAt={startedAt} />
+      <TimeSection mine={mine} times={times} startedAt={startedAt} />
     </aside>
   );
 }

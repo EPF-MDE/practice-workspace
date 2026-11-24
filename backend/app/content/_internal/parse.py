@@ -9,7 +9,7 @@ from .model import (
     DIRECTIVES,
     ContentError,
 )
-from .render import Competency
+from .render import CompetencyContent
 from .tree import _Directive, _Node, _RawStep, _walk
 
 _FRONT_MATTER = re.compile(r"\A---\n(.*?)\n---\n", re.S)
@@ -79,17 +79,22 @@ def _no_drawings(src: str) -> dict[str, Any]:
 
 def parse_competency(
     text: str, source: str = "content", drawings: Drawings = _no_drawings
-) -> Competency:
+) -> CompetencyContent:
     text = text.replace("\r\n", "\n")
     front = _FRONT_MATTER.match(text)
     if not front:
-        raise ContentError(f"{source}: no front matter (competency:, title:)")
+        raise ContentError(f"{source}: no front matter (competency:)")
     meta = dict(
         (key.strip(), value.strip())
         for key, _, value in (
             line.partition(":") for line in front.group(1).splitlines()
         )
     )
+    if "title" in meta:
+        raise ContentError(
+            f"{source}: the front matter holds no title: the Course folder's "
+            "settings give each Competency its title"
+        )
     if not re.fullmatch(r"C\d", meta.get("competency", "")):
         raise ContentError(f"{source}: front matter needs 'competency: C<n>'")
     body = _COMMENT.sub("", text[front.end() :])
@@ -114,9 +119,8 @@ def parse_competency(
         for d in _walk(step.nodes):
             if d.name in ("example-drawing", "reference-drawing"):
                 d.snapshot = _snapshot(d, drawings, f"{source}, step '{step.id}'")
-    result = Competency(
+    result = CompetencyContent(
         competency,
-        meta.get("title", ""),
         "\n".join(cast(list[str], intro_nodes)),
         raw_steps,
     )

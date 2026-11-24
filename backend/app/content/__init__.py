@@ -20,14 +20,14 @@ from ._internal.model import (
     Waiting,
 )
 from ._internal.parse import parse_competency
-from ._internal.render import Competency
+from ._internal.render import CompetencyContent
 
 __all__ = [
     "Answer",
     "Block",
     "Canvas",
     "CheckPoint",
-    "Competency",
+    "CompetencyContent",
     "ContentError",
     "ExampleDrawing",
     "Field",
@@ -42,7 +42,7 @@ __all__ = [
 ]
 
 
-def load_content(directory: str | Path) -> dict[str, Competency]:
+def load_content(directory: str | Path) -> dict[str, CompetencyContent]:
     directory = Path(directory).resolve()
 
     def drawings(src: str) -> dict[str, Any]:
@@ -52,10 +52,15 @@ def load_content(directory: str | Path) -> dict[str, Competency]:
         snapshot: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
         return snapshot
 
-    content: dict[str, Competency] = {}
+    content: dict[str, CompetencyContent] = {}
     for path in sorted(directory.glob("c[0-9].md")):
         competency = parse_competency(
             path.read_text(encoding="utf-8"), path.name, drawings
         )
+        if path.name != f"{competency.id.lower()}.md":
+            raise ContentError(
+                f"{path.name}: holds the content of {competency.id}, "
+                f"which belongs in {competency.id.lower()}.md"
+            )
         content[competency.id] = competency
     return content

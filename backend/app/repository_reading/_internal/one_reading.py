@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
+from app.course import COMPETENCIES
+
 from ..github import GitHubError
 from ..reading import (
-    COMPETENCIES,
     LOOKED_FOR,
     NOT_VISIBLE,
     CompetencyReading,
