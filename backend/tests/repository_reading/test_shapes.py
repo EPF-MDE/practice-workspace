@@ -186,3 +186,16 @@ def test_ref_analyses_stored_before_they_had_a_type_are_read_again(
     again = r.reader.read_now(r.student, previous=RepositoryReading.from_dict(stored))
 
     assert again.competencies == reading.competencies
+
+
+def test_a_readings_student_is_stored_under_the_keys_it_always_had(
+    recorded: type[Recorded],
+) -> None:
+    r = recorded("placeholder-email")
+    reading = r.reader.read(r.student)
+
+    assert reading.to_dict()["student"] == {
+        "login": r.student.login,
+        "project": r.student.group,
+        "evidence_project": r.student.evidence_project,
+    }
