@@ -6,6 +6,7 @@ import {
   type CompetencyPage,
   PracticeService,
 } from "@/client";
+import { courseQuery } from "@/course";
 import { Html } from "@/packages/shared/Html";
 import {
   type DraftScope,
@@ -100,20 +101,20 @@ function PathView({
 export function Path({
   studentId,
   competency,
-  competencies,
 }: {
   studentId: number;
   competency: string;
-  competencies: CompetencyOut[];
 }) {
+  const course = useQuery(courseQuery);
   const page = useQuery({
     queryKey: pathKey(competency),
     queryFn: async () =>
       (await PracticeService.competencyPage({ path: { competency } })).data,
   });
 
-  if (page.isPending) return <main className="p-8">Loading {competency}…</main>;
-  if (page.isError || !page.data)
+  if (page.isPending || course.isPending)
+    return <main className="p-8">Loading {competency}…</main>;
+  if (page.isError || !page.data || course.isError || !course.data)
     return (
       <main className="p-8">
         This Competency cannot be shown.{" "}
@@ -124,7 +125,7 @@ export function Path({
     <PathView
       scope={{ studentId, competency }}
       page={page.data}
-      competencies={competencies}
+      competencies={course.data.competencies}
     />
   );
 }
