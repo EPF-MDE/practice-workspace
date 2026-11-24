@@ -147,6 +147,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = p.parse_args(argv)
     settings = Settings()
+    uses_workspace_data = not (args.roster and args.out)
+    if uses_workspace_data:
+        settings.require("Workspace data", "repository")
     loading = load_course(settings.course_folder)
     if loading.course is None:
         print("\n".join(loading.problems), file=sys.stderr)
@@ -166,8 +169,7 @@ def main(argv: list[str] | None = None) -> int:
             settings.github_app_installation_id,
         )
     store = None
-    if not (args.roster and args.out):
-        settings.require("Workspace data", "repository")
+    if uses_workspace_data:
         store = GitHubWorkspaceData(
             settings.repository,
             installation_token(

@@ -1,7 +1,9 @@
 import base64
 import json
+from pathlib import Path
 
 import httpx
+import pytest
 
 from app.repository_reading import (
     GitHubWorkspaceData,
@@ -10,9 +12,10 @@ from app.repository_reading import (
     StudentToRead,
     WorkspaceDataReadings,
 )
-from app.repository_reading.batch import evidence_projects, run_batch
+from app.repository_reading.batch import evidence_projects, main, run_batch
 from app.repository_reading.recorded import RecordedGitHub
 from app.roster import parse_roster
+from app.settings import ConfigurationError
 from app.store import DeclarationPayload, InMemoryStore
 
 from .conftest import FIXTURES, MATHUTRICE, NOW, OCEENS, REPOSITORIES
@@ -238,3 +241,14 @@ def test_reading_a_file_from_workspace_data() -> None:
     )
     assert data.read("roster.csv") == b"github_login\r\n"
     assert data.read("repository-readings/nobody.json") is None
+
+
+def test_the_batch_without_a_repository_refuses_before_asking_github(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("WORKSPACE_REPOSITORY", "")
+    roster = tmp_path / "roster.csv"
+    roster.write_text(ROSTER, encoding="utf-8")
+
+    with pytest.raises(ConfigurationError, match=r"WORKSPACE_REPOSITORY\b"):
+        main(["--roster", str(roster)])
