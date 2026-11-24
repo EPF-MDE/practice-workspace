@@ -5,14 +5,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from conftest import MakeClient, sign_in
-from course_folders import ONE_STEP, TWO_GROUPS, front_matter
+from conftest import AFTER_THE_CLOSE, BEFORE_THE_CLOSE, MakeClient, sign_in
+from course_folders import CALENDAR, ONE_STEP, TWO_GROUPS, front_matter
 from courses_under_test import FIXTURES, TWO_GROUP_FIXTURE, CourseFolder
 from fastapi.testclient import TestClient
 
 from app.course import COMPETENCIES
-from app.main import ConfigurationError
-from app.settings import Settings
+from app.settings import ConfigurationError, Settings
 
 BACKEND = Path(__file__).resolve().parents[1]
 THREE_LEVELS = FIXTURES / "courses" / "three-levels"
@@ -24,8 +23,8 @@ NAME = 'name = "A course"\n'
 TITLES = "".join(
     f'\n[competencies.{c}]\ntitle = "{c}"\nminutes = 40\n' for c in COMPETENCIES
 )
-SETTINGS = NAME + TWO_GROUPS + TITLES
-NO_LEVEL = NAME + "levels = []\n" + TWO_GROUPS + TITLES
+SETTINGS = NAME + TWO_GROUPS + TITLES + CALENDAR
+NO_LEVEL = NAME + "levels = []\n" + TWO_GROUPS + TITLES + CALENDAR
 TWO_LEVELS = (
     SETTINGS
     + '\n[[levels]]\nid = "started"\nlabel = "Started"\n\n'
@@ -59,27 +58,19 @@ def blocks(text: str) -> list[str]:
 def on_three_levels(
     make_client: MakeClient,
     test_settings: Settings,
-    closes_at: datetime,
-    reading_day_at: datetime,
+    now: datetime,
 ) -> TestClient:
     client = make_client(
-        settings=test_settings.model_copy(
-            update={
-                "course_folder": str(THREE_LEVELS),
-                "closes_at": closes_at,
-                "reading_day_at": reading_day_at,
-            }
-        )
+        settings=test_settings.model_copy(update={"course_folder": str(THREE_LEVELS)}),
+        now=now,
     )
     sign_in(client, TWO_GROUP_FIXTURE.student.github_id)
     return client
 
 
 @pytest.fixture
-def signed_in(
-    make_client: MakeClient, test_settings: Settings, future: datetime
-) -> TestClient:
-    return on_three_levels(make_client, test_settings, future, future)
+def signed_in(make_client: MakeClient, test_settings: Settings) -> TestClient:
+    return on_three_levels(make_client, test_settings, BEFORE_THE_CLOSE)
 
 
 def verify(folder: Path) -> subprocess.CompletedProcess[str]:
@@ -138,11 +129,11 @@ def test_the_top_level_needs_a_link_and_a_level_of_another_scale_is_refused(
 
 
 def test_after_the_close_a_point_only_moves_up_to_the_top_level(
-    make_client: MakeClient, test_settings: Settings, past: datetime, future: datetime
+    make_client: MakeClient, test_settings: Settings
 ) -> None:
-    before = on_three_levels(make_client, test_settings, future, future)
+    before = on_three_levels(make_client, test_settings, BEFORE_THE_CLOSE)
     before.post(SELF, json=rated(a="seen", b="tried"))
-    after = on_three_levels(make_client, test_settings, past, future)
+    after = on_three_levels(make_client, test_settings, AFTER_THE_CLOSE)
 
     down = after.post(SELF, json=rated(a="seen", b="seen"))
     short_of_the_top = after.post(SELF, json=rated(a="tried", b="tried"))
@@ -204,17 +195,15 @@ def test_the_app_refuses_to_start_on_an_empty_level_list(
 
 
 def test_a_stored_level_the_scale_no_longer_holds_still_serves_the_page(
-    make_client: MakeClient, test_settings: Settings, future: datetime, tmp_path: Path
+    make_client: MakeClient, test_settings: Settings, tmp_path: Path
 ) -> None:
-    signed_in = on_three_levels(make_client, test_settings, future, future)
+    signed_in = on_three_levels(make_client, test_settings, BEFORE_THE_CLOSE)
     signed_in.post(SELF, json=rated(a="seen", b="tried"))
     for name in ("course.toml", "c1.md", "c2.md", "c3.md"):
         text = (THREE_LEVELS / name).read_text(encoding="utf-8")
         (tmp_path / name).write_text(text.replace("seen", "glimpsed"))
     renamed = make_client(
-        settings=test_settings.model_copy(
-            update={"course_folder": str(tmp_path), "closes_at": future}
-        )
+        settings=test_settings.model_copy(update={"course_folder": str(tmp_path)})
     )
     sign_in(renamed, TWO_GROUP_FIXTURE.student.github_id)
 
