@@ -16,7 +16,7 @@ class _Directive:
 
     @property
     def is_group_block(self) -> bool:
-        return self.name not in DIRECTIVES
+        return bool(self.name) and self.name not in DIRECTIVES
 
 
 _Node = str | _Directive
