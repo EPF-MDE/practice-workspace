@@ -331,6 +331,8 @@ def test_each_move_is_dated_and_the_levels_unchanged_keep_their_date(
     assert mine["levels"]["C1.a"]["since"] == first["sent_at"]
     assert mine["levels"]["C1.b"]["since"] == moved["sent_at"]
     assert [v["version"] for v in mine["history"]] == [1, 2]
+    assert datetime.fromisoformat(first["sent_at"]) == BEFORE_THE_CLOSE
+    assert datetime.fromisoformat(moved["sent_at"]) == AFTER_THE_CLOSE
 
 
 def test_after_the_reading_day_nothing_changes(at: At) -> None:

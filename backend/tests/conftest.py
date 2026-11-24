@@ -90,6 +90,8 @@ def make_client(test_settings: Settings, store: InMemoryStore) -> MakeClient:
         access_check: AccessCheck | None = None,
         now: datetime = BEFORE_THE_CLOSE,
     ) -> TestClient:
+        if isinstance(store, InMemoryStore):
+            store.clock = lambda: now
         app = create_app(
             settings=settings or test_settings,
             roster=roster,
