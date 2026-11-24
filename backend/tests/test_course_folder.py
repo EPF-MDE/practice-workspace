@@ -12,14 +12,13 @@ from course_folders import (
     with_every_competency,
     write_course_folder,
 )
-from courses_under_test import FIXTURES, TWO_GROUP_FIXTURE, CourseFolder
+from courses_under_test import DEMO_COURSE, FIXTURES, TWO_GROUP_FIXTURE, CourseFolder
 from fastapi.testclient import TestClient
 
 from app.main import ConfigurationError
 from app.settings import Settings
 
 BACKEND = Path(__file__).resolve().parents[1]
-DEMO_COURSE = BACKEND.parent / "demo-course"
 COURSES = FIXTURES / "courses"
 
 
@@ -98,7 +97,7 @@ def test_the_app_refuses_to_start_on_invalid_settings_and_names_each_problem(
 
 
 def test_verify_passes_the_demo_course() -> None:
-    result = verify(DEMO_COURSE)
+    result = verify(DEMO_COURSE.folder)
 
     assert result.returncode == 0, result.stdout + result.stderr
 

@@ -9,7 +9,7 @@ from app.repository_reading import (
 )
 from app.roster import Repository
 
-from .conftest import NOW, Recorded
+from .conftest import NOW, OCEENS, Recorded
 
 
 def test_reading_a_repository_again_compares_nothing_already_compared(
@@ -157,7 +157,7 @@ def test_a_full_reading_of_the_largest_shape_stays_within_its_estimate() -> None
             "student",
             "OcéENS",
             Repository(github.repository),
-            Repository("EPF-MDE/OceENS"),
+            OCEENS,
         )
     )
 
