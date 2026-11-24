@@ -7,7 +7,7 @@ from ..reading import (
     Fact,
     PointId,
 )
-from .analysis import OWN_HISTORY
+from .ref_analysis import HowRead, RefAnalysis
 from .rules import (
     _plural,
 )
@@ -26,7 +26,7 @@ class _C1Facts(_ReadingState):
         )
         for b in ordered:
             a = self.analyses[b["commit"]["sha"]]
-            if a["files"]:
+            if a.files:
                 self.facts["C1"].append(
                     self._c1_fact(a, f"`{b['name']}`", {"branch": b["name"]})
                 )
@@ -34,7 +34,7 @@ class _C1Facts(_ReadingState):
         for p in sorted(pull_list, key=lambda p: p["number"]):
             sha = p["head"]["sha"]
             a = self.analyses[sha]
-            if not a["files"] or sha in branch_shas:
+            if not a.files or sha in branch_shas:
                 continue
             deleted = p["head"]["ref"] not in branches_by_name
             where = f"pull request #{p['number']}" + (
@@ -45,25 +45,25 @@ class _C1Facts(_ReadingState):
             )
             self.facts["C1"].append(replace(fact, link=p.get("html_url") or fact.link))
 
-    def _c1_fact(self, a: dict[str, Any], where: str, ref: dict[str, Any]) -> Fact:
-        n = len(a["files"])
+    def _c1_fact(self, a: RefAnalysis, where: str, ref: dict[str, Any]) -> Fact:
+        n = len(a.files)
         text = (
             f"{where} holds {_plural(n, 'file')} of its own history, none from the "
-            f"course's code; last change on {a['last_change']}."
-            if a.get(OWN_HISTORY)
-            else f"{where} changes {_plural(n, 'file')} beyond `{a['closest']}`, "
-            f"{_plural(a['lines_added'], 'line')} added; "
-            f"last change on {a['last_change']}."
+            f"course's code; last change on {a.last_change}."
+            if a.read is HowRead.OWN_HISTORY
+            else f"{where} changes {_plural(n, 'file')} beyond `{a.closest}`, "
+            f"{_plural(a.lines_added or 0, 'line')} added; "
+            f"last change on {a.last_change}."
         )
         return Fact(
             point=PointId.CHANGED_FILES,
             text=text,
-            link=a.get("link"),
+            link=a.link,
             detail={
                 **ref,
-                "closest": a["closest"],
-                "files": a["files"],
-                "lines_added": a["lines_added"],
-                "last_change": a["last_change"],
+                "closest": a.closest,
+                "files": [f.model_dump(exclude_none=True) for f in a.files],
+                "lines_added": a.lines_added,
+                "last_change": a.last_change,
             },
         )

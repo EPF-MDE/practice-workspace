@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from base64 import b64encode
 from datetime import UTC, datetime
 from typing import Any
 
@@ -214,3 +215,42 @@ def test_a_repository_linked_to_the_upstream_it_cannot_be_compared_with_shows_no
     declare(client, "https://github.com/ada/OceENS")
 
     assert panel(client, "C1")["facts"] == []
+
+
+ARCHITECTURE_JOB = "jobs:\n  architecture:\n    runs-on: ubuntu-latest\n"
+TEST_JOB = "jobs:\n  test:\n    runs-on: ubuntu-latest\n"
+
+
+@pytest.mark.parametrize(
+    ("top_level", "nested", "shown"),
+    [(ARCHITECTURE_JOB, TEST_JOB, True), (TEST_JOB, ARCHITECTURE_JOB, False)],
+    ids=["a workflow GitHub runs", "a file in a folder GitHub never runs"],
+)
+def test_the_architecture_check_is_found_only_in_a_workflow_github_runs(
+    make_client: MakeClient, top_level: str, nested: str, shown: bool
+) -> None:
+    ci, kept = ".github/workflows/ci.yml", ".github/workflows/old/architecture.yml"
+    github = UnforkedRepositories({"ada/bakery": ["README.md", ci, kept]})
+    contents, tip = "repos/ada/bakery/contents", "ref=ada/bakery-tip"
+    github.answers |= {
+        f"{contents}/.github/workflows?{tip}": [
+            {"type": "file", "name": "ci.yml", "path": ci},
+            {"type": "dir", "name": "old", "path": ".github/workflows/old"},
+        ],
+        f"{contents}/{ci}?{tip}": {"content": b64encode(top_level.encode()).decode()},
+        f"{contents}/{kept}?{tip}": {"content": b64encode(nested.encode()).decode()},
+    }
+    client = make_client(
+        repository_reading=RepositoryReader(github, InMemoryReadings()),
+        access_check=FakeAccessCheck(),
+    )
+    sign_in(client, ADA_OF_OCEENS)
+
+    declare(client, "https://github.com/ada/bakery")
+
+    found = [
+        f["text"]
+        for f in panel(client, "C2")["facts"]
+        if f["text"].startswith("The Architecture Check runs from")
+    ]
+    assert found == ([f"The Architecture Check runs from `{ci}` on `main`."] * shown)

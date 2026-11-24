@@ -76,23 +76,22 @@ class _C2Facts(_ReadingState):
         a = self.analyses.get(default_sha) if default_sha else None
         if not a:
             return
-        own = {f["path"] for f in a["files"]}
-        for path, w in (a.get("workflows") or {}).items():
-            if w.get("architecture"):
+        for path, w in a.default_branch_workflows.items():
+            if w.architecture:
                 self.facts["C2"].append(
                     Fact(
                         point=PointId.C2_B,
                         text="The Architecture Check runs from "
                         f"`{path}` on `{self.default}`.",
                         credited_to=STUDENT
-                        if path in own
-                        else Credit(a["closest"] or a.get("fallback") or STUDENT),
+                        if path in a.changed_paths
+                        else Credit(a.closest or a.fallback or STUDENT),
                         link=f"https://github.com/{self.s.evidence_project}/blob/{self.default}/{path}",
                         detail={"workflow": path},
                     )
                 )
                 break
-        fallback = a.get("fallback")
+        fallback = a.fallback
         if fallback and FALLBACK_CHAIN.index(fallback) >= FALLBACK_CHAIN.index(
             CLEAN_BENCH
         ):
@@ -171,18 +170,10 @@ class _C2Facts(_ReadingState):
                     )
                 )
         seen = set()
-        for sha, a in self.analyses.items():
-            own = {f["path"] for f in a["files"]}
-            workflows = dict(a.get("workflows") or {})
-            for path in a.get("workflow_files", []):
-                if path not in workflows:
-                    w = self._workflow(sha, path)
-                    if w:
-                        workflows[path] = w
-                        a.setdefault("workflows_own", {})[path] = w
-            workflows.update(a.get("workflows_own") or {})
-            for path, w in workflows.items():
-                for job, needs in (w.get("deploy_needs") or {}).items():
+        for a in self.analyses.values():
+            own = a.changed_paths
+            for path, w in a.workflows.items():
+                for job, needs in w.deploy_needs.items():
                     key = (path, job, tuple(needs), path in own)
                     if key in seen:
                         continue
@@ -194,7 +185,7 @@ class _C2Facts(_ReadingState):
                             text=f"In `{path}`, the job `{job}` waits for {waits}.",
                             credited_to=STUDENT
                             if path in own
-                            else Credit(a["closest"] or STUDENT),
+                            else Credit(a.closest or STUDENT),
                             detail={
                                 "workflow": path,
                                 "job": job,
