@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 import pytest
-from fake_github import FakeGitHub
+from fake_github import BOT, FakeGitHub
 
 from app.store import (
     EVERY_COMPETENCY,
@@ -17,7 +17,6 @@ from app.store import (
     SelfAssessmentPayload,
     WithdrawalPayload,
 )
-from app.store.github import STORE_BOT
 
 from .conftest import ADA_OF_OCEENS, PNG, SENDS, SNAPSHOT, github_store
 
@@ -107,7 +106,7 @@ def test_a_drawing_is_written_with_the_commit_holding_its_files(
 def _sent_before(github: FakeGitHub, block: dict[str, Any]) -> None:
     data = json.dumps(block, ensure_ascii=False, separators=(", ", ": "))
     github.comment_by_hand(
-        401, f"A send\n\n```json practice\n{data}\n```\n", STORE_BOT, "Bot"
+        401, f"A send\n\n```json practice\n{data}\n```\n", BOT["login"], "Bot"
     )
 
 
