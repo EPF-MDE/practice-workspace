@@ -4,12 +4,21 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { stepScript } from "../shared/step-script";
+import { SITUATIONS } from "./situations";
 
 const rebaseWithAScript = stepScript(
   "agent-rebase.yml",
   "rebase",
   "Rebase with a script"
 );
+
+const WORKFLOW = readFileSync(
+  join(import.meta.dirname, "../../../.github/workflows/agent-rebase.yml"),
+  "utf8"
+);
+
+const wordsIn = (text: string, pattern: RegExp): Set<string> =>
+  new Set([...text.matchAll(pattern)].map(([, word]) => word as string));
 
 const IDENTITY = {
   GIT_AUTHOR_NAME: "test",
@@ -130,5 +139,34 @@ describe("the rebase with a script", { timeout: 20_000 }, () => {
     });
 
     expect(outcome).toBe("superseded");
+  });
+});
+
+describe("the outcomes of the rebase with a script", () => {
+  const written = wordsIn(rebaseWithAScript, /outcome=([a-z-]+)/g);
+
+  it("are the outcomes the workflow handles, each spelt the same", () => {
+    const handled = new Set([
+      ...wordsIn(WORKFLOW, /steps\.script\.outputs\.outcome == '([a-z-]+)'/g),
+      ...wordsIn(WORKFLOW, /"\$OUTCOME" = "([a-z-]+)"/g),
+    ]);
+
+    expect(written).toEqual(
+      new Set(["up-to-date", "superseded", "rebased", "conflicts"])
+    );
+    expect(handled).toEqual(written);
+  });
+
+  it("give the agent only situations it knows", () => {
+    const agentSituations = wordsIn(
+      WORKFLOW.slice(WORKFLOW.indexOf("SITUATION:")).split("\n")[0] ?? "",
+      /'([a-z-]+)'/g
+    );
+    agentSituations.delete("failure");
+
+    expect(agentSituations).toEqual(new Set(["check-fails"]));
+    for (const situation of Object.keys(SITUATIONS)) {
+      expect([...agentSituations, ...written]).toContain(situation);
+    }
   });
 });

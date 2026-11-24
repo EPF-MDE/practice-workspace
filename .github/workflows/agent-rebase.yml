@@ -300,7 +300,7 @@ jobs:
           POSTHOG_LLMA_PRIVACY_MODE: "false"
           POSTHOG_LLMA_DISTINCT_ID: factory:rebase:${{ matrix.pr }}
           CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS: "30000"
-          SITUATION: ${{ steps.script.outputs.outcome }}
+          SITUATION: ${{ steps.check.outcome == 'failure' && 'check-fails' || steps.script.outputs.outcome }}
           PR_NUMBER: ${{ matrix.pr }}
           BRANCH: ${{ steps.pr.outputs.branch }}
           BASE_REF: ${{ steps.pr.outputs.base_ref }}
