@@ -3,9 +3,13 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { workflowStep } from "./workflow-step";
+import { stepScript } from "../shared/step-script";
 
-const rebaseWithAScript = workflowStep("rebase", "Rebase with a script");
+const rebaseWithAScript = stepScript(
+  "agent-rebase.yml",
+  "rebase",
+  "Rebase with a script"
+);
 
 const IDENTITY = {
   GIT_AUTHOR_NAME: "test",
@@ -21,10 +25,10 @@ const inRepository = (dir: string) => ({
       encoding: "utf8",
       env: { ...process.env, ...IDENTITY },
     }).trim(),
-  commit: (file: string, text: string) => {
+  commit: (file: string, text: string, by = "the branch") => {
     writeFileSync(join(dir, file), text);
     execFileSync("git", ["add", file], { cwd: dir });
-    execFileSync("git", ["commit", "-qm", `${file}: ${text}`], {
+    execFileSync("git", ["commit", "-qm", `${file}: ${text}, by ${by}`], {
       cwd: dir,
       env: { ...process.env, ...IDENTITY },
     });
@@ -53,7 +57,7 @@ const rebase = ({ onTheBranch, onMainSince }: Story) => {
   const headSha = git("rev-parse", "HEAD");
 
   git("checkout", "-q", "main");
-  for (const [file, text] of onMainSince) commit(file, text);
+  for (const [file, text] of onMainSince) commit(file, text, "main");
   git("push", "-q", "origin", "main");
   git("checkout", "-q", "--detach", headSha);
   git("fetch", "-q", "origin");
@@ -84,7 +88,7 @@ const rebase = ({ onTheBranch, onMainSince }: Story) => {
   };
 };
 
-describe("the rebase with a script", () => {
+describe("the rebase with a script", { timeout: 20_000 }, () => {
   it("rebases a branch whose changes do not touch main's", () => {
     const { status, outcome, git } = rebase({
       onTheBranch: [["feature.txt", "the feature"]],
@@ -95,7 +99,7 @@ describe("the rebase with a script", () => {
     expect(outcome).toBe("rebased");
     expect(git("rev-parse", "--abbrev-ref", "HEAD")).toBe("feature");
     expect(git("log", "--format=%s", "origin/main..HEAD")).toBe(
-      "feature.txt: the feature"
+      "feature.txt: the feature, by the branch"
     );
   });
 

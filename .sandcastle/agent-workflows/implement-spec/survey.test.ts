@@ -3,24 +3,13 @@ import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parse } from "yaml";
+import { stepScript } from "../shared/step-script";
 
-type Step = { name?: string; run?: string };
-type Workflow = { jobs: Record<string, { steps: Step[] }> };
-
-const workflow = parse(
-  readFileSync(
-    join(
-      import.meta.dirname,
-      "../../../.github/workflows/agent-implement-spec.yml"
-    ),
-    "utf8"
-  )
-) as Workflow;
-
-const findTheFrontier = workflow.jobs.survey.steps.find(
-  (step) => step.name === "Find the spec and the frontier ticket"
-)?.run;
+const findTheFrontier = stepScript(
+  "agent-implement-spec.yml",
+  "survey",
+  "Find the spec and the frontier ticket"
+);
 
 type Ticket = {
   number: number;
@@ -66,7 +55,7 @@ const survey = (queue: Ticket[], openPullRequests: number[] = []) => {
   const output = join(dir, "output");
   writeFileSync(output, "");
 
-  const result = spawnSync("bash", ["-c", findTheFrontier ?? "exit 99"], {
+  const result = spawnSync("bash", ["-c", findTheFrontier], {
     encoding: "utf8",
     env: {
       ...process.env,

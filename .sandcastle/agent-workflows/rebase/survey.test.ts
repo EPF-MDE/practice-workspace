@@ -3,9 +3,10 @@ import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { workflowStep } from "./workflow-step";
+import { stepScript } from "../shared/step-script";
 
-const findThePullRequests = workflowStep(
+const findThePullRequests = stepScript(
+  "agent-rebase.yml",
   "survey",
   "Find the pull requests to rebase"
 );
@@ -29,7 +30,8 @@ const listed = ({
   labels: labels.map((name) => ({ name })),
 });
 
-const survey = (
+const surveyAsked = (
+  requested: string,
   ...lists: PullRequest[][]
 ): { status: number | null; stderr: string; numbers: number[] } => {
   const dir = mkdtempSync(join(tmpdir(), "rebase-survey-"));
@@ -62,6 +64,7 @@ cat "${dir}/list-$calls.json"
       PATH: `${dir}:${process.env.PATH}`,
       GITHUB_OUTPUT: output,
       SETTLE_SECONDS: "0",
+      REQUESTED_PR: requested,
     },
   });
   const line = readFileSync(output, "utf8")
@@ -73,6 +76,8 @@ cat "${dir}/list-$calls.json"
     numbers: line ? JSON.parse(line.slice("prs=".length)) : [],
   };
 };
+
+const survey = (...lists: PullRequest[][]) => surveyAsked("", ...lists);
 
 describe("the rebase survey", () => {
   it("takes every pull request GitHub says conflicts with its base", () => {
@@ -125,5 +130,23 @@ describe("the rebase survey", () => {
 
     expect(status).toBe(0);
     expect(numbers).toEqual([]);
+  });
+});
+
+describe("the rebase survey, asked for a pull request", () => {
+  it("takes a pull request labelled agent:rebase, conflicting or not, blocked or not", () => {
+    const { numbers } = survey([
+      { number: 1, mergeable: "MERGEABLE", labels: ["agent:rebase"] },
+      { number: 2, labels: ["agent:rebase", "agent:blocked"] },
+      { number: 3, mergeable: "MERGEABLE" },
+    ]);
+
+    expect(numbers).toEqual([1, 2]);
+  });
+
+  it("takes only the pull request asked for, by label or by hand", () => {
+    const { numbers } = surveyAsked("7", [{ number: 1 }]);
+
+    expect(numbers).toEqual([7]);
   });
 });
