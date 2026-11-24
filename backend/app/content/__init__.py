@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any
 
 from ._internal.model import (
-    COMPETENCIES,
     Answer,
     Block,
     Canvas,
@@ -24,7 +23,6 @@ from ._internal.parse import parse_competency
 from ._internal.render import CompetencyContent
 
 __all__ = [
-    "COMPETENCIES",
     "Answer",
     "Block",
     "Canvas",

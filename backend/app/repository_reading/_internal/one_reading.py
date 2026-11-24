@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from app.content import COMPETENCIES
+from app.course import COMPETENCIES
 
 from ..github import GitHubError
 from ..reading import (

@@ -5,7 +5,7 @@ from datetime import datetime
 
 import yaml
 
-from app.content import COMPETENCIES
+from app.course import COMPETENCIES
 
 from ..reading import (
     Fact,

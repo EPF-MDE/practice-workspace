@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.content import COMPETENCIES
+from app.course import COMPETENCIES
 
 ONE_STEP = "## Read {#read minutes=5}\n\nA Step to read.\n"
 

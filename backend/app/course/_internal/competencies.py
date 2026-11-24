@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from app.content import COMPETENCIES
+COMPETENCIES = ("C1", "C2", "C3")
 
 
 def competency_problems(

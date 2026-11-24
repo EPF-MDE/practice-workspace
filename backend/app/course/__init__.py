@@ -6,17 +6,12 @@ from pathlib import Path
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
-from app.content import (
-    COMPETENCIES,
-    CompetencyContent,
-    ContentError,
-    load_content,
-)
+from app.content import CompetencyContent, ContentError, load_content
 
-from ._internal.competencies import competency_problems
+from ._internal.competencies import COMPETENCIES, competency_problems
 from ._internal.settings_file import read_settings
 
-__all__ = ["Competency", "Course", "Loading", "load_course", "router"]
+__all__ = ["COMPETENCIES", "Competency", "Course", "Loading", "load_course", "router"]
 
 
 @dataclass(frozen=True)

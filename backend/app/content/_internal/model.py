@@ -5,8 +5,6 @@ from typing import Any
 
 from app import roster
 
-COMPETENCIES = ("C1", "C2", "C3")
-
 GROUPS = {name: group.directive for name, group in roster.GROUPS.items()}
 FIELD_KINDS = ("line", "text", "choice")
 BANDS = ("Basic", "Solid", "Outstanding")
