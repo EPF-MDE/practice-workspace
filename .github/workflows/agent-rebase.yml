@@ -11,6 +11,8 @@ name: Agent — Rebase The Pull Requests That Conflict
 #   label waits for the night. To rebase it now:
 #     gh workflow run agent-rebase.yml -f pr=<number>
 #   The label also retries a blocked pull request.
+#   A pull request labelled `agent:in-progress` is left to the agent working
+#   on it, whatever asked: this run never takes a branch another one holds.
 #
 # ONE RUNNER PER PULL REQUEST, A SCRIPT FIRST
 #   A script rebases the branch. When it goes through and `npm run check`
@@ -81,6 +83,24 @@ jobs:
         run: |
           set -euo pipefail
           if [ -n "${REQUESTED_PR:-}" ]; then
+            if ! [[ $REQUESTED_PR =~ ^[1-9][0-9]*$ ]]; then
+              echo "::error::The pr input is \"$REQUESTED_PR\": give a pull request's number, such as 83."
+              exit 1
+            fi
+            requested=$(mktemp)
+            gh pr view "$REQUESTED_PR" --json state,isCrossRepository,labels > "$requested"
+            if [ "$(jq -r '.state' "$requested")" != "OPEN" ] \
+              || [ "$(jq -r '.isCrossRepository' "$requested")" = "true" ]; then
+              echo "::notice::#$REQUESTED_PR is closed or from a fork: nothing to rebase."
+              echo "prs=[]" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if jq -e '[.labels[].name] | index("agent:in-progress")' "$requested" > /dev/null; then
+              gh pr comment "$REQUESTED_PR" --body \
+                "Not rebased now: an agent is working on this pull request. If it is labelled \`agent:rebase\`, the label stays and tonight's run takes it. Or, once the agent is done: \`gh workflow run agent-rebase.yml -f pr=$REQUESTED_PR\`."
+              echo "prs=[]" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             echo "prs=[$REQUESTED_PR]" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -154,15 +174,22 @@ jobs:
           gh label create "agent:review" --color 5319E7 \
             --description "Ask the review workflow to read this pull request" || true
           gh pr view "$PR_NUMBER" \
-            --json number,title,body,state,isCrossRepository,headRefName,headRefOid,baseRefName \
+            --json number,title,body,state,isCrossRepository,labels,headRefName,headRefOid,baseRefName \
             > /tmp/pr.json
+          # The survey checked this. What changed since stops the run before
+          # it takes the pull request, so it touches none of its labels.
           if [ "$(jq -r '.state' /tmp/pr.json)" != "OPEN" ] || [ "$(jq -r '.isCrossRepository' /tmp/pr.json)" = "true" ]; then
-            echo "::error::#$PR_NUMBER is closed or from a fork: nothing to rebase."
+            echo "::error::#$PR_NUMBER was closed since the survey: nothing to rebase."
             exit 1
           fi
+          if jq -e '[.labels[].name] | index("agent:in-progress")' /tmp/pr.json > /dev/null; then
+            echo "::error::An agent started on #$PR_NUMBER since the survey: it is left to that agent."
+            exit 1
+          fi
+          gh pr edit "$PR_NUMBER" --add-label "agent:in-progress"
+          echo "taken=true" >> "$GITHUB_OUTPUT"
           gh pr edit "$PR_NUMBER" --remove-label "agent:rebase" || true
           gh pr edit "$PR_NUMBER" --remove-label "agent:blocked" || true
-          gh pr edit "$PR_NUMBER" --add-label "agent:in-progress"
           jq -r '"branch=\(.headRefName)\nhead_sha=\(.headRefOid)\nbase_ref=\(.baseRefName)"' \
             /tmp/pr.json >> "$GITHUB_OUTPUT"
           jq -r '"# #\(.number): \(.title)\n\n\(.body)"' /tmp/pr.json > /tmp/rebase-context.md
@@ -234,8 +261,8 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          npm ci && npm --prefix frontend ci && (cd backend && uv sync) \
-            && npm run check 2>&1 | tee /tmp/check.log
+          { npm ci && npm --prefix frontend ci && (cd backend && uv sync) && npm run check; } \
+            2>&1 | tee /tmp/check.log
 
       - name: Install Claude Code and the PostHog plugin
         # As in agent-review.yml: the plugin only sends the session, and this
@@ -400,7 +427,7 @@ jobs:
           gh pr comment "$PR_NUMBER" --body "Not rebased: a person has to decide, in ${where}. Nothing was pushed."
 
       - name: Mark blocked on failure
-        if: failure()
+        if: failure() && steps.pr.outputs.taken == 'true'
         env:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: |
@@ -409,7 +436,7 @@ jobs:
             "Rebase run **failed** — [logs](${RUN_URL}). Nothing was pushed. Add \`agent:rebase\` to retry." || true
 
       - name: Always remove in-progress
-        if: always()
+        if: always() && steps.pr.outputs.taken == 'true'
         env:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: gh pr edit "$PR_NUMBER" --remove-label "agent:in-progress" || true
