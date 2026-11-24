@@ -1,0 +1,352 @@
+name: Agent — Rebase The Pull Requests That Conflict
+
+# Keeps every open pull request on top of its base, so a morning starts with
+# pull requests ready to merge.
+#
+# WHAT TRIGGERS IT
+#   Every night, for each pull request GitHub says conflicts with its base.
+#   Or the `agent:rebase` label on one pull request, conflicting or not: add
+#   it after a merge that left others behind, or to retry a blocked one.
+#   Or by hand: `gh workflow run agent-rebase.yml`.
+#
+# ONE RUNNER PER PULL REQUEST, A SCRIPT FIRST
+#   A script rebases the branch. When it goes through and `npm run check`
+#   passes, no agent runs. Only on a conflict, or a check that the base
+#   broke, does an agent resolve it. Every push is `--force-with-lease`
+#   against the head this run read: if anyone pushed meanwhile, nothing is
+#   overwritten. An agent's resolution is code nobody has read, so it goes to
+#   `agent:review`.
+#
+# WHEN IT CANNOT
+#   Superseded by the base, or a conflict the agent cannot settle: the pull
+#   request gets `agent:blocked`, and an issue labelled `needs-a-human` says
+#   what to decide. The nightly survey skips blocked pull requests. The issue
+#   closes once the pull request is rebased, merged, closed or unblocked.
+#
+# WHAT IT NEEDS
+#   secrets.CLAUDE_CODE_OAUTH_TOKEN and secrets.POSTHOG_API_KEY, on the
+#     agent's step only.
+#   secrets.FACTORY_PAT — Contents, Pull requests and Issues: write.
+#   The `agent:rebase` label. No workflow can create the label that starts
+#     it, so create it once:
+#       gh label create "agent:rebase" --color 0E8A16 \
+#         --description "Ask the rebase workflow to put this pull request on top of its base"
+#
+# `pull_request`, not `pull_request_target`: a fork's pull request gets no
+# secret, so the label on it fails at the first `gh` call. The nightly
+# survey leaves forks out.
+
+on:
+  schedule:
+    # 23:00 UTC: midnight in Paris in winter, 01:00 in summer.
+    - cron: "0 23 * * *"
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: read # the checkout
+
+jobs:
+  survey:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.label.name == 'agent:rebase'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      prs: ${{ steps.survey.outputs.prs }}
+
+    env:
+      GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+      GH_REPO: ${{ github.repository }}
+      LABELLED_PR: ${{ github.event.pull_request.number }}
+
+    steps:
+      - name: Find the pull requests to rebase
+        id: survey
+        run: |
+          set -euo pipefail
+          if [ -n "${LABELLED_PR:-}" ]; then
+            echo "prs=[$LABELLED_PR]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # GitHub computes `mergeable` lazily: listing asks for it, and a
+          # pull request nobody has looked at lately reads UNKNOWN at first.
+          list=$(mktemp)
+          for _ in 1 2 3 4 5; do
+            gh pr list --state open --limit 100 \
+              --json number,mergeable,isCrossRepository,labels > "$list"
+            jq -e 'any(.[]; .mergeable == "UNKNOWN")' "$list" > /dev/null || break
+            sleep "${SETTLE_SECONDS:-20}"
+          done
+          prs=$(jq -c '[.[]
+            | select(.mergeable == "CONFLICTING" and (.isCrossRepository | not))
+            | select([.labels[].name] | any(. == "agent:blocked" or . == "agent:in-progress") | not)
+            | .number]' "$list")
+          echo "To rebase: $prs"
+          echo "prs=$prs" >> "$GITHUB_OUTPUT"
+
+      - name: Close the issues of pull requests that need no human any more
+        if: env.LABELLED_PR == ''
+        run: |
+          set -euo pipefail
+          gh issue list --state open --label "needs-a-human" --limit 100 --json number,body \
+            --jq '.[] | (.body | capture("<!-- factory:rebase #(?<pr>[0-9]+) -->").pr // empty) as $pr
+              | "\(.number) \($pr)"' \
+            | while read -r issue pr; do
+                status=$(gh pr view "$pr" --json state,labels \
+                  --jq '"\(.state) \([.labels[].name] | index("agent:blocked") != null)"' < /dev/null)
+                if [ "$status" != "OPEN true" ]; then
+                  gh issue close "$issue" < /dev/null \
+                    --comment "#$pr is no longer open and blocked: nothing left to resolve here."
+                fi
+              done
+
+  rebase:
+    needs: survey
+    if: needs.survey.outputs.prs != '[]' && needs.survey.outputs.prs != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        pr: ${{ fromJSON(needs.survey.outputs.prs) }}
+
+    # The review's group: a rebase never force-pushes under a running review.
+    concurrency:
+      group: agent-review-${{ matrix.pr }}
+      cancel-in-progress: false
+
+    env:
+      GH_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ matrix.pr }}
+      RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    steps:
+      - name: Read the pull request and transition labels
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+        run: |
+          set -euo pipefail
+          gh label create "agent:in-progress" --color FBCA04 \
+            --description "An agent is working on this right now" || true
+          gh label create "agent:blocked" --color B60205 \
+            --description "An agent run failed here. Its comment says how to retry" || true
+          gh label create "needs-a-human" --color D93F0B \
+            --description "A person has to decide before an agent can go on" || true
+          gh pr view "$PR_NUMBER" \
+            --json number,title,body,state,isCrossRepository,headRefName,headRefOid,baseRefName \
+            > /tmp/pr.json
+          if [ "$(jq -r '.state' /tmp/pr.json)" != "OPEN" ] || [ "$(jq -r '.isCrossRepository' /tmp/pr.json)" = "true" ]; then
+            echo "::error::#$PR_NUMBER is closed or from a fork: nothing to rebase."
+            exit 1
+          fi
+          gh pr edit "$PR_NUMBER" --remove-label "agent:rebase" || true
+          gh pr edit "$PR_NUMBER" --remove-label "agent:blocked" || true
+          gh pr edit "$PR_NUMBER" --add-label "agent:in-progress"
+          jq -r '"branch=\(.headRefName)\nhead_sha=\(.headRefOid)\nbase_ref=\(.baseRefName)"' \
+            /tmp/pr.json >> "$GITHUB_OUTPUT"
+          jq -r '"# #\(.number): \(.title)\n\n\(.body)"' /tmp/pr.json > /tmp/rebase-context.md
+
+      - name: Checkout the pull request
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ steps.pr.outputs.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install dependencies
+        # On the pull request's head, before the rebase can leave conflict
+        # markers in a lock file. Each check below installs again after it.
+        run: |
+          npm ci
+          npm --prefix frontend ci
+          (cd backend && uv sync)
+          git config user.name "agent-factory[bot]"
+          git config user.email "agent-factory[bot]@users.noreply.github.com"
+
+      - name: Rebase with a script
+        id: script
+        env:
+          BRANCH: ${{ steps.pr.outputs.branch }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          BASE_REF: ${{ steps.pr.outputs.base_ref }}
+        run: |
+          set -euo pipefail
+          git checkout -q -B "$BRANCH" "$HEAD_SHA"
+          if git merge-base --is-ancestor "origin/$BASE_REF" HEAD; then
+            outcome=up-to-date
+          elif git rebase "origin/$BASE_REF"; then
+            # The rebase drops every commit the base already has. None left
+            # means the base does all this pull request did.
+            if git diff --quiet "origin/$BASE_REF" HEAD; then
+              outcome=superseded
+            else
+              outcome=rebased
+            fi
+          else
+            outcome=conflicts
+          fi
+          echo "Outcome: $outcome"
+          echo "outcome=$outcome" >> "$GITHUB_OUTPUT"
+
+      - name: Install and check the rebased branch
+        id: check
+        if: steps.script.outputs.outcome == 'rebased'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm ci && npm --prefix frontend ci && (cd backend && uv sync) \
+            && npm run check 2>&1 | tee /tmp/check.log
+
+      - name: Resolve with an agent
+        id: agent
+        if: >-
+          steps.script.outputs.outcome == 'conflicts' ||
+          steps.check.outcome == 'failure'
+        continue-on-error: true
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_HOST: https://eu.i.posthog.com
+          POSTHOG_LLMA_CC_ENABLED: "true"
+          POSTHOG_LLMA_PRIVACY_MODE: "false"
+          POSTHOG_LLMA_DISTINCT_ID: factory:rebase:${{ matrix.pr }}
+          CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS: "30000"
+          SITUATION: ${{ steps.script.outputs.outcome }}
+          PR_NUMBER: ${{ matrix.pr }}
+          BRANCH: ${{ steps.pr.outputs.branch }}
+          BASE_REF: ${{ steps.pr.outputs.base_ref }}
+        run: npx tsx .sandcastle/agent-workflows/rebase/rebase.ts
+
+      - name: Check the agent's resolution
+        id: agent_check
+        if: steps.agent.outcome == 'success' || steps.agent.outcome == 'failure'
+        env:
+          BASE_REF: ${{ steps.pr.outputs.base_ref }}
+          AGENT: ${{ steps.agent.outcome }}
+        run: |
+          set -euo pipefail
+          blocked() { [ -s /tmp/rebase-blocked.md ] || echo "$1" > /tmp/rebase-blocked.md; exit 0; }
+          [ -s /tmp/rebase-blocked.md ] && exit 0
+          [ "$AGENT" = "success" ] || blocked "The agent's run failed. See the logs."
+          if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
+            blocked "The agent stopped in the middle of the rebase."
+          fi
+          git merge-base --is-ancestor "origin/$BASE_REF" HEAD \
+            || blocked "The agent's branch is not on top of \`$BASE_REF\`."
+          [ -z "$(git status --porcelain)" ] || blocked "The agent left uncommitted changes."
+          { npm ci && npm --prefix frontend ci && (cd backend && uv sync) && npm run check; } \
+            || blocked "\`npm run check\` fails on the agent's resolution."
+          echo "resolved=true" >> "$GITHUB_OUTPUT"
+
+      - name: Push with lease
+        id: push
+        if: >-
+          (steps.script.outputs.outcome == 'rebased' && steps.check.outcome == 'success') ||
+          steps.agent_check.outputs.resolved == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+          BRANCH: ${{ steps.pr.outputs.branch }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          # Lands only if the branch is still at the head this run read.
+          if git -c core.hooksPath=/dev/null \
+            -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+            push --force-with-lease="refs/heads/$BRANCH:$HEAD_SHA" \
+            "https://github.com/${GH_REPO}.git" "HEAD:refs/heads/$BRANCH"; then
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::$BRANCH moved during this run. Nothing was pushed: the next run tries again."
+          fi
+
+      - name: Report the rebase
+        if: steps.push.outputs.pushed == 'true' || steps.script.outputs.outcome == 'up-to-date'
+        env:
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+          BASE_REF: ${{ steps.pr.outputs.base_ref }}
+          OUTCOME: ${{ steps.script.outputs.outcome }}
+          BY_AGENT: ${{ steps.agent_check.outputs.resolved }}
+        run: |
+          set -euo pipefail
+          if [ "$OUTCOME" = "up-to-date" ]; then
+            echo "Already on top of \`$BASE_REF\`: nothing to rebase. [Logs](${RUN_URL})." > /tmp/report.md
+          elif [ "$BY_AGENT" = "true" ]; then
+            {
+              echo "Rebased onto \`$BASE_REF\` by an agent, which resolved what the script could not. [Logs](${RUN_URL})."
+              echo ""
+              cat /tmp/rebase-summary.md 2>/dev/null || echo "The agent left no summary."
+              echo ""
+              echo "Nobody has read this resolution yet, so it goes to \`agent:review\`."
+            } > /tmp/report.md
+          else
+            echo "Rebased onto \`$BASE_REF\` by a script, no agent. \`npm run check\` passes. [Logs](${RUN_URL})." > /tmp/report.md
+          fi
+          gh pr comment "$PR_NUMBER" --body-file /tmp/report.md
+          [ "$BY_AGENT" = "true" ] && gh pr edit "$PR_NUMBER" --add-label "agent:review"
+          gh issue list --state open --label "needs-a-human" --limit 100 --json number,body \
+            --jq ".[] | select(.body | contains(\"<!-- factory:rebase #${PR_NUMBER} -->\")) | .number" \
+            | while read -r issue; do
+                gh issue close "$issue" --comment "#$PR_NUMBER is rebased: [logs](${RUN_URL})." < /dev/null
+              done
+
+      - name: Hand it to a human
+        if: >-
+          steps.script.outputs.outcome == 'superseded' ||
+          ((steps.agent.outcome == 'success' || steps.agent.outcome == 'failure') &&
+          steps.agent_check.outputs.resolved != 'true')
+        env:
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+          BASE_REF: ${{ steps.pr.outputs.base_ref }}
+          OUTCOME: ${{ steps.script.outputs.outcome }}
+        run: |
+          set -euo pipefail
+          if [ "$OUTCOME" = "superseded" ]; then
+            echo "Once rebased, nothing of this pull request is left: \`$BASE_REF\` already does all it does. Close it, or say what is missing." > /tmp/rebase-blocked.md
+          fi
+          [ -s /tmp/rebase-blocked.md ] || echo "The run stopped before saying why. See the logs." > /tmp/rebase-blocked.md
+          marker="<!-- factory:rebase #${PR_NUMBER} -->"
+          {
+            echo "#${PR_NUMBER} could not be rebased onto \`$BASE_REF\` unattended: [logs](${RUN_URL})."
+            echo ""
+            cat /tmp/rebase-blocked.md
+            echo ""
+            echo "Once it is resolved, remove \`agent:blocked\` from #${PR_NUMBER}, or add \`agent:rebase\` to have the workflow try again."
+            echo ""
+            echo "$marker"
+          } > /tmp/issue.md
+          issue=$(gh issue list --state open --label "needs-a-human" --limit 100 --json number,body \
+            --jq ".[] | select(.body | contains(\"$marker\")) | .number" | head -n1)
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" --body-file /tmp/issue.md
+            where="#$issue"
+          else
+            where=$(gh issue create --label "needs-a-human" \
+              --title "Rebase #${PR_NUMBER} onto $BASE_REF by hand" --body-file /tmp/issue.md)
+          fi
+          gh pr edit "$PR_NUMBER" --add-label "agent:blocked"
+          gh pr comment "$PR_NUMBER" --body "Not rebased: a person has to decide, in ${where}. Nothing was pushed."
+
+      - name: Always remove in-progress
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+        run: gh pr edit "$PR_NUMBER" --remove-label "agent:in-progress" || true
