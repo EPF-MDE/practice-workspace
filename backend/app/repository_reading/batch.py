@@ -184,7 +184,7 @@ def main(argv: list[str] | None = None) -> int:
         raw = store.read("roster.csv")
         assert raw is not None
         roster = raw.decode("utf-8")
-    roster_rows = list(parse_roster(roster, upstreams))
+    roster_rows = list(parse_roster(roster, upstreams.keys()))
     if args.only:
         wanted = set(args.only.split(","))
         roster_rows = [s for s in roster_rows if s.github_login in wanted]
