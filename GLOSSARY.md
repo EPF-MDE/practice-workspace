@@ -66,7 +66,7 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 ### Time
 
-**Close**: The instant a Course's Practice stops taking new answers, set in the Instance's settings. After it and until the Reading Day, a Self-assessment level only moves up to the top of the Course's levels, with a link to the work, so the Self-assessment cannot be rewritten to look better than the Practice was; the Evidence Plan and Evidence Project stay editable. _Avoid_: deadline, cut-off
+**Close**: The instant a Course's Practice stops taking new answers, set in the Instance's settings. After it and until the Reading Day, a Self-assessment level only moves up to the top level of the Course's Scale, with a link to the work, so the Self-assessment cannot be rewritten to look better than the Practice was; the Evidence Plan and Evidence Project stay editable. _Avoid_: deadline, cut-off
 
 **Reading Day**: The instant from which the Instructor reads each Student's Evidence Project, set in the Instance's settings. Nothing sent after it is read. _Avoid_: deadline, freeze
 
