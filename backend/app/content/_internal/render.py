@@ -28,12 +28,12 @@ class CompetencyContent:
     id: str
     intro: str
     _steps: tuple[_RawStep, ...]
-    groups: dict[str, str] = field(default_factory=dict, hash=False)
+    groups: dict[str, str] = field(hash=False)
 
     def for_group(self, group: str) -> Page:
         return self._page(self.groups[group])
 
-    def _page(self, block: str | None) -> Page:
+    def _page(self, block: str) -> Page:
         titles = {s.id: s.title for s in self._steps}
         steps = tuple(
             _step_for(s, block, titles.get(s.after or "", "")) for s in self._steps

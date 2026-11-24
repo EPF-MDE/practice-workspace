@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 
 from .model import (
     BANDS,
@@ -34,7 +34,7 @@ def _check(
     if sum(s.optional for s in competency._steps) > 1:
         raise ContentError(f"{source}: one optional redraw per Competency, not more")
     transfers: list[tuple[str, str]] = []
-    group_blocks = _group_blocks(competency)
+    group_blocks = competency.groups
     for index, step in enumerate(competency._steps):
         where = f"{source}, step '{step.id}'"
         directives = list(_walk(step.nodes))
@@ -198,12 +198,7 @@ def _check(
             )
 
 
-def _group_blocks(competency: CompetencyContent) -> dict[str, str | None]:
-    group_blocks: dict[str, str | None] = {**competency.groups}
-    return group_blocks or {"no Group": None}
-
-
-def _takes_an_answer(step: _RawStep, group_blocks: dict[str, str | None]) -> bool:
+def _takes_an_answer(step: _RawStep, group_blocks: Mapping[str, str]) -> bool:
     return step.kind == "drawing" or all(
         _step_for(step, block).fields for block in group_blocks.values()
     )
@@ -214,7 +209,7 @@ def _check_waiting(
     step: _RawStep,
     directives: list[_Directive],
     where: str,
-    group_blocks: dict[str, str | None],
+    group_blocks: Mapping[str, str],
 ) -> None:
     waiting = [d for d in directives if d.name == "waiting"]
     if not step.after:
