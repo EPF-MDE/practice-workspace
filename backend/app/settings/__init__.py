@@ -61,8 +61,9 @@ class Settings(BaseSettings):
             f"{prefix}{name}".upper() for name in names if not getattr(self, name)
         ]
         if missing:
+            settings = "setting" if len(missing) == 1 else "settings"
             raise ConfigurationError(
-                f"{needed_by} needs the Instance setting {' and '.join(missing)}"
+                f"{needed_by} needs the Instance {settings} {' and '.join(missing)}"
             )
 
 
