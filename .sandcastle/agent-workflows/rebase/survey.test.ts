@@ -30,10 +30,7 @@ const listed = ({
   labels: labels.map((name) => ({ name })),
 });
 
-const surveyAsked = (
-  requested: string,
-  ...lists: PullRequest[][]
-): { status: number | null; stderr: string; numbers: number[] } => {
+const fakeGhListing = (lists: PullRequest[][]): string => {
   const dir = mkdtempSync(join(tmpdir(), "rebase-survey-"));
   lists.forEach((list, index) => {
     writeFileSync(
@@ -54,6 +51,19 @@ cat "${dir}/list-$calls.json"
 `
   );
   chmodSync(join(dir, "gh"), 0o755);
+  return dir;
+};
+
+const surveyAsked = (
+  requested: string,
+  ...lists: PullRequest[][]
+): {
+  status: number | null;
+  stderr: string;
+  numbers: number[];
+  listings: number;
+} => {
+  const dir = fakeGhListing(lists);
   const output = join(dir, "output");
   writeFileSync(output, "");
 
@@ -74,6 +84,7 @@ cat "${dir}/list-$calls.json"
     status: result.status,
     stderr: result.stderr,
     numbers: line ? JSON.parse(line.slice("prs=".length)) : [],
+    listings: Number(readFileSync(join(dir, "calls"), "utf8")),
   };
 };
 
@@ -125,15 +136,6 @@ describe("the rebase survey", () => {
     expect(numbers).toEqual([1, 2]);
   });
 
-  it("finds nothing when no pull request conflicts", () => {
-    const { status, numbers } = survey([{ number: 1, mergeable: "MERGEABLE" }]);
-
-    expect(status).toBe(0);
-    expect(numbers).toEqual([]);
-  });
-});
-
-describe("the rebase survey, asked for a pull request", () => {
   it("takes a pull request labelled agent:rebase, conflicting or not, blocked or not", () => {
     const { numbers } = survey([
       { number: 1, mergeable: "MERGEABLE", labels: ["agent:rebase"] },
@@ -144,9 +146,19 @@ describe("the rebase survey, asked for a pull request", () => {
     expect(numbers).toEqual([1, 2]);
   });
 
-  it("takes only the pull request asked for, by label or by hand", () => {
-    const { numbers } = surveyAsked("7", [{ number: 1 }]);
+  it("finds nothing when no pull request conflicts", () => {
+    const { status, numbers } = survey([{ number: 1, mergeable: "MERGEABLE" }]);
+
+    expect(status).toBe(0);
+    expect(numbers).toEqual([]);
+  });
+});
+
+describe("the rebase survey, asked for a pull request", () => {
+  it("takes only the pull request asked for, by label or by hand, without listing any", () => {
+    const { numbers, listings } = surveyAsked("7", [{ number: 1 }]);
 
     expect(numbers).toEqual([7]);
+    expect(listings).toBe(0);
   });
 });
