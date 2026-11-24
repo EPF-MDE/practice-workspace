@@ -244,6 +244,11 @@ def _competency(request: Request, competency: str) -> Competency:
     return course.competencies[competency]
 
 
+def _scale(request: Request) -> closing.Scale:
+    scale: closing.Scale = request.app.state.course.scale
+    return scale
+
+
 def _step(page: Page, step_id: str) -> Step:
     step = page.step(step_id)
     if step is None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Collection
 from pathlib import Path
 from typing import Any
 
@@ -42,7 +43,9 @@ __all__ = [
 ]
 
 
-def load_content(directory: str | Path) -> dict[str, CompetencyContent]:
+def load_content(
+    directory: str | Path, *, to_get_there_levels: Collection[str] | None
+) -> dict[str, CompetencyContent]:
     directory = Path(directory).resolve()
 
     def drawings(src: str) -> dict[str, Any]:
@@ -55,7 +58,10 @@ def load_content(directory: str | Path) -> dict[str, CompetencyContent]:
     content: dict[str, CompetencyContent] = {}
     for path in sorted(directory.glob("c[0-9].md")):
         competency = parse_competency(
-            path.read_text(encoding="utf-8"), path.name, drawings
+            path.read_text(encoding="utf-8"),
+            path.name,
+            drawings,
+            to_get_there_levels=to_get_there_levels,
         )
         if path.name != f"{competency.id.lower()}.md":
             raise ContentError(

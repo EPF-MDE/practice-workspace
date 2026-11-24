@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
+from app.closing import Level, Scale
 from app.content import CompetencyContent, ContentError, load_content
 
 from ._internal.competencies import COMPETENCIES, competency_problems
@@ -26,6 +27,7 @@ class Competency:
 class Course:
     name: str
     competencies: dict[str, Competency]
+    scale: Scale
 
 
 @dataclass(frozen=True)
@@ -39,8 +41,15 @@ def load_course(folder: str | Path) -> Loading:
     if not folder.is_dir():
         return Loading(None, [f"{folder}: no such Course folder"])
     settings, problems = read_settings(folder)
+    scale = (
+        None
+        if settings is None
+        else Scale(tuple(Level(level.id, level.label) for level in settings.levels))
+    )
     try:
-        content = load_content(folder)
+        content = load_content(
+            folder, to_get_there_levels=None if scale is None else scale.below_top
+        )
     except ContentError as error:
         problems.append(str(error))
     else:
@@ -49,7 +58,7 @@ def load_course(folder: str | Path) -> Loading:
             lambda c: f"{c.lower()}.md: missing, so {c} has no content",
             lambda c: f"content for {c}, which is no Competency of the Engine",
         )
-    if settings is None or problems:
+    if settings is None or scale is None or problems:
         return Loading(None, problems)
     competencies = {
         id: Competency(
@@ -60,7 +69,12 @@ def load_course(folder: str | Path) -> Loading:
         )
         for id in COMPETENCIES
     }
-    return Loading(Course(settings.name, competencies), [])
+    return Loading(Course(settings.name, competencies, scale), [])
+
+
+class LevelOut(BaseModel):
+    id: str
+    label: str
 
 
 class CompetencyOut(BaseModel):
@@ -72,6 +86,7 @@ class CompetencyOut(BaseModel):
 class CourseOut(BaseModel):
     name: str
     competencies: list[CompetencyOut]
+    scale: list[LevelOut]
 
 
 router = APIRouter()
@@ -85,5 +100,8 @@ def course(request: Request) -> CourseOut:
         competencies=[
             CompetencyOut(id=c.id, title=c.title, minutes=c.minutes)
             for c in loaded.competencies.values()
+        ],
+        scale=[
+            LevelOut(id=level.id, label=level.label) for level in loaded.scale.levels
         ],
     )

@@ -11,3 +11,19 @@ minutes = 25
 [competencies.C3]
 title = "Another fixture Competency with one Step"
 minutes = 15
+
+[[levels]]
+id = "not-yet"
+label = "Not yet"
+
+[[levels]]
+id = "understand"
+label = "I understand"
+
+[[levels]]
+id = "redo"
+label = "I can redo"
+
+[[levels]]
+id = "done"
+label = "I have done it"

@@ -11,3 +11,19 @@ minutes = 40
 [competencies.C3]
 title = "Observe, prioritize, and resolve errors in production"
 minutes = 40
+
+[[levels]]
+id = "not-yet"
+label = "Not yet"
+
+[[levels]]
+id = "understand"
+label = "I understand"
+
+[[levels]]
+id = "redo"
+label = "I can redo"
+
+[[levels]]
+id = "done"
+label = "I have done it"

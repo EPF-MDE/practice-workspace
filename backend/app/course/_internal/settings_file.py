@@ -3,7 +3,14 @@ from __future__ import annotations
 import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    ValidationError,
+    field_validator,
+)
 from pydantic_core import ErrorDetails
 
 from .competencies import competency_problems
@@ -18,11 +25,31 @@ class CompetencySettings(BaseModel):
     minutes: PositiveInt
 
 
+class LevelSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    id: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+
+
 class CourseSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     name: str = Field(min_length=1)
     competencies: dict[str, CompetencySettings] = {}
+    levels: tuple[LevelSettings, ...]
+
+    @field_validator("levels")
+    @classmethod
+    def _a_scale(cls, levels: tuple[LevelSettings, ...]) -> tuple[LevelSettings, ...]:
+        if not levels:
+            raise ValueError(
+                "no Self-assessment level: list them in order, the last being the top"
+            )
+        ids = [level.id for level in levels]
+        if len(set(ids)) != len(ids):
+            raise ValueError("two Self-assessment levels share an id")
+        return levels
 
 
 def read_settings(folder: Path) -> tuple[CourseSettings | None, list[str]]:

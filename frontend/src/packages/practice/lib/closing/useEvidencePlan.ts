@@ -8,17 +8,17 @@ import {
   type EvidenceDraft,
   evidenceDrafts,
 } from "@/packages/shared/drafts";
-import { DONE, type Levels } from "./useSelfAssessment";
+import type { Levels } from "./useSelfAssessment";
 import { pathKey, pathsKey } from "@/packages/shared/pathKeys";
 
 export function usePlan(
   scope: DraftScope,
   page: CompetencyPage,
-  rated: Levels["rated"]
+  { rated, topLevel }: Pick<Levels, "rated" | "topLevel">
 ) {
   const { competency } = scope;
   const forDraft = Object.fromEntries(
-    Object.entries(rated).filter(([, v]) => v.level !== DONE)
+    Object.entries(rated).filter(([, v]) => v.level !== topLevel.id)
   );
   const draft = useQuery({
     queryKey: [...pathKey(competency), "draft", forDraft],

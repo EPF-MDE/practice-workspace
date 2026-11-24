@@ -1,0 +1,25 @@
+name = "Three-level course"
+
+[competencies.C1]
+title = "A Competency on a three-level scale"
+minutes = 40
+
+[competencies.C2]
+title = "A fixture Competency with one Step"
+minutes = 40
+
+[competencies.C3]
+title = "Another fixture Competency with one Step"
+minutes = 40
+
+[[levels]]
+id = "seen"
+label = "Seen it"
+
+[[levels]]
+id = "tried"
+label = "Tried it"
+
+[[levels]]
+id = "shipped"
+label = "Shipped it"
