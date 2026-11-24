@@ -101,5 +101,7 @@ def course(request: Request) -> CourseOut:
             CompetencyOut(id=c.id, title=c.title, minutes=c.minutes)
             for c in loaded.competencies.values()
         ],
-        scale=[LevelOut(id=lv.id, label=lv.label) for lv in loaded.scale.levels],
+        scale=[
+            LevelOut(id=level.id, label=level.label) for level in loaded.scale.levels
+        ],
     )
