@@ -121,7 +121,7 @@ describe("check-workflow-triggers, on pull_request_target", () => {
         run: git fetch origin "refs/pull/$PR_NUMBER/head"`,
     ],
     [
-      "calls git",
+      "checks out code",
       `      - name: Checkout
         run: gh pr checkout "$PR_NUMBER"`,
     ],

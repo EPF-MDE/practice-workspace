@@ -48,7 +48,8 @@ const codeRunIn = (name, job) => {
     const where = `job ${name}, step ${step.name ?? index + 1}`;
     const run = String(step.run ?? "");
     if (step.uses) found.push(`${where} uses an action`);
-    if (/\bgit\b|checkout/.test(run)) found.push(`${where} calls git`);
+    if (/\bgit\b/.test(run)) found.push(`${where} calls git`);
+    if (/checkout/.test(run)) found.push(`${where} checks out code`);
     if (run.includes("${{")) found.push(`${where} interpolates an expression`);
   }
   return found;
@@ -82,7 +83,7 @@ if (found.length > 0) {
   console.error(`
 Trigger them on pull_request instead, where a fork's pull request gets the
 check and no secret. A pull_request_target workflow must skip a fork's pull
-request, use no action, call no git and interpolate no expression in a
+request, use no action, call no git, check out nothing and interpolate no expression in a
 script (ADR-0017).`);
   process.exit(1);
 }
