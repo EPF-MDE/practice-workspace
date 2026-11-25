@@ -6,9 +6,8 @@ from courses_under_test import CourseFolder, OnTheRoster
 from fastapi.testclient import TestClient
 
 from app.auth import FakeIdentity
-from app.main import ConfigurationError
 from app.roster import RefreshingRoster, StaticRoster
-from app.settings import Settings
+from app.settings import ConfigurationError, Settings
 
 
 def test_a_visitor_is_not_signed_in(client: TestClient) -> None:
