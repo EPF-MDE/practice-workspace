@@ -1,0 +1,34 @@
+name = "One-Group course"
+
+[[groups]]
+name = "Lighthouse"
+block = "lighthouse"
+upstream = "fictional-org/Lighthouse"
+
+[competencies.C1]
+title = "Keep one light burning"
+minutes = 40
+
+[competencies.C2]
+title = "A fixture Competency with one Step"
+minutes = 25
+
+[competencies.C3]
+title = "Another fixture Competency with one Step"
+minutes = 15
+
+[[levels]]
+id = "not-yet"
+label = "Not yet"
+
+[[levels]]
+id = "understand"
+label = "I understand"
+
+[[levels]]
+id = "redo"
+label = "I can redo"
+
+[[levels]]
+id = "done"
+label = "I have done it"

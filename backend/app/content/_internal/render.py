@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from markdown_it import MarkdownIt
 
 from .model import (
-    GROUPS,
     Answer,
     Block,
     Canvas,
@@ -29,12 +28,15 @@ class CompetencyContent:
     id: str
     intro: str
     _steps: tuple[_RawStep, ...]
+    groups: dict[str, str] = field(hash=False)
 
     def for_group(self, group: str) -> Page:
-        name = GROUPS[group]
+        return self._page(self.groups[group])
+
+    def _page(self, block: str) -> Page:
         titles = {s.id: s.title for s in self._steps}
         steps = tuple(
-            _step_for(s, name, titles.get(s.after or "", "")) for s in self._steps
+            _step_for(s, block, titles.get(s.after or "", "")) for s in self._steps
         )
         return Page(self.id, _render(self.intro), steps)
 
@@ -47,7 +49,7 @@ def _render(text: str) -> str:
     return _markdown.render(text) if text else ""
 
 
-def _step_for(step: _RawStep, group: str, after_title: str = "") -> Step:
+def _step_for(step: _RawStep, group: str | None, after_title: str = "") -> Step:
     blocks: list[Block] = []
     _flatten(step.nodes, group, blocks)
     kind = step.kind or (
@@ -92,7 +94,7 @@ def _flatten(nodes: Iterable[_Node], group: str | None, out: list[Block]) -> Non
         if isinstance(node, str):
             pending.append(node)
             continue
-        if node.name in GROUPS.values():
+        if node.is_group_block:
             if node.name == group:
                 flush()
                 _flatten(node.children, group, out)

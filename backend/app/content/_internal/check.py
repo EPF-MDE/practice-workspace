@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 
 from .model import (
     BANDS,
     CHECK_POINTS,
     DRAWING_DIRECTIVES,
     FIELD_KINDS,
-    GROUPS,
     INSTRUCTOR_MARKERS,
     STEP_KINDS,
     UNVALIDATED_MARKER,
@@ -35,10 +34,11 @@ def _check(
     if sum(s.optional for s in competency._steps) > 1:
         raise ContentError(f"{source}: one optional redraw per Competency, not more")
     transfers: list[tuple[str, str]] = []
+    group_blocks = competency.groups
     for index, step in enumerate(competency._steps):
         where = f"{source}, step '{step.id}'"
         directives = list(_walk(step.nodes))
-        _check_waiting(competency._steps[:index], step, directives, where)
+        _check_waiting(competency._steps[:index], step, directives, where, group_blocks)
         if step.kind not in (None, *STEP_KINDS):
             raise ContentError(f"{where}: kind is one of {STEP_KINDS}")
         if step.kind == "transfer":
@@ -48,8 +48,8 @@ def _check(
                     "(fills=C1.b)"
                 )
             if any(
-                "project" not in {f.id for f in _step_for(step, GROUPS[g]).fields}
-                for g in GROUPS
+                "project" not in {f.id for f in _step_for(step, block).fields}
+                for block in group_blocks.values()
             ):
                 raise ContentError(
                     f"{where}: a Transfer has a field {{#project}}, the Evidence "
@@ -62,10 +62,11 @@ def _check(
             d.name in DRAWING_DIRECTIVES for d in directives
         ):
             raise ContentError(f"{where}: drawings belong in a step with kind=drawing")
-        groups = {d.name for d in directives if d.name in GROUPS.values()}
-        if groups and groups != set(GROUPS.values()):
+        blocks = {d.name for d in directives if d.is_group_block}
+        missing = [name for name, block in group_blocks.items() if block not in blocks]
+        if blocks and missing:
             raise ContentError(
-                f"{where}: has a '{groups.pop()}' block but not the other Group's"
+                f"{where}: has a Group block but none for {', '.join(missing)}"
             )
         for d in directives:
             if d.name == "field" and (
@@ -142,8 +143,8 @@ def _check(
                     )
                 check_points += [(where, c.attrs.get("point", "")) for c in inner]
         if step.kind == "drawing":
-            for group in GROUPS:
-                view = _step_for(step, GROUPS[group])
+            for group, block in group_blocks.items():
+                view = _step_for(step, block)
                 if view.fields:
                     raise ContentError(
                         f"{where}: a drawing step takes a drawing, not fields"
@@ -156,8 +157,8 @@ def _check(
                     raise ContentError(
                         f"{where}: one reference-drawing for {group}, not more"
                     )
-        for group in GROUPS:
-            view = _step_for(step, GROUPS[group])
+        for group, block in group_blocks.items():
+            view = _step_for(step, block)
             ids = [f.id for f in view.fields]
             if len(set(ids)) != len(ids):
                 raise ContentError(f"{where}: two fields share an id for {group}")
@@ -182,8 +183,8 @@ def _check(
                 f"{where}: a check-point's point={point or '?'} is no point of "
                 f"{competency.id}"
             )
-    for group in GROUPS:
-        served = repr(competency.for_group(group))
+    for group, block in group_blocks.items():
+        served = repr(competency._page(block))
         for marker in INSTRUCTOR_MARKERS:
             if marker in served.lower():
                 raise ContentError(
@@ -197,9 +198,9 @@ def _check(
             )
 
 
-def _takes_an_answer(step: _RawStep) -> bool:
+def _takes_an_answer(step: _RawStep, group_blocks: Mapping[str, str]) -> bool:
     return step.kind == "drawing" or all(
-        _step_for(step, g).fields for g in GROUPS.values()
+        _step_for(step, block).fields for block in group_blocks.values()
     )
 
 
@@ -208,6 +209,7 @@ def _check_waiting(
     step: _RawStep,
     directives: list[_Directive],
     where: str,
+    group_blocks: Mapping[str, str],
 ) -> None:
     waiting = [d for d in directives if d.name == "waiting"]
     if not step.after:
@@ -219,7 +221,7 @@ def _check_waiting(
     before = next((s for s in earlier if s.id == step.after), None)
     if before is None:
         raise ContentError(f"{where}: after={step.after} names no earlier step")
-    if not _takes_an_answer(before):
+    if not _takes_an_answer(before, group_blocks):
         raise ContentError(
             f"{where}: after={step.after}, a step that takes no answer, so this one "
             "would never open"

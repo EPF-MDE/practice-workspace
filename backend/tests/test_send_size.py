@@ -4,7 +4,8 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from conftest import ADA_OF_OCEENS, MakeClient, sign_in
+from conftest import MakeClient, sign_in
+from courses_under_test import OnTheRoster
 from fake_github import FakeGitHub
 from fastapi.testclient import TestClient
 
@@ -14,16 +15,14 @@ from app.repository_reading import (
     Fact,
     PointId,
     RepositoryReading,
-    StudentToRead,
 )
-from app.roster import Repository
 from app.store import GitHubStore
 
 C1 = "/api/competencies/C1"
 FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 
 
-def a_repository_with_very_many_files() -> RepositoryReading:
+def a_repository_with_very_many_files(student: OnTheRoster) -> RepositoryReading:
     files = [
         {"path": f"src/module_{i:05}/a_long_file_name.py", "additions": i}
         for i in range(3000)
@@ -32,11 +31,11 @@ def a_repository_with_very_many_files() -> RepositoryReading:
         PointId.CHANGED_FILES,
         "`feature/cache` changes 3000 files beyond `course-2026`; "
         "last change on 2026-10-13.",
-        link="https://github.com/ada-oceens/OceENS/compare/a...b",
+        link=f"https://github.com/{student.evidence_project}/compare/a...b",
         detail={"branch": "feature/cache", "files": files},
     )
     return RepositoryReading(
-        student=StudentToRead("ada-oceens", "OcéENS", Repository("ada-oceens/OceENS")),
+        student=student.to_read(),
         default_branch="main",
         facts_computed_at=FRESH_READING_AT,
         last_checked_at=FRESH_READING_AT,
@@ -59,15 +58,17 @@ def github() -> FakeGitHub:
 
 
 @pytest.fixture
-def ada(make_client: MakeClient, github: FakeGitHub) -> TestClient:
+def signed_in(
+    make_client: MakeClient, github: FakeGitHub, student: OnTheRoster
+) -> TestClient:
     repositories = OfflineRepositoryReading()
-    repositories.put(a_repository_with_very_many_files())
+    repositories.put(a_repository_with_very_many_files(student))
     client = make_client(
         store=GitHubStore(github.client(), github.repository),
         repository_reading=repositories,
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
     client.post(
         f"{C1}/self-assessment",
         json={"levels": {"C1.a": {"level": "understand", "link": None}}},
@@ -76,7 +77,7 @@ def ada(make_client: MakeClient, github: FakeGitHub) -> TestClient:
 
 
 def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_comment(
-    ada: TestClient, github: FakeGitHub
+    signed_in: TestClient, github: FakeGitHub
 ) -> None:
     before = github.write_requests
     declaration = {
@@ -84,14 +85,14 @@ def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_
         "what_to_read": "n" * 2_000,
     }
 
-    closed = ada.post(
+    closed = signed_in.post(
         f"{C1}/close",
         json={"text": "p" * 12_000, "example": "e" * 2_000, "declaration": declaration},
     )
 
     assert closed.status_code == 200
     assert github.write_requests == before + 1
-    assert ada.get(C1).json()["evidence_plan"]["text"] == "p" * 12_000
+    assert signed_in.get(C1).json()["evidence_plan"]["text"] == "p" * 12_000
 
 
 @pytest.mark.parametrize(
@@ -152,11 +153,15 @@ def test_the_longest_closing_send_with_a_repository_of_very_many_files_fits_one_
     ],
 )
 def test_a_text_over_its_limit_gets_a_clear_422_and_nothing_is_stored(
-    ada: TestClient, github: FakeGitHub, path: str, body: dict[str, Any], what: str
+    signed_in: TestClient,
+    github: FakeGitHub,
+    path: str,
+    body: dict[str, Any],
+    what: str,
 ) -> None:
     before = github.write_requests
 
-    refused = ada.post(path, json=body)
+    refused = signed_in.post(path, json=body)
 
     assert refused.status_code == 422
     detail = refused.json()["detail"]
@@ -166,12 +171,12 @@ def test_a_text_over_its_limit_gets_a_clear_422_and_nothing_is_stored(
 
 
 def test_a_send_within_each_limit_but_too_large_once_stored_gets_a_422_not_a_503(
-    ada: TestClient, github: FakeGitHub
+    signed_in: TestClient, github: FakeGitHub
 ) -> None:
     before = github.write_requests
     body = {"text": "\x01" * 12_000, "example": "My README."}
 
-    refused = ada.post(f"{C1}/close", json=body)
+    refused = signed_in.post(f"{C1}/close", json=body)
 
     assert refused.status_code == 422
     assert "too long to store" in refused.json()["detail"]
@@ -180,11 +185,11 @@ def test_a_send_within_each_limit_but_too_large_once_stored_gets_a_422_not_a_503
 
 
 def test_a_send_missing_a_field_and_no_text_too_long_gets_the_usual_422(
-    ada: TestClient, github: FakeGitHub
+    signed_in: TestClient, github: FakeGitHub
 ) -> None:
     before = github.write_requests
 
-    refused = ada.post(f"{C1}/close", json={"text": "My plan."})
+    refused = signed_in.post(f"{C1}/close", json={"text": "My plan."})
 
     assert refused.status_code == 422
     detail = refused.json()["detail"]

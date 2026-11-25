@@ -23,8 +23,8 @@ function Opening() {
             {course.name}
           </h1>
           <p className="text-muted-foreground">
-            {student.name}, your Project is{" "}
-            <strong data-testid="project">{student.project}</strong>.
+            {student.name}, your Group is{" "}
+            <strong data-testid="group">{student.group}</strong>.
           </p>
         </div>
         <form method="post" action="/auth/logout">

@@ -5,7 +5,8 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from conftest import ADA_OF_OCEENS, MakeClient, sign_in
+from conftest import MakeClient, sign_in
+from courses_under_test import OnTheRoster
 from fastapi.testclient import TestClient
 
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
@@ -19,7 +20,6 @@ from app.repository_reading import (
     Response,
     StudentToRead,
 )
-from app.roster import Repository
 
 DECLARATION = "/api/evidence-project/declaration"
 COMPETENCIES = ("C1", "C2", "C3")
@@ -39,9 +39,11 @@ def declare(client: TestClient, url: str) -> None:
     ).is_success
 
 
-def reading_of(repository: str, ruleset: str) -> RepositoryReading:
+def reading_of(
+    student: OnTheRoster, repository: str, ruleset: str
+) -> RepositoryReading:
     return RepositoryReading(
-        student=StudentToRead("ada-oceens", "OcéENS", Repository(repository)),
+        student=student.to_read(repository),
         default_branch="main",
         facts_computed_at=FRESH_READING_AT,
         last_checked_at=FRESH_READING_AT,
@@ -69,45 +71,47 @@ class CountedReading(OfflineRepositoryReading):
 
 
 @pytest.fixture
-def repositories() -> CountedReading:
+def repositories(student: OnTheRoster) -> CountedReading:
     source = CountedReading()
-    source.put(reading_of("ada-oceens/OceENS", "on the roster's"))
-    source.put(reading_of("ada/bakery", "on the bakery"))
+    source.put(reading_of(student, student.evidence_project, "on the roster's"))
+    source.put(reading_of(student, "ada/bakery", "on the bakery"))
     return source
 
 
 @pytest.fixture
-def ada(make_client: MakeClient, repositories: CountedReading) -> TestClient:
+def signed_in(
+    make_client: MakeClient, repositories: CountedReading, student: OnTheRoster
+) -> TestClient:
     client = make_client(
         repository_reading=repositories,
         access_check=FakeAccessCheck(readable={"ada/bakery"}),
     )
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
     return client
 
 
 def test_a_declared_github_repository_is_read_for_every_competency(
-    ada: TestClient,
+    signed_in: TestClient,
 ) -> None:
-    declare(ada, "https://github.com/ada/bakery")
+    declare(signed_in, "https://github.com/ada/bakery")
 
     for competency in COMPETENCIES:
-        shown = panel(ada, competency)
+        shown = panel(signed_in, competency)
         assert shown["unavailable"] is None
         assert shown["evidence_project"] == "ada/bakery"
-    assert panel(ada, "C2")["facts"][0]["text"] == "The ruleset `on the bakery`."
+    assert panel(signed_in, "C2")["facts"][0]["text"] == "The ruleset `on the bakery`."
 
 
 def test_withdrawing_the_declaration_reads_the_rosters_evidence_project_again(
-    ada: TestClient,
+    signed_in: TestClient, student: OnTheRoster
 ) -> None:
-    declare(ada, "https://github.com/ada/bakery")
-    assert panel(ada, "C2")["facts"][0]["text"] == "The ruleset `on the bakery`."
+    declare(signed_in, "https://github.com/ada/bakery")
+    assert panel(signed_in, "C2")["facts"][0]["text"] == "The ruleset `on the bakery`."
 
-    ada.delete(DECLARATION)
+    signed_in.delete(DECLARATION)
 
-    shown = panel(ada, "C2")
-    assert shown["evidence_project"] == "ada-oceens/OceENS"
+    shown = panel(signed_in, "C2")
+    assert shown["evidence_project"] == student.evidence_project
     assert shown["facts"][0]["text"] == "The ruleset `on the roster's`."
 
 
@@ -117,13 +121,13 @@ def test_withdrawing_the_declaration_reads_the_rosters_evidence_project_again(
     ids=["a GitLab project", "a repository the App cannot read"],
 )
 def test_a_project_the_app_cannot_read_is_said_as_such_never_a_zero(
-    ada: TestClient, repositories: CountedReading, url: str
+    signed_in: TestClient, repositories: CountedReading, url: str
 ) -> None:
-    declare(ada, url)
+    declare(signed_in, url)
     repositories.asked.clear()
 
     for competency in COMPETENCIES:
-        shown = panel(ada, competency)
+        shown = panel(signed_in, competency)
         assert shown["unavailable"]
         assert shown["empty"] is False
         assert shown["facts"] == []
@@ -131,22 +135,25 @@ def test_a_project_the_app_cannot_read_is_said_as_such_never_a_zero(
     assert repositories.asked == []
 
 
-UPSTREAM_BRANCHES = "repos/EPF-MDE/OceENS/branches?per_page=100"
-
-
 class UnforkedRepositories:
     def __init__(
-        self, files: dict[str, list[str]], *, linked_to_upstream: tuple[str, ...] = ()
+        self,
+        upstream: str | None,
+        files: dict[str, list[str]],
+        *,
+        linked_to_upstream: tuple[str, ...] = (),
     ) -> None:
         self.answers: dict[str, Any] = {
-            UPSTREAM_BRANCHES: [{"name": "course-2026", "commit": {"sha": "up"}}]
+            f"repos/{upstream}/branches?per_page=100": [
+                {"name": "course-2026", "commit": {"sha": "up"}}
+            ]
         }
         for repository, paths in files.items():
             sha = f"{repository}-tip"
             self.answers |= {
                 f"repos/{repository}": {
                     "default_branch": "main",
-                    "source": {"full_name": "EPF-MDE/OceENS"}
+                    "source": {"full_name": upstream}
                     if repository in linked_to_upstream
                     else None,
                 },
@@ -169,19 +176,20 @@ class UnforkedRepositories:
 
 
 def test_a_repository_of_its_own_history_is_read_and_a_change_reads_the_new_one(
-    make_client: MakeClient,
+    make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = UnforkedRepositories(
+        student.upstream,
         {
             "ada/bakery": ["README.md", "src/oven.py", "package-lock.json"],
             "ada/mill": ["README.md"],
-        }
+        },
     )
     client = make_client(
         repository_reading=RepositoryReader(github, InMemoryReadings()),
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
 
     declare(client, "https://github.com/ada/bakery")
     bakery = panel(client, "C1")
@@ -201,18 +209,20 @@ def test_a_repository_of_its_own_history_is_read_and_a_change_reads_the_new_one(
 
 
 def test_a_repository_linked_to_the_upstream_it_cannot_be_compared_with_shows_no_files(
-    make_client: MakeClient,
+    make_client: MakeClient, student: OnTheRoster
 ) -> None:
     github = UnforkedRepositories(
-        {"ada/OceENS": ["README.md", "src/app.py"]}, linked_to_upstream=("ada/OceENS",)
+        student.upstream,
+        {"ada/linked-fork": ["README.md", "src/app.py"]},
+        linked_to_upstream=("ada/linked-fork",),
     )
     client = make_client(
         repository_reading=RepositoryReader(github, InMemoryReadings()),
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
 
-    declare(client, "https://github.com/ada/OceENS")
+    declare(client, "https://github.com/ada/linked-fork")
 
     assert panel(client, "C1")["facts"] == []
 
@@ -227,10 +237,16 @@ TEST_JOB = "jobs:\n  test:\n    runs-on: ubuntu-latest\n"
     ids=["a workflow GitHub runs", "a file in a folder GitHub never runs"],
 )
 def test_the_architecture_check_is_found_only_in_a_workflow_github_runs(
-    make_client: MakeClient, top_level: str, nested: str, shown: bool
+    make_client: MakeClient,
+    student: OnTheRoster,
+    top_level: str,
+    nested: str,
+    shown: bool,
 ) -> None:
     ci, kept = ".github/workflows/ci.yml", ".github/workflows/old/architecture.yml"
-    github = UnforkedRepositories({"ada/bakery": ["README.md", ci, kept]})
+    github = UnforkedRepositories(
+        student.upstream, {"ada/bakery": ["README.md", ci, kept]}
+    )
     contents, tip = "repos/ada/bakery/contents", "ref=ada/bakery-tip"
     github.answers |= {
         f"{contents}/.github/workflows?{tip}": [
@@ -244,7 +260,7 @@ def test_the_architecture_check_is_found_only_in_a_workflow_github_runs(
         repository_reading=RepositoryReader(github, InMemoryReadings()),
         access_check=FakeAccessCheck(),
     )
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
 
     declare(client, "https://github.com/ada/bakery")
 

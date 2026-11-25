@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tomllib
+from collections import Counter
 from pathlib import Path
 
 from pydantic import (
@@ -16,6 +17,16 @@ from pydantic_core import ErrorDetails
 from .competencies import competency_problems
 
 SETTINGS_FILE = "course.toml"
+BLOCK_ID = r"^[A-Za-z][\w-]*$"
+REPOSITORY = r"^[\w.-]+/[\w.-]+$"
+
+
+class GroupSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    name: str = Field(min_length=1)
+    block: str = Field(pattern=BLOCK_ID)
+    upstream: str | None = Field(default=None, pattern=REPOSITORY)
 
 
 class CompetencySettings(BaseModel):
@@ -36,6 +47,7 @@ class CourseSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     name: str = Field(min_length=1)
+    groups: tuple[GroupSettings, ...] = Field(min_length=1)
     competencies: dict[str, CompetencySettings] = {}
     levels: tuple[LevelSettings, ...]
 
@@ -64,12 +76,24 @@ def read_settings(folder: Path) -> tuple[CourseSettings | None, list[str]]:
         settings = CourseSettings.model_validate(raw)
     except ValidationError as error:
         return None, [_problem(e) for e in error.errors()]
-    problems = competency_problems(
+    problems = _duplicates(settings) + competency_problems(
         set(settings.competencies),
         lambda c: f"{SETTINGS_FILE}: no [competencies.{c}], so {c} has no title",
         lambda c: f"{SETTINGS_FILE}: [competencies.{c}] is no Competency of the Engine",
     )
     return (None, problems) if problems else (settings, [])
+
+
+def _duplicates(settings: CourseSettings) -> list[str]:
+    problems = []
+    for key in ("name", "block"):
+        counts = Counter(getattr(group, key) for group in settings.groups)
+        problems += [
+            f"{SETTINGS_FILE}: two Groups share the {key} '{value}'"
+            for value, count in counts.items()
+            if count > 1
+        ]
+    return problems
 
 
 def _problem(error: ErrorDetails) -> str:

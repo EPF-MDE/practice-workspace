@@ -1,9 +1,10 @@
 import gzip
+from dataclasses import replace
 from typing import Any
 
 from app.repository_reading import PointId, RepositoryReading
 
-from .conftest import FIXTURES, Recorded
+from .conftest import FIXTURES, MATHUTRICE, Recorded
 
 
 def c1_refs(reading: RepositoryReading) -> dict[str, dict[str, Any]]:
@@ -186,3 +187,41 @@ def test_ref_analyses_stored_before_they_had_a_type_are_read_again(
     again = r.reader.read_now(r.student, previous=RepositoryReading.from_dict(stored))
 
     assert again.competencies == reading.competencies
+
+
+def test_a_readings_student_is_stored_under_the_keys_it_always_had(
+    recorded: type[Recorded],
+) -> None:
+    r = recorded("placeholder-email")
+    reading = r.reader.read(r.student)
+
+    assert reading.to_dict()["student"] == {
+        "login": r.student.login,
+        "project": r.student.group,
+        "evidence_project": r.student.evidence_project,
+    }
+
+
+def test_a_group_without_an_upstream_repository_is_read_on_its_own_history(
+    recorded: type[Recorded],
+) -> None:
+    r = recorded("empty-repository")
+    student = replace(r.student, upstream=None)
+    sha = "d39af33d97a4d6f5076e9ef2a8755ebb76ce2ff8"
+    repo = f"repos/{student.evidence_project}/git"
+    r.github.set(
+        f"{repo}/trees/{sha}?recursive=1",
+        200,
+        {"tree": [{"path": "README.md", "type": "blob"}]},
+    )
+    r.github.set(
+        f"{repo}/commits/{sha}", 200, {"committer": {"date": "2026-11-01T10:00:00Z"}}
+    )
+
+    reading = r.reader.read(student)
+
+    (fact,) = reading["C1"].facts
+    assert fact.credited_to == "student"
+    assert fact.detail["files"] == [{"path": "README.md"}]
+    assert fact.detail["closest"] is None
+    assert not any(MATHUTRICE in request for request in r.github.requests)

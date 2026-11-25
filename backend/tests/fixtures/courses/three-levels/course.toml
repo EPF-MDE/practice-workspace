@@ -1,5 +1,13 @@
 name = "Three-level course"
 
+[[groups]]
+name = "OcéENS"
+block = "oceens"
+
+[[groups]]
+name = "MATHutrice"
+block = "mathutrice"
+
 [competencies.C1]
 title = "A Competency on a three-level scale"
 minutes = 40

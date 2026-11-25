@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -44,7 +44,10 @@ __all__ = [
 
 
 def load_content(
-    directory: str | Path, *, to_get_there_levels: Collection[str] | None
+    directory: str | Path,
+    groups: Mapping[str, str],
+    *,
+    to_get_there_levels: Collection[str] | None,
 ) -> dict[str, CompetencyContent]:
     directory = Path(directory).resolve()
 
@@ -59,6 +62,7 @@ def load_content(
     for path in sorted(directory.glob("c[0-9].md")):
         competency = parse_competency(
             path.read_text(encoding="utf-8"),
+            groups,
             path.name,
             drawings,
             to_get_there_levels=to_get_there_levels,

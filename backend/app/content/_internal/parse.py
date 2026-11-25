@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Mapping
 from typing import Any, cast
 
 from .check import _check
@@ -33,7 +33,7 @@ def _attrs(text: str | None) -> dict[str, str]:
     return attrs
 
 
-def _tree(lines: list[str], where: str) -> list[_Node]:
+def _tree(lines: list[str], where: str, blocks: Collection[str]) -> list[_Node]:
     root = _Directive("", {})
     stack = [root]
     fenced = False
@@ -42,8 +42,11 @@ def _tree(lines: list[str], where: str) -> list[_Node]:
             fenced = not fenced
         elif not fenced and (opened := _OPEN.match(line)):
             name = opened.group(1)
-            if name not in DIRECTIVES:
-                raise ContentError(f"{where}: unknown block '::: {name}'")
+            if name not in DIRECTIVES and name not in blocks:
+                raise ContentError(
+                    f"{where}: unknown block '::: {name}', neither a directive nor "
+                    "a Group block the Course's settings name"
+                )
             directive = _Directive(name, _attrs(opened.group(2)))
             stack[-1].children.append(directive)
             stack.append(directive)
@@ -79,11 +82,17 @@ def _no_drawings(src: str) -> dict[str, Any]:
 
 def parse_competency(
     text: str,
+    groups: Mapping[str, str],
     source: str = "content",
     drawings: Drawings = _no_drawings,
     *,
     to_get_there_levels: Collection[str] | None,
 ) -> CompetencyContent:
+    clashing = sorted(set(groups.values()) & DIRECTIVES)
+    if clashing:
+        raise ContentError(
+            f"{source}: a Group block is named like a directive: {clashing}"
+        )
     text = text.replace("\r\n", "\n")
     front = _FRONT_MATTER.match(text)
     if not front:
@@ -113,11 +122,12 @@ def parse_competency(
             (steps[-1][2] if steps else intro).append(line)
 
     competency = meta["competency"]
-    intro_nodes = _tree(intro, f"{source}, intro")
+    blocks = set(groups.values())
+    intro_nodes = _tree(intro, f"{source}, intro", blocks)
     if any(isinstance(n, _Directive) for n in intro_nodes):
         raise ContentError(f"{source}: blocks belong in a step, not the intro")
     raw_steps = tuple(
-        _raw_step(title, attrs, lines, source) for title, attrs, lines in steps
+        _raw_step(title, attrs, lines, source, blocks) for title, attrs, lines in steps
     )
     for step in raw_steps:
         for d in _walk(step.nodes):
@@ -127,13 +137,18 @@ def parse_competency(
         competency,
         "\n".join(cast(list[str], intro_nodes)),
         raw_steps,
+        dict(groups),
     )
     _check(result, source, to_get_there_levels)
     return result
 
 
 def _raw_step(
-    title: str, attrs: dict[str, str], lines: list[str], source: str
+    title: str,
+    attrs: dict[str, str],
+    lines: list[str],
+    source: str,
+    blocks: Collection[str],
 ) -> _RawStep:
     where = f"{source}, step '{title}'"
     if "id" not in attrs or not attrs.get("minutes", "").isdigit():
@@ -149,7 +164,7 @@ def _raw_step(
         attrs.get("fills"),
         optional == "yes",
         attrs.get("after"),
-        tuple(_tree(lines, where)),
+        tuple(_tree(lines, where, blocks)),
     )
 
 

@@ -7,7 +7,7 @@ from typing import Any, NewType
 
 from pydantic import BaseModel
 
-from app.roster import GROUPS, Repository, Student
+from app.roster import Repository, Student
 
 
 class PointId(StrEnum):
@@ -50,22 +50,24 @@ class ChangedFile(BaseModel):
     changes: int | None = None
 
 
+_STORED_GROUP = "project"
 _KEYS_BEFORE_RENAME = {"facts_computed_at": "read_at", "last_checked_at": "checked_at"}
 
 
 @dataclass(frozen=True)
 class StudentToRead:
     login: str
-    project: str
+    group: str
     evidence_project: Repository
+    upstream: Repository | None = field(default=None, compare=False)
 
     @classmethod
-    def from_roster(cls, student: Student) -> StudentToRead:
-        return cls(student.github_login, student.project, student.evidence_project)
-
-    @property
-    def upstream(self) -> Repository:
-        return GROUPS[self.project].upstream
+    def from_roster(
+        cls, student: Student, upstream: Repository | None
+    ) -> StudentToRead:
+        return cls(
+            student.github_login, student.group, student.evidence_project, upstream
+        )
 
     @property
     def key(self) -> tuple[str, str]:
@@ -120,6 +122,12 @@ class RepositoryReading:
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
+        s = self.student
+        d["student"] = {
+            "login": s.login,
+            _STORED_GROUP: s.group,
+            "evidence_project": s.evidence_project,
+        }
         d["facts_computed_at"] = self.facts_computed_at.isoformat()
         d["last_checked_at"] = self.last_checked_at.isoformat()
         return d
@@ -127,7 +135,7 @@ class RepositoryReading:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> RepositoryReading:
         return cls(
-            student=StudentToRead(**d["student"]),
+            student=_stored_student(d["student"]),
             default_branch=d["default_branch"],
             facts_computed_at=_stored_instant(d, "facts_computed_at"),
             last_checked_at=_stored_instant(d, "last_checked_at"),
@@ -148,6 +156,12 @@ class RepositoryReading:
             refs=d.get("refs", {}),
             upstream_shas=d.get("upstream_shas", {}),
         )
+
+
+def _stored_student(d: dict[str, Any]) -> StudentToRead:
+    return StudentToRead(
+        d["login"], d[_STORED_GROUP], Repository(d["evidence_project"])
+    )
 
 
 def _stored_instant(d: dict[str, Any], key: str) -> datetime:

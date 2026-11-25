@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from conftest import ADA_OF_OCEENS, MakeClient, sign_in
+from conftest import MakeClient, sign_in
+from courses_under_test import OnTheRoster
 from fastapi.testclient import TestClient
 
 from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
@@ -15,16 +16,14 @@ from app.repository_reading import (
     RepositoryReading,
     StudentToRead,
 )
-from app.roster import Repository
 from app.settings import Settings
 from app.store import InMemoryStore
 
 FRESH_READING_AT = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
-ADA_REPOSITORY = StudentToRead("ada-oceens", "OcéENS", Repository("ada-oceens/OceENS"))
 
 
 def reading(
-    student: StudentToRead = ADA_REPOSITORY,
+    student: OnTheRoster,
     empty: bool = False,
     branches: int = 3,
     pulls: int = 2,
@@ -37,7 +36,7 @@ def reading(
                 PointId.CHANGED_FILES,
                 "`feature/cache` changes 2 files beyond `course-2026`, 40 lines added; "
                 "last change on 2026-10-13.",
-                link="https://github.com/ada-oceens/OceENS/compare/a...b",
+                link=f"https://github.com/{student.evidence_project}/compare/a...b",
                 detail={
                     "branch": "feature/cache",
                     "files": [{"path": "app/cache.py", "additions": 30}],
@@ -62,7 +61,7 @@ def reading(
         ]
     )
     return RepositoryReading(
-        student=student,
+        student=student.to_read(),
         default_branch="main",
         facts_computed_at=FRESH_READING_AT,
         last_checked_at=FRESH_READING_AT,
@@ -96,19 +95,23 @@ def repositories() -> OfflineRepositoryReading:
 
 @pytest.fixture
 def panel_client(
-    make_client: MakeClient, repositories: OfflineRepositoryReading
+    make_client: MakeClient,
+    repositories: OfflineRepositoryReading,
+    student: OnTheRoster,
 ) -> TestClient:
-    return make_client(
-        repository_reading=repositories,
-        access_check=FakeAccessCheck(readable={"ada-oceens/bakery"}),
+    client = make_client(
+        repository_reading=repositories, access_check=FakeAccessCheck()
     )
+    sign_in(client, student.github_id)
+    return client
 
 
 def test_each_fact_names_the_point_it_supports(
-    panel_client: TestClient, repositories: OfflineRepositoryReading
+    panel_client: TestClient,
+    repositories: OfflineRepositoryReading,
+    student: OnTheRoster,
 ) -> None:
-    repositories.put(reading())
-    sign_in(panel_client, ADA_OF_OCEENS)
+    repositories.put(reading(student))
 
     panel = panel_client.get("/api/competencies/C1/evidence-panel").json()
 
@@ -122,10 +125,11 @@ def test_each_fact_names_the_point_it_supports(
 
 
 def test_a_point_the_repository_cannot_show_says_to_show_it_at_the_eval(
-    panel_client: TestClient, repositories: OfflineRepositoryReading
+    panel_client: TestClient,
+    repositories: OfflineRepositoryReading,
+    student: OnTheRoster,
 ) -> None:
-    repositories.put(reading())
-    sign_in(panel_client, ADA_OF_OCEENS)
+    repositories.put(reading(student))
 
     c2 = panel_client.get("/api/competencies/C2/evidence-panel").json()
     c3 = panel_client.get("/api/competencies/C3/evidence-panel").json()
@@ -149,10 +153,11 @@ def test_a_point_the_repository_cannot_show_says_to_show_it_at_the_eval(
 
 
 def test_c1s_changed_files_come_with_a_sentence_saying_the_workspace_does_not_judge_them(  # noqa: E501
-    panel_client: TestClient, repositories: OfflineRepositoryReading
+    panel_client: TestClient,
+    repositories: OfflineRepositoryReading,
+    student: OnTheRoster,
 ) -> None:
-    repositories.put(reading())
-    sign_in(panel_client, ADA_OF_OCEENS)
+    repositories.put(reading(student))
 
     c1 = panel_client.get("/api/competencies/C1/evidence-panel").json()
 
@@ -160,8 +165,8 @@ def test_c1s_changed_files_come_with_a_sentence_saying_the_workspace_does_not_ju
     assert c1["facts"][0]["files"] == [
         {"path": "app/cache.py", "additions": 30, "changes": None}
     ]
-    assert (
-        c1["facts"][0]["link"] == "https://github.com/ada-oceens/OceENS/compare/a...b"
+    assert c1["facts"][0]["link"] == (
+        f"https://github.com/{student.evidence_project}/compare/a...b"
     )
     assert (
         panel_client.get("/api/competencies/C2/evidence-panel").json()["not_judged"]
@@ -170,10 +175,11 @@ def test_c1s_changed_files_come_with_a_sentence_saying_the_workspace_does_not_ju
 
 
 def test_an_empty_repository_says_where_it_looked_what_to_do_and_that_it_is_not_a_zero(
-    panel_client: TestClient, repositories: OfflineRepositoryReading
+    panel_client: TestClient,
+    repositories: OfflineRepositoryReading,
+    student: OnTheRoster,
 ) -> None:
-    repositories.put(reading(empty=True, branches=1, pulls=0))
-    sign_in(panel_client, ADA_OF_OCEENS)
+    repositories.put(reading(student, empty=True, branches=1, pulls=0))
 
     c1 = panel_client.get("/api/competencies/C1/evidence-panel").json()
 
@@ -192,9 +198,9 @@ def test_the_panel_shows_when_the_repository_was_read_and_a_refresh_writes_nothi
     panel_client: TestClient,
     repositories: OfflineRepositoryReading,
     store: InMemoryStore,
+    student: OnTheRoster,
 ) -> None:
-    repositories.put(reading())
-    sign_in(panel_client, ADA_OF_OCEENS)
+    repositories.put(reading(student))
     before = store.writes
 
     shown = panel_client.get("/api/competencies/C2/evidence-panel").json()
@@ -210,7 +216,7 @@ def test_the_panel_shows_when_the_repository_was_read_and_a_refresh_writes_nothi
 
 
 def test_a_repository_that_cannot_be_read_now_is_said_plainly_never_a_zero(
-    make_client: MakeClient,
+    make_client: MakeClient, student: OnTheRoster
 ) -> None:
     class Down:
         def read(self, student: StudentToRead) -> RepositoryReading:
@@ -219,7 +225,7 @@ def test_a_repository_that_cannot_be_read_now_is_said_plainly_never_a_zero(
         refresh = read
 
     client = make_client(repository_reading=Down(), access_check=FakeAccessCheck())
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
 
     panel = client.get("/api/competencies/C1/evidence-panel")
 
@@ -233,20 +239,19 @@ def test_a_repository_that_cannot_be_read_now_is_said_plainly_never_a_zero(
 
 
 def test_an_unknown_competency_has_no_panel(panel_client: TestClient) -> None:
-    sign_in(panel_client, ADA_OF_OCEENS)
     assert panel_client.get("/api/competencies/C9/evidence-panel").status_code == 404
 
 
-def test_the_panel_needs_a_signed_in_student(panel_client: TestClient) -> None:
-    assert panel_client.get("/api/competencies/C1/evidence-panel").status_code == 401
+def test_the_panel_needs_a_signed_in_student(client: TestClient) -> None:
+    assert client.get("/api/competencies/C1/evidence-panel").status_code == 401
 
 
 def test_with_the_real_repository_reading_the_app_starts_even_before_the_student_connector_is_installed(  # noqa: E501
-    make_client: MakeClient, test_settings: Settings
+    make_client: MakeClient, test_settings: Settings, student: OnTheRoster
 ) -> None:
     settings = test_settings.model_copy(update={"repository_reading": "github"})
     client = make_client(settings=settings, access_check=FakeAccessCheck())
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
 
     panel = client.get("/api/competencies/C1/evidence-panel").json()
 

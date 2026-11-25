@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Any
 
-from conftest import ADA_OF_OCEENS, MakeClient, sign_in
+from conftest import MakeClient, sign_in
+from courses_under_test import OnTheRoster
 from fastapi.testclient import TestClient
 
 from app.settings import Settings
@@ -14,8 +15,10 @@ def questions_of(page: dict[str, Any], step_id: str) -> list[str]:
     return [q["text"] for q in step["questions"]]
 
 
-def test_a_question_is_stored_with_its_step(client: TestClient) -> None:
-    sign_in(client, ADA_OF_OCEENS)
+def test_a_question_is_stored_with_its_step(
+    client: TestClient, student: OnTheRoster
+) -> None:
+    sign_in(client, student.github_id)
 
     response = client.post(
         f"{PAGE}/steps/read-the-chain/questions", json={"text": "Why 10?"}
@@ -27,8 +30,8 @@ def test_a_question_is_stored_with_its_step(client: TestClient) -> None:
     assert questions_of(page, "guided-calculation") == []
 
 
-def test_every_question_is_kept(client: TestClient) -> None:
-    sign_in(client, ADA_OF_OCEENS)
+def test_every_question_is_kept(client: TestClient, student: OnTheRoster) -> None:
+    sign_in(client, student.github_id)
     client.post(f"{PAGE}/steps/guided-calculation/questions", json={"text": "First"})
     client.post(f"{PAGE}/steps/guided-calculation/questions", json={"text": "Second"})
 
@@ -38,8 +41,10 @@ def test_every_question_is_kept(client: TestClient) -> None:
     ]
 
 
-def test_a_question_needs_text_and_a_real_step(client: TestClient) -> None:
-    sign_in(client, ADA_OF_OCEENS)
+def test_a_question_needs_text_and_a_real_step(
+    client: TestClient, student: OnTheRoster
+) -> None:
+    sign_in(client, student.github_id)
 
     assert (
         client.post(
@@ -60,10 +65,13 @@ def test_a_question_needs_text_and_a_real_step(client: TestClient) -> None:
 
 
 def test_a_question_after_the_workspace_closed_is_refused(
-    make_client: MakeClient, test_settings: Settings, past: datetime
+    make_client: MakeClient,
+    test_settings: Settings,
+    past: datetime,
+    student: OnTheRoster,
 ) -> None:
     client = make_client(settings=test_settings.model_copy(update={"closes_at": past}))
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, student.github_id)
 
     response = client.post(
         f"{PAGE}/steps/read-the-chain/questions", json={"text": "Late?"}

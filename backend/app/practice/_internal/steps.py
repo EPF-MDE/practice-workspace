@@ -20,6 +20,7 @@ from app.content import (
 )
 from app.content import Field as ContentField
 from app.course import Competency, Course
+from app.repository_reading import StudentToRead
 from app.roster import Student
 from app.settings import PARIS, Settings
 from app.store import (
@@ -231,6 +232,11 @@ def _step_out(
 
 def _store(request: Request) -> Store:
     return cast(Store, request.app.state.store)
+
+
+def _student_to_read(request: Request, student: Student) -> StudentToRead:
+    course: Course = request.app.state.course
+    return StudentToRead.from_roster(student, course.groups[student.group].upstream)
 
 
 def _page(request: Request, competency: str, student: Student) -> Page:

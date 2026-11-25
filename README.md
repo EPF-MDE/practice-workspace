@@ -4,7 +4,7 @@ A space where each Student of a course practises its Competencies on their own, 
 
 It is one public engine. Each course that uses it keeps its material private and runs its own instance, on a released version of the engine ([ADR-0001](./docs/adr/0001-one-public-engine-and-one-instance-per-course.md)). It is written for the courses of EPF's MDE programme, and holds none of them.
 
-**Status:** the engine, imported from the course it was built for, running on a fictional Demo course. Some of that course's values are still in the code (its two Groups, its dates and one slide); they move to a Course folder's settings next. Every Course has the same three Competencies, C1, C2 and C3; its Course folder titles them and gives each Path its minutes.
+**Status:** the engine, imported from the course it was built for, running on a fictional Demo course. Some of that course's values are still in the code (its dates and one slide); they move to a Course folder's settings next, as its Groups and their upstream repositories already have. Every Course has the same three Competencies, C1, C2 and C3; its Course folder titles them and gives each Path its minutes.
 
 ## Run the Demo course
 
@@ -17,7 +17,7 @@ npm run demo
 
 Then open <http://localhost:8000/auth/login?github_id=1001> to sign in as a fictional Student (any id in [`demo-course/roster.csv`](./demo-course/roster.csv) works). Sign-in is faked and nothing is kept once the server stops.
 
-The engine reads a Course folder at start from the folder `WORKSPACE_COURSE_FOLDER` names: its settings in `course.toml` (the Course's `name`, a `[competencies.C1]` table for each of C1, C2 and C3 with its `title` and `minutes`, and its Self-assessment `levels`, in order, each with an `id` and a `label`, the last being the level that says a point is done; a `to-get-there` block names a level below it), one Markdown file per Competency (`c1.md`, `c2.md`, `c3.md`) and its drawings. [`demo-course/`](./demo-course/) is one, and shows the format. The engine refuses to start on a Course folder it cannot serve, naming every problem it found; `uv run python -m app verify <course folder>`, run from `backend/`, loads the folder the same way and exits non-zero on any problem.
+The engine reads a Course folder at start from the folder `WORKSPACE_COURSE_FOLDER` names: its settings in `course.toml` (the Course's `name`; each Group's name, the id of its Group block and its Upstream repository, if any; a `[competencies.C1]` table for each of C1, C2 and C3 with its `title` and `minutes`; and its Self-assessment `levels`, in order, each with an `id` and a `label`, the last being the level that says a point is done; a `to-get-there` block names a level below it), one Markdown file per Competency (`c1.md`, `c2.md`, `c3.md`) and its drawings. [`demo-course/`](./demo-course/) is one, and shows the format. The engine refuses to start on a Course folder it cannot serve, naming every problem it found; `uv run python -m app verify <course folder>`, run from `backend/`, loads the folder the same way and exits non-zero on any problem.
 
 ## Working on it
 

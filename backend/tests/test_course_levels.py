@@ -5,8 +5,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from conftest import ADA_OF_OCEENS, FIXTURES, MakeClient, sign_in
-from course_folders import ONE_STEP, front_matter
+from conftest import MakeClient, sign_in
+from course_folders import ONE_STEP, TWO_GROUPS, front_matter
+from courses_under_test import FIXTURES, TWO_GROUP_FIXTURE, CourseFolder
 from fastapi.testclient import TestClient
 
 from app.course import COMPETENCIES
@@ -23,8 +24,8 @@ NAME = 'name = "A course"\n'
 TITLES = "".join(
     f'\n[competencies.{c}]\ntitle = "{c}"\nminutes = 40\n' for c in COMPETENCIES
 )
-SETTINGS = NAME + TITLES
-NO_LEVEL = NAME + "levels = []\n" + TITLES
+SETTINGS = NAME + TWO_GROUPS + TITLES
+NO_LEVEL = NAME + "levels = []\n" + TWO_GROUPS + TITLES
 TWO_LEVELS = (
     SETTINGS
     + '\n[[levels]]\nid = "started"\nlabel = "Started"\n\n'
@@ -36,6 +37,11 @@ CLOSING_WITH = (
     "::: point {{#C1.a band=Basic}}\nA statement.\n\n"
     "::: to-get-there {{level={level}}}\nA way there.\n:::\n:::\n"
 )
+
+
+@pytest.fixture
+def course() -> CourseFolder:
+    return TWO_GROUP_FIXTURE
 
 
 def rated(**by_point: str | tuple[str, str]) -> dict[str, Any]:
@@ -65,12 +71,12 @@ def on_three_levels(
             }
         )
     )
-    sign_in(client, ADA_OF_OCEENS)
+    sign_in(client, TWO_GROUP_FIXTURE.student.github_id)
     return client
 
 
 @pytest.fixture
-def ada(
+def signed_in(
     make_client: MakeClient, test_settings: Settings, future: datetime
 ) -> TestClient:
     return on_three_levels(make_client, test_settings, future, future)
@@ -87,7 +93,7 @@ def verify(folder: Path) -> subprocess.CompletedProcess[str]:
 
 
 def a_course(folder: Path, settings: str, to_get_there: str) -> Path:
-    (folder / "course.toml").write_text(settings)
+    (folder / "course.toml").write_text(settings, encoding="utf-8")
     (folder / "c1.md").write_text(CLOSING_WITH.format(level=to_get_there))
     for competency in COMPETENCIES[1:]:
         (folder / f"{competency.lower()}.md").write_text(
@@ -96,8 +102,8 @@ def a_course(folder: Path, settings: str, to_get_there: str) -> Path:
     return folder
 
 
-def test_the_api_serves_the_courses_scale_in_order(ada: TestClient) -> None:
-    assert ada.get("/api/course").json()["scale"] == [
+def test_the_api_serves_the_courses_scale_in_order(signed_in: TestClient) -> None:
+    assert signed_in.get("/api/course").json()["scale"] == [
         {"id": "seen", "label": "Seen it"},
         {"id": "tried", "label": "Tried it"},
         {"id": "shipped", "label": "Shipped it"},
@@ -105,11 +111,11 @@ def test_the_api_serves_the_courses_scale_in_order(ada: TestClient) -> None:
 
 
 def test_the_evidence_plan_is_drafted_for_exactly_the_points_below_the_top_level(
-    ada: TestClient,
+    signed_in: TestClient,
 ) -> None:
-    text = ada.post(DRAFT, json=rated(a="seen", b="tried", c=("shipped", LINK))).json()[
-        "text"
-    ]
+    text = signed_in.post(
+        DRAFT, json=rated(a="seen", b="tried", c=("shipped", LINK))
+    ).json()["text"]
 
     seen, tried = blocks(text)
     assert seen.startswith("C1.a (Basic), Seen it")
@@ -120,10 +126,10 @@ def test_the_evidence_plan_is_drafted_for_exactly_the_points_below_the_top_level
 
 
 def test_the_top_level_needs_a_link_and_a_level_of_another_scale_is_refused(
-    ada: TestClient,
+    signed_in: TestClient,
 ) -> None:
-    without_link = ada.post(SELF, json=rated(c="shipped"))
-    another_scale = ada.post(SELF, json=rated(a="understand"))
+    without_link = signed_in.post(SELF, json=rated(c="shipped"))
+    another_scale = signed_in.post(SELF, json=rated(a="understand"))
 
     assert without_link.status_code == 422
     assert "Shipped it" in without_link.json()["detail"]
@@ -200,8 +206,8 @@ def test_the_app_refuses_to_start_on_an_empty_level_list(
 def test_a_stored_level_the_scale_no_longer_holds_still_serves_the_page(
     make_client: MakeClient, test_settings: Settings, future: datetime, tmp_path: Path
 ) -> None:
-    ada = on_three_levels(make_client, test_settings, future, future)
-    ada.post(SELF, json=rated(a="seen", b="tried"))
+    signed_in = on_three_levels(make_client, test_settings, future, future)
+    signed_in.post(SELF, json=rated(a="seen", b="tried"))
     for name in ("course.toml", "c1.md", "c2.md", "c3.md"):
         text = (THREE_LEVELS / name).read_text(encoding="utf-8")
         (tmp_path / name).write_text(text.replace("seen", "glimpsed"))
@@ -210,7 +216,7 @@ def test_a_stored_level_the_scale_no_longer_holds_still_serves_the_page(
             update={"course_folder": str(tmp_path), "closes_at": future}
         )
     )
-    sign_in(renamed, ADA_OF_OCEENS)
+    sign_in(renamed, TWO_GROUP_FIXTURE.student.github_id)
 
     page = renamed.get(PAGE)
 
