@@ -227,12 +227,22 @@ describe("the outcomes of the rebase with a script", () => {
   });
 
   it("lead to a review decision spelt as the steps after it read it", () => {
-    expect(wordsIn(WORKFLOW, /review=([a-z]+)$/gm)).toEqual(
+    expect(wordsIn(WORKFLOW, /review=([a-z]+) because=/g)).toEqual(
       new Set(["keep", "request"])
     );
     expect(wordsIn(WORKFLOW, /"\$REVIEW" [!=]+ "([a-z]+)"/g)).toEqual(
       new Set(["keep"])
     );
+  });
+
+  it("give the report a reason spelt as the decision wrote it", () => {
+    const reasons = wordsIn(WORKFLOW, /because=([a-z]+)$/gm);
+    expect(reasons).toEqual(
+      new Set(["agent", "waiting", "changed", "unchanged"])
+    );
+    for (const read of wordsIn(WORKFLOW, /"\$BECAUSE" = "([a-z]+)"/g)) {
+      expect(reasons).toContain(read);
+    }
   });
 
   it("give the agent only situations it knows", () => {

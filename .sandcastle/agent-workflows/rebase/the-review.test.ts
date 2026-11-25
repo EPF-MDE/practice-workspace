@@ -53,7 +53,11 @@ const decide = ({
       WAITING: reviewWaiting ? "true" : "false",
     },
   });
-  return { status: result.status, review: outputOf(output, "review") };
+  return {
+    status: result.status,
+    review: outputOf(output, "review"),
+    because: outputOf(output, "because"),
+  };
 };
 
 describe("whether a rebase keeps the review", () => {
@@ -64,32 +68,46 @@ describe("whether a rebase keeps the review", () => {
       { outcome: "rebased", diff: "unchanged" },
     ],
   ])("keeps it for a pull request %s", (_, rebase) => {
-    expect(decide(rebase)).toEqual({ status: 0, review: "keep" });
+    expect(decide(rebase)).toEqual({
+      status: 0,
+      review: "keep",
+      because: "unchanged",
+    });
   });
 
-  it.each<[string, Rebase]>([
+  it.each<[string, Rebase, string]>([
     [
       "rebased by the script, its diff changed",
       { outcome: "rebased", diff: "changed" },
+      "changed",
     ],
     [
       "whose conflicts an agent resolved",
       { outcome: "conflicts", byAgent: true },
+      "agent",
     ],
     [
       "whose failing check an agent fixed",
       { outcome: "rebased", diff: "unchanged", byAgent: true },
+      "agent",
     ],
     [
       "rebased by the script, its diff unchanged, agent:review waiting",
       { outcome: "rebased", diff: "unchanged", reviewWaiting: true },
+      "waiting",
+    ],
+    [
+      "rebased by the script, its diff changed, agent:review waiting",
+      { outcome: "rebased", diff: "changed", reviewWaiting: true },
+      "waiting",
     ],
     [
       "already on top of its base, agent:review waiting",
       { outcome: "up-to-date", reviewWaiting: true },
+      "waiting",
     ],
-  ])("asks for one on a pull request %s", (_, rebase) => {
-    expect(decide(rebase)).toEqual({ status: 0, review: "request" });
+  ])("asks for one on a pull request %s", (_, rebase, because) => {
+    expect(decide(rebase)).toEqual({ status: 0, review: "request", because });
   });
 });
 

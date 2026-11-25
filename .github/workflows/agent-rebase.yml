@@ -390,15 +390,18 @@ jobs:
           WAITING: ${{ steps.pr.outputs.review_waiting }}
         run: |
           set -euo pipefail
-          if [ "$BY_AGENT" = "true" ] || [ "$WAITING" = "true" ]; then
-            review=request
+          if [ "$BY_AGENT" = "true" ]; then
+            review=request because=agent
+          elif [ "$WAITING" = "true" ]; then
+            review=request because=waiting
           elif [ "$OUTCOME" = "rebased" ] && [ "$DIFF" != "unchanged" ]; then
-            review=request
+            review=request because=changed
           else
-            review=keep
+            review=keep because=unchanged
           fi
-          echo "Review: $review"
+          echo "Review: $review, because: $because"
           echo "review=$review" >> "$GITHUB_OUTPUT"
+          echo "because=$because" >> "$GITHUB_OUTPUT"
 
       - name: Report the rebase
         if: steps.decide.outputs.review != ''
@@ -406,14 +409,13 @@ jobs:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
           BASE_REF: ${{ steps.pr.outputs.base_ref }}
           OUTCOME: ${{ steps.script.outputs.outcome }}
-          BY_AGENT: ${{ steps.agent_check.outputs.resolved }}
-          REVIEW: ${{ steps.decide.outputs.review }}
-          DIFF: ${{ steps.script.outputs.diff }}
+          BECAUSE: ${{ steps.decide.outputs.because }}
         run: |
           set -euo pipefail
+          by_script="Rebased onto \`$BASE_REF\` by a script, no agent. \`npm run check\` passes"
           if [ "$OUTCOME" = "up-to-date" ]; then
             echo "Already on top of \`$BASE_REF\`: nothing to rebase. [Logs](${RUN_URL})." > /tmp/report.md
-          elif [ "$BY_AGENT" = "true" ]; then
+          elif [ "$BECAUSE" = "agent" ]; then
             {
               echo "Rebased onto \`$BASE_REF\` by an agent, which resolved what the script could not. [Logs](${RUN_URL})."
               echo ""
@@ -421,12 +423,12 @@ jobs:
               echo ""
               echo "Nobody has read this resolution yet, so it goes to \`agent:review\`."
             } > /tmp/report.md
-          elif [ "$REVIEW" = "keep" ]; then
-            echo "Rebased onto \`$BASE_REF\` by a script, no agent. \`npm run check\` passes, and this pull request's own diff is unchanged, so its review stands. [Logs](${RUN_URL})." > /tmp/report.md
-          elif [ "$DIFF" = "unchanged" ]; then
-            echo "Rebased onto \`$BASE_REF\` by a script, no agent. \`npm run check\` passes, and this pull request's own diff is unchanged, but \`agent:review\` was waiting, so it goes back on. [Logs](${RUN_URL})." > /tmp/report.md
+          elif [ "$BECAUSE" = "unchanged" ]; then
+            echo "$by_script, and this pull request's own diff is unchanged, so its review stands. [Logs](${RUN_URL})." > /tmp/report.md
+          elif [ "$BECAUSE" = "waiting" ]; then
+            echo "$by_script, and \`agent:review\` was waiting, so it goes back on. [Logs](${RUN_URL})." > /tmp/report.md
           else
-            echo "Rebased onto \`$BASE_REF\` by a script, no agent. \`npm run check\` passes, but \`$BASE_REF\` changed lines in or beside this pull request's diff, so it goes to \`agent:review\`. [Logs](${RUN_URL})." > /tmp/report.md
+            echo "$by_script, but \`$BASE_REF\` changed lines in or beside this pull request's diff, so it goes to \`agent:review\`. [Logs](${RUN_URL})." > /tmp/report.md
           fi
           gh pr comment "$PR_NUMBER" --body-file /tmp/report.md
           gh issue list --state open --label "needs-a-human" --limit 100 --json number,body \
