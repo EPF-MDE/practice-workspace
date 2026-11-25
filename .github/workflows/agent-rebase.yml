@@ -508,7 +508,7 @@ jobs:
             if [ -n "${NEW_HEAD:-}" ] && [ "$NEW_HEAD" != "$OLD_HEAD" ]; then
               status=$(mktemp)
               if ! statuses=$(gh api "repos/$GH_REPO/commits/$OLD_HEAD/status"); then
-                echo "::warning::The statuses of $OLD_HEAD could not be read: does FACTORY_PAT have Commit statuses: read?"
+                echo "::warning::The statuses of $OLD_HEAD could not be read: does FACTORY_PAT have Commit statuses: write, as this workflow asks?"
                 exit 0
               fi
               echo "$statuses" \
