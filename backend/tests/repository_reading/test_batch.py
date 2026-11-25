@@ -48,7 +48,9 @@ def recorded_github(*names: str) -> RecordedGitHub:
 
 def roster_students(csv_text: str) -> list[StudentToRead]:
     return evidence_projects(
-        list(parse_roster(csv_text, UPSTREAMS)), InMemoryStore(), UPSTREAMS
+        list(parse_roster(csv_text, UPSTREAMS, names_evidence_projects=True)),
+        InMemoryStore(),
+        UPSTREAMS,
     ).to_read
 
 
@@ -65,7 +67,9 @@ def test_the_roster_gives_each_students_evidence_project() -> None:
 def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named() -> (
     None
 ):
-    dorothy, radia, barbara = parse_roster(ROSTER, UPSTREAMS)
+    dorothy, radia, barbara = parse_roster(
+        ROSTER, UPSTREAMS, names_evidence_projects=True
+    )
     store = InMemoryStore()
     store.send_declaration(
         radia,

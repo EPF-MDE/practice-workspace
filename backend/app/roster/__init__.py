@@ -51,7 +51,7 @@ EVIDENCE_PROJECT = "evidence_project"
 
 
 def parse_roster(
-    text: str, groups: Collection[str], names_evidence_projects: bool = True
+    text: str, groups: Collection[str], names_evidence_projects: bool
 ) -> Roster:
     reader = csv.DictReader(io.StringIO(text.lstrip("\ufeff")))
     columns = COLUMNS + ((EVIDENCE_PROJECT,) if names_evidence_projects else ())
@@ -111,7 +111,7 @@ class StaticRoster:
         cls,
         path: str | Path,
         groups: Collection[str],
-        names_evidence_projects: bool = True,
+        names_evidence_projects: bool,
     ) -> StaticRoster:
         return cls(
             parse_roster(
@@ -127,7 +127,7 @@ class RefreshingRoster:
         self,
         read: Callable[[], str],
         groups: Collection[str],
-        names_evidence_projects: bool = True,
+        names_evidence_projects: bool,
         max_age: float = 300,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
