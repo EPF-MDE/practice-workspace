@@ -23,14 +23,9 @@ name: Agent — Rebase The Pull Requests That Conflict
 #   against the head this run read: if anyone pushed meanwhile, nothing is
 #   overwritten.
 #
-# THE REVIEW STANDS WHEN NOTHING IT READ CHANGED
-#   A script's rebase that `npm run check` passes, and that leaves the pull
-#   request's own diff as it was (`git patch-id`), keeps its review: the
-#   `agent-review` status of the old head goes on the new one. Any other
-#   push goes to `agent:review`: an agent's resolution is code nobody has
-#   read, and a diff the base changed is not the one the review read. So
-#   does an `agent:review` left waiting while the pull request conflicted,
-#   once GitHub calls it mergeable.
+# THE REVIEW STANDS WHEN NOTHING IT READ CHANGED (ADR-0018)
+#   Only a script's rebase that leaves the pull request's own diff as it
+#   was keeps the review; any other push goes to `agent:review`.
 #
 # WHEN IT CANNOT
 #   Superseded by the base, or a conflict the agent cannot settle: the pull
@@ -258,9 +253,7 @@ jobs:
               outcome=superseded
             else
               outcome=rebased
-              # The diff the review read, and the one it would read now. The
-              # patch-id leaves out line numbers, so only a change of the
-              # pull request's lines, or of the lines around them, differs.
+              # The diff the review read, and the one it would read now (ADR-0018).
               fork_point=$(git merge-base "origin/$BASE_REF" "$HEAD_SHA")
               read_before=$(git diff "$fork_point" "$HEAD_SHA" | git patch-id --stable)
               read_now=$(git diff "origin/$BASE_REF" HEAD | git patch-id --stable)
