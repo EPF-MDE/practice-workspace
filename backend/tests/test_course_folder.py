@@ -4,7 +4,13 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-from conftest import FIXTURE_CLOSE, FIXTURE_READING_DAY, MakeClient, sign_in
+from conftest import (
+    FIXTURE_CLOSE,
+    FIXTURE_READING_DAY,
+    FIXTURE_TIME_ZONE,
+    MakeClient,
+    sign_in,
+)
 from course_folders import (
     A_SCALE,
     CALENDAR,
@@ -14,7 +20,13 @@ from course_folders import (
     with_every_competency,
     write_course_folder,
 )
-from courses_under_test import DEMO_COURSE, FIXTURES, TWO_GROUP_FIXTURE, CourseFolder
+from courses_under_test import (
+    DEMO_COURSE,
+    FIXTURES,
+    TWO_GROUP_FIXTURE,
+    CourseFolder,
+    OnTheRoster,
+)
 from fastapi.testclient import TestClient
 
 from app.settings import ConfigurationError, Settings
@@ -318,3 +330,27 @@ def test_the_close_and_the_reading_day_are_the_courses_in_its_time_zone(
 
     assert datetime.fromisoformat(page["closes_at"]) == FIXTURE_CLOSE
     assert datetime.fromisoformat(page["reading_day_at"]) == FIXTURE_READING_DAY
+
+
+def test_a_close_written_with_an_offset_keeps_it(
+    make_client: MakeClient,
+    test_settings: Settings,
+    student: OnTheRoster,
+    tmp_path: Path,
+) -> None:
+    folder = write_course_folder(tmp_path, with_every_competency())
+    settings = folder / "course.toml"
+    settings.write_text(
+        settings.read_text(encoding="utf-8").replace(
+            "close = 2030-06-14T23:59:00", "close = 2030-06-14T23:59:00-04:00"
+        ),
+        encoding="utf-8",
+    )
+    client = make_client(settings=on(test_settings, folder))
+    sign_in(client, student.github_id)
+
+    page = client.get("/api/competencies/C1").json()
+
+    assert datetime.fromisoformat(page["closes_at"]) == datetime(
+        2030, 6, 15, 5, 59, tzinfo=FIXTURE_TIME_ZONE
+    )
