@@ -71,7 +71,6 @@ def load_content(
 
     loading = ContentLoading({}, set(), [])
     for path in sorted(directory.glob("c[0-9].md")):
-        loading.with_a_file.add(path.stem.upper())
         try:
             competency = parse_competency(
                 path.read_text(encoding="utf-8"),
@@ -81,6 +80,7 @@ def load_content(
                 to_get_there_levels=to_get_there_levels,
             )
         except ContentError as error:
+            loading.with_a_file.add(path.stem.upper())
             loading.problems.extend(error.problems)
             continue
         if path.name != f"{competency.id.lower()}.md":
@@ -89,5 +89,6 @@ def load_content(
                 f"which belongs in {competency.id.lower()}.md"
             )
             continue
+        loading.with_a_file.add(competency.id)
         loading.competencies[competency.id] = competency
     return loading

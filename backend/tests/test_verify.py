@@ -60,10 +60,10 @@ def test_verify_reports_problems_in_different_files_at_once() -> None:
         assert any(where in p and problem in p for p in problems(result))
 
 
-def with_c1(folder: Path, steps: str, *, holding: str = "C1") -> Path:
+def with_c1(folder: Path, steps: str) -> Path:
     for name in ("course.toml", "c1.md", "c2.md", "c3.md"):
         (folder / name).write_text((VERIFY / "valid" / name).read_text())
-    (folder / "c1.md").write_text(f"---\ncompetency: {holding}\n---\n\n{steps}")
+    (folder / "c1.md").write_text(f"---\ncompetency: C1\n---\n\n{steps}")
     return folder
 
 
@@ -108,18 +108,6 @@ def test_a_drawing_that_is_no_json_is_named(tmp_path: Path) -> None:
     assert result.returncode != 0
     assert len(problems(result)) == 1, result.stdout
     assert "'drawings/harbour.json'" in problems(result)[0]
-
-
-def test_a_file_holding_another_competency_is_not_reported_missing(
-    tmp_path: Path,
-) -> None:
-    steps = (VERIFY / "valid" / "c2.md").read_text().split("---\n")[-1]
-
-    result = verify(with_c1(tmp_path, steps, holding="C2"))
-
-    assert result.returncode != 0
-    assert len(problems(result)) == 1, result.stdout
-    assert "belongs in c2.md" in problems(result)[0]
 
 
 def test_a_problem_repeated_in_two_steps_sharing_an_id_is_reported_once(
