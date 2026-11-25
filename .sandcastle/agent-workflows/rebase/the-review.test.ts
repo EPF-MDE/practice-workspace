@@ -30,9 +30,15 @@ type Rebase = {
   outcome: "up-to-date" | "rebased" | "conflicts";
   diff?: "unchanged" | "changed";
   byAgent?: boolean;
+  reviewWaiting?: boolean;
 };
 
-const decide = ({ outcome, diff, byAgent = false }: Rebase) => {
+const decide = ({
+  outcome,
+  diff,
+  byAgent = false,
+  reviewWaiting = false,
+}: Rebase) => {
   const output = join(mkdtempSync(join(tmpdir(), "review-decide-")), "output");
   writeFileSync(output, "");
   const result = spawnSync("bash", ["-c", decideWhetherTheReviewStands], {
@@ -43,6 +49,7 @@ const decide = ({ outcome, diff, byAgent = false }: Rebase) => {
       OUTCOME: outcome,
       DIFF: diff ?? "",
       BY_AGENT: byAgent ? "true" : "",
+      WAITING: reviewWaiting ? "true" : "false",
     },
   });
   return { status: result.status, review: outputOf(output, "review") };
@@ -72,6 +79,14 @@ describe("whether a rebase keeps the review", () => {
       "whose failing check an agent fixed",
       { outcome: "rebased", diff: "unchanged", byAgent: true },
     ],
+    [
+      "rebased by the script, its diff unchanged, agent:review waiting",
+      { outcome: "rebased", diff: "unchanged", reviewWaiting: true },
+    ],
+    [
+      "already on top of its base, agent:review waiting",
+      { outcome: "up-to-date", reviewWaiting: true },
+    ],
   ])("asks for one on a pull request %s", (_, rebase) => {
     expect(decide(rebase)).toEqual({ status: 0, review: "request" });
   });
@@ -81,6 +96,18 @@ type PullRequest = {
   labels?: string[];
   mergeable?: ("MERGEABLE" | "CONFLICTING" | "UNKNOWN")[];
   statuses?: { context: string; state: string; target_url?: string }[];
+};
+
+const writeStatuses = (
+  dir: string,
+  statuses: NonNullable<PullRequest["statuses"]>
+) => {
+  writeFileSync(
+    join(dir, "status.json"),
+    JSON.stringify({
+      statuses: statuses.map((status) => ({ description: null, ...status })),
+    })
+  );
 };
 
 const fakeGh = ({
@@ -99,12 +126,7 @@ const fakeGh = ({
       JSON.stringify({ mergeable: state })
     );
   });
-  writeFileSync(
-    join(dir, "status.json"),
-    JSON.stringify({
-      statuses: statuses.map((status) => ({ description: null, ...status })),
-    })
-  );
+  writeStatuses(dir, statuses);
   writeFileSync(join(dir, "asked"), "0");
   for (const log of ["edits", "comments", "posted"]) {
     writeFileSync(join(dir, log), "");
@@ -217,7 +239,7 @@ describe("a rebased pull request handed to the review", () => {
 
   it("puts back an agent:review left waiting while the pull request conflicted", () => {
     const { edits, posted } = handOff({
-      review: "keep",
+      review: "request",
       pushed: false,
       labels: ["agent:review"],
       mergeable: ["CONFLICTING", "MERGEABLE"],

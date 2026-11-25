@@ -200,6 +200,8 @@ jobs:
           gh pr edit "$PR_NUMBER" --remove-label "agent:blocked" || true
           jq -r '"branch=\(.headRefName)\nhead_sha=\(.headRefOid)\nbase_ref=\(.baseRefName)"' \
             /tmp/pr.json >> "$GITHUB_OUTPUT"
+          jq -r '"review_waiting=\([.labels[].name] | index("agent:review") != null)"' \
+            /tmp/pr.json >> "$GITHUB_OUTPUT"
           jq -r '"# #\(.number): \(.title)\n\n\(.body)"' /tmp/pr.json > /tmp/rebase-context.md
           echo "MARKER=<!-- $ISSUE_MARKER #$PR_NUMBER -->" >> "$GITHUB_ENV"
 
@@ -385,9 +387,10 @@ jobs:
           OUTCOME: ${{ steps.script.outputs.outcome }}
           DIFF: ${{ steps.script.outputs.diff }}
           BY_AGENT: ${{ steps.agent_check.outputs.resolved }}
+          WAITING: ${{ steps.pr.outputs.review_waiting }}
         run: |
           set -euo pipefail
-          if [ "$BY_AGENT" = "true" ]; then
+          if [ "$BY_AGENT" = "true" ] || [ "$WAITING" = "true" ]; then
             review=request
           elif [ "$OUTCOME" = "rebased" ] && [ "$DIFF" != "unchanged" ]; then
             review=request
@@ -405,6 +408,7 @@ jobs:
           OUTCOME: ${{ steps.script.outputs.outcome }}
           BY_AGENT: ${{ steps.agent_check.outputs.resolved }}
           REVIEW: ${{ steps.decide.outputs.review }}
+          DIFF: ${{ steps.script.outputs.diff }}
         run: |
           set -euo pipefail
           if [ "$OUTCOME" = "up-to-date" ]; then
@@ -419,6 +423,8 @@ jobs:
             } > /tmp/report.md
           elif [ "$REVIEW" = "keep" ]; then
             echo "Rebased onto \`$BASE_REF\` by a script, no agent. \`npm run check\` passes, and this pull request's own diff is unchanged, so its review stands. [Logs](${RUN_URL})." > /tmp/report.md
+          elif [ "$DIFF" = "unchanged" ]; then
+            echo "Rebased onto \`$BASE_REF\` by a script, no agent. \`npm run check\` passes, and this pull request's own diff is unchanged, but \`agent:review\` was waiting, so it goes back on. [Logs](${RUN_URL})." > /tmp/report.md
           else
             echo "Rebased onto \`$BASE_REF\` by a script, no agent. \`npm run check\` passes, but \`$BASE_REF\` changed lines in or beside this pull request's diff, so it goes to \`agent:review\`. [Logs](${RUN_URL})." > /tmp/report.md
           fi
@@ -496,9 +502,7 @@ jobs:
           NEW_HEAD: ${{ steps.push.outputs.head }}
         run: |
           set -euo pipefail
-          waiting=$(gh pr view "$PR_NUMBER" --json labels \
-            | jq '[.labels[].name] | index("agent:review") != null')
-          if [ "$REVIEW" = "keep" ] && [ "$waiting" = "false" ]; then
+          if [ "$REVIEW" = "keep" ]; then
             if [ -n "${NEW_HEAD:-}" ] && [ "$NEW_HEAD" != "$OLD_HEAD" ]; then
               status=$(mktemp)
               gh api "repos/$GH_REPO/commits/$OLD_HEAD/status" \
@@ -529,7 +533,8 @@ jobs:
             gh pr comment "$PR_NUMBER" --body \
               "GitHub does not call this pull request mergeable yet, so \`agent:review\` may start no review. If none starts, take the label off and put it back."
           fi
-          if [ "$waiting" = "true" ]; then
+          if gh pr view "$PR_NUMBER" --json labels \
+            | jq -e '[.labels[].name] | index("agent:review")' > /dev/null; then
             gh pr edit "$PR_NUMBER" --remove-label "agent:review"
           fi
           gh pr edit "$PR_NUMBER" --add-label "agent:review"
