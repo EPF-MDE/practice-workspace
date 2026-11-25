@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
-from app.closing import Level, Scale
+from app.closing import Level, Phase, Scale
 from app.content import CompetencyContent, ContentError, load_content
 from app.roster import Repository
 
@@ -47,6 +47,11 @@ class Calendar:
     closes_at: datetime
     reading_day_at: datetime
     time_zone: ZoneInfo
+
+    def phase(self, now: datetime) -> Phase:
+        if now > self.reading_day_at:
+            return "over"
+        return "closed" if now > self.closes_at else "open"
 
     def in_course_time(self, instant: datetime) -> str:
         when = instant.astimezone(self.time_zone).strftime("%-d %B %Y at %H:%M")

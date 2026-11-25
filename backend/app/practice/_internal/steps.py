@@ -62,12 +62,11 @@ def _calendar(request: Request) -> Calendar:
 
 
 def _closed(request: Request) -> bool:
-    return _now(request) > _calendar(request).closes_at
+    return _phase(request) != "open"
 
 
 def _phase(request: Request) -> closing.Phase:
-    calendar = _calendar(request)
-    return closing.phase(_now(request), calendar.closes_at, calendar.reading_day_at)
+    return _calendar(request).phase(_now(request))
 
 
 def _refuse_after_the_reading_day(request: Request, what: str) -> None:
