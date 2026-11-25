@@ -4,6 +4,7 @@ from pathlib import Path
 
 import httpx
 import pytest
+from courses_under_test import NOTHING_BY_DEFAULT_FIXTURE
 
 from app.repository_reading import (
     GitHubWorkspaceData,
@@ -12,7 +13,13 @@ from app.repository_reading import (
     StudentToRead,
     WorkspaceDataReadings,
 )
-from app.repository_reading.batch import evidence_projects, main, run_batch
+from app.repository_reading.batch import (
+    BatchResult,
+    evidence_projects,
+    main,
+    run_batch,
+    summary,
+)
 from app.repository_reading.recorded import RecordedGitHub
 from app.roster import parse_roster
 from app.settings import ConfigurationError
@@ -103,6 +110,51 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
     store.withdraw_declaration(radia)
     found = evidence_projects([radia], store, UPSTREAMS)
     assert found.to_read[0].evidence_project == "radia-oceens/OceENS"
+
+
+def test_without_the_store_only_the_roster_is_read() -> None:
+    dorothy, radia = list(
+        parse_roster(ROSTER, UPSTREAMS, names_evidence_projects=True)
+    )[:2]
+
+    found = evidence_projects([dorothy, radia], None, UPSTREAMS)
+
+    assert [(s.login, s.evidence_project) for s in found.to_read] == [
+        ("dorothy-math", "dorothy-math/MATHutrice"),
+        ("radia-oceens", "radia-oceens/OceENS"),
+    ]
+
+
+def test_reading_nothing_a_student_who_declared_nothing_is_listed_not_declared() -> (
+    None
+):
+    course = NOTHING_BY_DEFAULT_FIXTURE
+    iris, olive = course.roster(course.roster_csv)
+    store = InMemoryStore()
+    store.send_declaration(
+        olive,
+        DeclarationPayload(
+            url="https://github.com/olive/orchard",
+            what_to_read="n",
+            repository_path="olive/orchard",
+            host="github",
+            access_when_declared="readable",
+        ),
+    )
+
+    found = evidence_projects([iris, olive], store, {"Orchard": None})
+
+    assert found.not_declared == [iris.github_login]
+    assert [(s.login, s.evidence_project) for s in found.to_read] == [
+        (olive.github_login, "olive/orchard")
+    ]
+    assert evidence_projects([iris], None, {"Orchard": None}).not_declared == [
+        iris.github_login
+    ]
+    assert (
+        f"\n  {iris.github_login}: not declared: no Evidence Project to read"
+        in summary(BatchResult(), found)
+    )
 
 
 def test_the_batch_stores_one_file_per_student_in_one_commit() -> None:

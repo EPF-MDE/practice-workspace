@@ -81,21 +81,13 @@ class EvidenceProjects:
             )
 
 
-def roster_evidence_projects(
-    students: list[Student], upstreams: Upstreams
-) -> EvidenceProjects:
-    found = EvidenceProjects()
-    for student in students:
-        found.add(student, student.evidence_project, upstreams[student.group])
-    return found
-
-
 def evidence_projects(
-    students: list[Student], store: Store, upstreams: Upstreams
+    students: list[Student], store: Store | None, upstreams: Upstreams
 ) -> EvidenceProjects:
     found = EvidenceProjects()
-    for student, record in zip(students, store.records(students), strict=True):
-        declared = record.declaration()
+    records = [None] * len(students) if store is None else store.records(students)
+    for student, record in zip(students, records, strict=True):
+        declared = None if record is None else record.declaration()
         upstream = upstreams[student.group]
         if declared is None:
             found.add(student, student.evidence_project, upstream)
@@ -151,6 +143,15 @@ def run_batch(
             f"data: batch reading of {len(result.readings)} repositories",
         )
     return result
+
+
+def summary(result: BatchResult, found: EvidenceProjects) -> str:
+    return (
+        f"{len(result.readings)} repositories read, {len(result.failures)} failed"
+        + "".join(f"\n  {k}: {v}" for k, v in result.failures.items())
+        + "".join(f"\n  {k}: {not_read_on_gitlab(v)}" for k, v in found.gitlab.items())
+        + "".join(f"\n  {k}: {NOT_DECLARED}" for k in found.not_declared)
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -226,12 +227,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.only:
         wanted = set(args.only.split(","))
         roster_rows = [s for s in roster_rows if s.github_login in wanted]
-    found = (
-        roster_evidence_projects(roster_rows, upstreams)
-        if args.roster_only
-        else evidence_projects(
-            roster_rows, GitHubStore.from_settings(settings), upstreams
-        )
+    found = evidence_projects(
+        roster_rows,
+        None if args.roster_only else GitHubStore.from_settings(settings),
+        upstreams,
     )
     students = found.to_read
 
@@ -249,12 +248,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         assert store is not None
         result = run_batch(students, reader, store, log)
-    print(
-        f"{len(result.readings)} repositories read, {len(result.failures)} failed"
-        + "".join(f"\n  {k}: {v}" for k, v in result.failures.items())
-        + "".join(f"\n  {k}: {not_read_on_gitlab(v)}" for k, v in found.gitlab.items())
-        + "".join(f"\n  {k}: {NOT_DECLARED}" for k in found.not_declared)
-    )
+    print(summary(result, found))
     return 1 if result.failures else 0
 
 

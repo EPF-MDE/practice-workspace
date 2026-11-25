@@ -13,9 +13,7 @@ from test_course_folder import on, verify
 from test_evidence_project_reading import CountedReading
 
 from app.evidence_panel import FakeAccessCheck
-from app.repository_reading.batch import evidence_projects
 from app.settings import ConfigurationError, Settings
-from app.store import DeclarationPayload, InMemoryStore
 
 DECLARATION = "/api/evidence-project/declaration"
 ORCHARD = {
@@ -80,31 +78,6 @@ def test_once_withdrawn_nothing_is_read_again(
 
     assert panel["evidence_project"] is None
     assert readings.asked == []
-
-
-def test_the_reading_day_batch_lists_a_student_who_declared_nothing_as_undeclared() -> (
-    None
-):
-    course = NOTHING_BY_DEFAULT_FIXTURE
-    iris, olive = course.roster(course.roster_csv)
-    store = InMemoryStore()
-    store.send_declaration(
-        olive,
-        DeclarationPayload(
-            url="https://github.com/olive/orchard",
-            what_to_read="n",
-            repository_path="olive/orchard",
-            host="github",
-            access_when_declared="readable",
-        ),
-    )
-
-    found = evidence_projects([iris, olive], store, {"Orchard": None})
-
-    assert found.not_declared == [iris.github_login]
-    assert [(s.login, s.evidence_project) for s in found.to_read] == [
-        (olive.github_login, "olive/orchard")
-    ]
 
 
 def test_verify_passes_a_course_folder_reading_nothing_by_default() -> None:
