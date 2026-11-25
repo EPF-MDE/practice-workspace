@@ -136,6 +136,7 @@ def parse_competency(
         found = len(problems)
         step = _raw_step(title, attrs, lines, where, blocks, problems)
         if step is None:
+            unreadable.add(attrs.get("id", title))
             continue
         for d in _walk(step.nodes):
             if d.name in ("example-drawing", "reference-drawing"):

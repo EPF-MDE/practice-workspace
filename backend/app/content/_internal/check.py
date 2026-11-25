@@ -269,9 +269,13 @@ def _check_waiting(
             )
         return
     before = next((s for s in earlier if s.id == step.after), None)
-    if before is None:
+    if before is None and step.after not in unreadable:
         problems.append(f"{where}: after={step.after} names no earlier step")
-    elif before.id not in unreadable and not _takes_an_answer(before, group_blocks):
+    elif (
+        before
+        and before.id not in unreadable
+        and not _takes_an_answer(before, group_blocks)
+    ):
         problems.append(
             f"{where}: after={step.after}, a step that takes no answer, so this one "
             "would never open"

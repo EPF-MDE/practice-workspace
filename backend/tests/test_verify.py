@@ -60,14 +60,19 @@ def test_verify_reports_problems_in_different_files_at_once() -> None:
         assert any(where in p and problem in p for p in problems(result))
 
 
+def with_c1(folder: Path, steps: str, *, holding: str = "C1") -> Path:
+    for name in ("course.toml", "c1.md", "c2.md", "c3.md"):
+        (folder / name).write_text((VERIFY / "valid" / name).read_text())
+    (folder / "c1.md").write_text(f"---\ncompetency: {holding}\n---\n\n{steps}")
+    return folder
+
+
 def test_verify_reports_every_problem_in_one_file(tmp_path: Path) -> None:
-    for name in ("course.toml", "c2.md", "c3.md"):
-        (tmp_path / name).write_text((VERIFY / "valid" / name).read_text())
-    (tmp_path / "c1.md").write_text(
-        "---\ncompetency: C1\n---\n\n"
+    with_c1(
+        tmp_path,
         "## Sail {#sail minutes=5}\n\n::: anwser\nx\n:::\n\n"
         "## Moor {#moor minutes=5}\n\nRead the banding anchor.\n\n"
-        "## Dock {#dock minutes=5}\n\n::: answer\nx\n:::\n"
+        "## Dock {#dock minutes=5}\n\n::: answer\nx\n:::\n",
     )
 
     result = verify(tmp_path)
@@ -77,6 +82,20 @@ def test_verify_reports_every_problem_in_one_file(tmp_path: Path) -> None:
     assert len(problems(result)) == len(steps), result.stdout
     for step in steps:
         assert any(step in p for p in problems(result))
+
+
+def test_a_step_waiting_for_a_broken_one_is_not_reported_too(tmp_path: Path) -> None:
+    result = verify(
+        with_c1(
+            tmp_path,
+            "## Sail {#sail}\n\n::: field {#route}\n:::\n\n"
+            "## Moor {#moor minutes=5 after=sail}\n\nMoor.\n",
+        )
+    )
+
+    assert result.returncode != 0
+    assert len(problems(result)) == 1, result.stdout
+    assert "step 'sail'" in problems(result)[0]
 
 
 def test_the_app_refuses_to_start_on_a_broken_course_folder_naming_each_problem(
