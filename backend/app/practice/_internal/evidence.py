@@ -56,7 +56,7 @@ def _declared(
         what_to_read=declared.what_to_read,
         repository=project.repository,
         host=project.host,
-        declares_roster_evidence_project=evidence_panel.is_the_rosters(
+        declares_roster_evidence_project=evidence_panel.is_roster_evidence_project(
             project.repository, student.evidence_project
         ),
         declared_at=declared.at,
