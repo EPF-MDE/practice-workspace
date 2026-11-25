@@ -3,6 +3,7 @@ import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { answersMergeable, type Mergeable } from "../shared/fake-gh-mergeable";
 import { stepScript } from "../shared/step-script";
 
 const decideWhetherTheReviewStands = stepScript(
@@ -94,7 +95,7 @@ describe("whether a rebase keeps the review", () => {
 
 type PullRequest = {
   labels?: string[];
-  mergeable?: ("MERGEABLE" | "CONFLICTING" | "UNKNOWN")[];
+  mergeable?: Mergeable[];
   statuses?:
     | { context: string; state: string; target_url?: string }[]
     | "unreadable";
@@ -123,14 +124,8 @@ const fakeGh = ({
     join(dir, "labels.json"),
     JSON.stringify({ labels: labels.map((name) => ({ name })) })
   );
-  mergeable.forEach((state, index) => {
-    writeFileSync(
-      join(dir, `mergeable-${index}.json`),
-      JSON.stringify({ mergeable: state })
-    );
-  });
+  const mergeableCase = answersMergeable(dir, 7, mergeable);
   writeStatuses(dir, statuses);
-  writeFileSync(join(dir, "asked"), "0");
   for (const log of ["edits", "comments", "posted"]) {
     writeFileSync(join(dir, log), "");
   }
@@ -139,12 +134,7 @@ const fakeGh = ({
     `#!/bin/bash
 case "$*" in
   "pr view 7 --json labels") cat "${dir}/labels.json" ;;
-  "pr view 7 --json mergeable")
-    asked=$(cat "${dir}/asked")
-    echo $((asked + 1)) > "${dir}/asked"
-    last=${mergeable.length - 1}
-    [ "$asked" -gt "$last" ] && asked=$last
-    cat "${dir}/mergeable-$asked.json" ;;
+${mergeableCase}
   "pr edit 7 "*) echo "$4 $5" >> "${dir}/edits" ;;
   "pr comment 7 "*) echo "comment" >> "${dir}/comments" ;;
   "api repos/EPF-MDE/practice-workspace/commits/${OLD_HEAD}/status") cat "${dir}/status.json" ;;

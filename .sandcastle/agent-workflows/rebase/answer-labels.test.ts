@@ -3,6 +3,7 @@ import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { answersMergeable, type Mergeable } from "../shared/fake-gh-mergeable";
 import { stepScript } from "../shared/step-script";
 
 const answerTheLabel = stepScript(
@@ -11,28 +12,15 @@ const answerTheLabel = stepScript(
   "Answer the label"
 );
 
-type Mergeable = "MERGEABLE" | "CONFLICTING" | "UNKNOWN";
-
 const fakeGh = (mergeable: Mergeable[]): string => {
   const dir = mkdtempSync(join(tmpdir(), "answer-labels-"));
-  mergeable.forEach((state, index) => {
-    writeFileSync(
-      join(dir, `mergeable-${index}.json`),
-      JSON.stringify({ mergeable: state })
-    );
-  });
-  writeFileSync(join(dir, "asked"), "0");
+  const mergeableCase = answersMergeable(dir, 7, mergeable);
   writeFileSync(join(dir, "calls"), "");
   writeFileSync(
     join(dir, "gh"),
     `#!/bin/bash
 case "$*" in
-  "pr view 7 --json mergeable")
-    asked=$(cat "${dir}/asked")
-    echo $((asked + 1)) > "${dir}/asked"
-    last=${mergeable.length - 1}
-    [ "$asked" -gt "$last" ] && asked=$last
-    cat "${dir}/mergeable-$asked.json" ;;
+${mergeableCase}
   "pr comment 7 --body "*) echo "comment" >> "${dir}/calls" ;;
   "workflow run agent-rebase.yml -f pr=7") echo "rebase" >> "${dir}/calls" ;;
   *) echo "unexpected gh $*" >&2; exit 1 ;;
