@@ -73,7 +73,9 @@ class CountedReading(OfflineRepositoryReading):
 @pytest.fixture
 def repositories(student: OnTheRoster) -> CountedReading:
     source = CountedReading()
-    source.put(reading_of(student, student.evidence_project, "on the roster's"))
+    source.put(
+        reading_of(student, student.to_read().evidence_project, "on the roster's")
+    )
     source.put(reading_of(student, "ada/bakery", "on the bakery"))
     return source
 

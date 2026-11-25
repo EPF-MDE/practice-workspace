@@ -69,8 +69,9 @@ def _revision() -> str:
 
 def default_roster(settings: Settings, course: Course) -> RosterSource:
     groups = set(course.groups)
+    names = course.roster_names_evidence_projects
     if settings.roster_file:
-        return StaticRoster.from_file(settings.roster_file, groups)
+        return StaticRoster.from_file(settings.roster_file, groups, names)
     settings.require("Reading the roster from the Store's repository", "repository")
     client = installation_client(
         settings.store_app_id,
@@ -82,6 +83,7 @@ def default_roster(settings: Settings, course: Course) -> RosterSource:
             client, settings.repository, settings.data_branch, "roster.csv"
         ),
         groups,
+        names,
     )
 
 

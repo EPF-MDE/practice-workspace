@@ -26,7 +26,7 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Instructor**: The person who writes a Course's material and reads what its Students send. _Avoid_: teacher, admin
 
-**Roster**: The list of a Course's Students, keyed by their numeric GitHub id, naming each Student's Group and their Evidence Project. Sign-in is checked against it. _Avoid_: class list, whitelist
+**Roster**: The list of a Course's Students, keyed by their numeric GitHub id, naming each Student's Group and, unless the Course folder's settings read nothing by default, their Evidence Project. Sign-in is checked against it. _Avoid_: class list, whitelist
 
 **Group**: The Students of a Course who receive the same Group-specific content, named once in the Course folder's settings. _Avoid_: class, cohort, team
 
@@ -60,7 +60,7 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Evidence Plan**: For one Student and each Competency, for each point of their Self-assessment not yet done, the evidence they will put in their Evidence Project before the Reading Day, and what to do to get there. The Practice workspace drafts it from their Self-assessment and the Student amends it until the Reading Day. _Avoid_: Practice Plan, roadmap
 
-**Evidence Project**: The one repository a Student puts their evidence in, for every Competency: by default the one the Roster names for them, which they may change for another until the Reading Day. _Avoid_: default repository, fork, portfolio, project
+**Evidence Project**: The one repository a Student puts their evidence in, for every Competency: the one the Roster names for them, which they may change for another until the Reading Day; in a Course whose settings read nothing when a Student declares none, only the one they declare. _Avoid_: default repository, fork, portfolio, project
 
 **Repository reading**: What the Practice workspace reads of a Student's Evidence Project, to show the Student and the Instructor where it stands for each Competency. It never changes what a Path shows. _Avoid_: fork reading, scan
 

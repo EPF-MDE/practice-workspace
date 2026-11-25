@@ -1,6 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type Access, type EvidencePanel, PracticeService } from "@/client";
 import { Button } from "@/components/ui/button";
+import { courseQuery } from "@/course";
 import { type EvidenceDraft } from "@/packages/shared/drafts";
 import { errorMessage } from "@/packages/shared/errorMessage";
 import {
@@ -70,7 +71,9 @@ function Declared({
   declared,
   over,
   withdraw,
+  readsNothing,
 }: {
+  readsNothing: boolean;
   competency: string;
   declared: NonNullable<EvidencePanel["declaration"]>;
   over: boolean;
@@ -103,20 +106,49 @@ function Declared({
         >
           Check again
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={over || withdraw.isPending}
-          onClick={() => withdraw.mutate()}
-        >
-          Withdraw it: back to the one the roster names
-        </Button>
+        <WithdrawButton
+          over={over}
+          withdraw={withdraw}
+          readsNothing={readsNothing}
+        />
       </div>
     </div>
   );
 }
 
-function RosterEvidenceProject({ repository }: { repository?: string }) {
+function WithdrawButton({
+  over,
+  withdraw,
+  readsNothing,
+}: {
+  over: boolean;
+  withdraw: Requests["withdraw"];
+  readsNothing: boolean;
+}) {
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={over || withdraw.isPending}
+      onClick={() => withdraw.mutate()}
+    >
+      {readsNothing
+        ? "Withdraw it: nothing is read until you declare another"
+        : "Withdraw it: back to the one the roster names"}
+    </Button>
+  );
+}
+
+function NothingDeclared() {
+  return (
+    <p className="text-sm" data-testid="nothing-declared">
+      Nothing declared: nothing is read until you declare your Evidence Project
+      below.
+    </p>
+  );
+}
+
+function RosterEvidenceProject({ repository }: { repository?: string | null }) {
   return (
     <p className="text-sm" data-testid="roster-evidence-project">
       Nothing else declared: for every Competency, the Reading Day reads the
@@ -240,6 +272,8 @@ export function EvidenceProject(props: Props) {
   const { check, declare, withdraw } = requests;
   const data = panel.data;
   const declared = data?.declaration;
+  const readsNothing =
+    useQuery(courseQuery).data?.read_when_none_declared === "nothing";
   const edit = (next: Partial<EvidenceDraft>) => {
     check.reset();
     onDraft({ ...draft, ...next });
@@ -254,7 +288,10 @@ export function EvidenceProject(props: Props) {
           declared={declared}
           over={over}
           withdraw={withdraw}
+          readsNothing={readsNothing}
         />
+      ) : readsNothing ? (
+        <NothingDeclared />
       ) : (
         <RosterEvidenceProject repository={data?.evidence_project} />
       )}

@@ -47,10 +47,9 @@ def recorded_github(*names: str) -> RecordedGitHub:
 
 
 def roster_students(csv_text: str) -> list[StudentToRead]:
-    to_read, _ = evidence_projects(
+    return evidence_projects(
         list(parse_roster(csv_text, UPSTREAMS)), InMemoryStore(), UPSTREAMS
-    )
-    return to_read
+    ).to_read
 
 
 def test_the_roster_gives_each_students_evidence_project() -> None:
@@ -89,17 +88,17 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
         ),
     )
 
-    to_read, gitlab = evidence_projects([dorothy, radia, barbara], store, UPSTREAMS)
+    found = evidence_projects([dorothy, radia, barbara], store, UPSTREAMS)
 
-    assert [(s.login, s.evidence_project) for s in to_read] == [
+    assert [(s.login, s.evidence_project) for s in found.to_read] == [
         ("dorothy-math", "dorothy-math/MATHutrice"),
         ("radia-oceens", "radia/notes"),
     ]
-    assert gitlab == {"barbara-oceens": "b/api"}
+    assert found.gitlab == {"barbara-oceens": "b/api"}
 
     store.withdraw_declaration(radia)
-    to_read, _ = evidence_projects([radia], store, UPSTREAMS)
-    assert to_read[0].evidence_project == "radia-oceens/OceENS"
+    found = evidence_projects([radia], store, UPSTREAMS)
+    assert found.to_read[0].evidence_project == "radia-oceens/OceENS"
 
 
 def test_the_batch_stores_one_file_per_student_in_one_commit() -> None:

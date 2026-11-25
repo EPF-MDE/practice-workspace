@@ -1,4 +1,5 @@
 name = "Demo course"
+read_when_none_declared = "roster"
 
 [[groups]]
 name = "OcéENS"

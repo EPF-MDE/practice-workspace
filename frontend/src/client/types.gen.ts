@@ -253,6 +253,7 @@ export type CourseOut = {
      * Scale
      */
     scale: Array<LevelOut>;
+    read_when_none_declared: WhenNoneDeclared;
 };
 
 /**
@@ -404,7 +405,7 @@ export type EvidencePanel = {
     /**
      * Evidence Project
      */
-    evidence_project: string;
+    evidence_project: string | null;
     /**
      * Unavailable
      */
@@ -658,7 +659,7 @@ export type Me = {
     /**
      * Evidence Project
      */
-    evidence_project: string;
+    evidence_project: string | null;
 };
 
 /**
@@ -1102,6 +1103,11 @@ export type WaitsFor = {
      */
     title: string;
 };
+
+/**
+ * WhenNoneDeclared
+ */
+export type WhenNoneDeclared = 'roster' | 'nothing';
 
 export type sessionSignInPageData = {
     body?: never;

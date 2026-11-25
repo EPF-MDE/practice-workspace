@@ -22,7 +22,7 @@ from .router import router
 from .steps import (
     _refuse_after_the_reading_day,
     _store,
-    _student_to_read,
+    _upstream,
 )
 
 
@@ -48,7 +48,8 @@ def _read_panel(
     return evidence_panel.read_panel(
         c,
         request.app.state.repository_reading,
-        _student_to_read(request, student),
+        student,
+        _upstream(request, student),
         None if declared is None else _declared(declared, request, student),
         refresh,
     )

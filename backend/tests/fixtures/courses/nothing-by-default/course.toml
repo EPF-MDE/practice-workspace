@@ -1,0 +1,31 @@
+name = "A Course without default Evidence Projects"
+read_when_none_declared = "nothing"
+
+[[groups]]
+name = "Orchard"
+block = "orchard"
+
+[competencies.C1]
+title = "Plant a fixture tree"
+minutes = 30
+
+[competencies.C2]
+title = "Water a fixture tree"
+minutes = 30
+
+[competencies.C3]
+title = "Pick a fixture apple"
+minutes = 30
+
+[[levels]]
+id = "not-yet"
+label = "Not yet"
+
+[[levels]]
+id = "done"
+label = "I have done it"
+
+[calendar]
+time_zone = "Europe/Paris"
+close = 2030-06-14T23:59:00
+reading_day = 2030-07-04T23:59:00

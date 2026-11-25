@@ -152,12 +152,18 @@ def _time(value: str) -> datetime:
     return datetime.fromisoformat(value)
 
 
+def _linked(evidence_project: str | None) -> str:
+    if evidence_project is None:
+        return "none named by the Roster"
+    return f"[{evidence_project}](https://github.com/{evidence_project})"
+
+
 def _header(student: Student) -> str:
     return (
         f"{_MARKER.format(student.github_id)}\n"
         f"**Student:** {student.name} (`{student.github_login}`)\n"
         f"**Group:** {student.group}\n"
-        f"**Evidence Project:** [{student.evidence_project}](https://github.com/{student.evidence_project})\n\n"
+        f"**Evidence Project:** {_linked(student.evidence_project)}\n\n"
         "Each comment below is one send from the Practice workspace: a line to read, "
         f"then a `{FENCE}` block the workspace reads back. Comments by people are "
         "ignored by it.\n"

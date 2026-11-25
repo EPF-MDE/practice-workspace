@@ -3,6 +3,7 @@ from __future__ import annotations
 import tomllib
 from collections import Counter
 from datetime import datetime
+from enum import StrEnum
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -22,6 +23,11 @@ from .competencies import competency_problems
 SETTINGS_FILE = "course.toml"
 BLOCK_ID = r"^[A-Za-z][\w-]*$"
 REPOSITORY = r"^[\w.-]+/[\w.-]+$"
+
+
+class WhenNoneDeclared(StrEnum):
+    ROSTER = "roster"
+    NOTHING = "nothing"
 
 
 class GroupSettings(BaseModel):
@@ -93,6 +99,7 @@ class CourseSettings(BaseModel):
     competencies: dict[str, CompetencySettings] = {}
     levels: tuple[LevelSettings, ...]
     calendar: CalendarSettings
+    read_when_none_declared: WhenNoneDeclared
 
     @field_validator("levels")
     @classmethod
