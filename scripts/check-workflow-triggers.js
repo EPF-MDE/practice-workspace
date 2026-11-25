@@ -13,9 +13,34 @@ const triggersOf = (on) => {
   return Object.keys(on ?? {});
 };
 
+const conjunctsOf = (condition) => {
+  const conjuncts = [""];
+  let depth = 0;
+  for (let at = 0; at < condition.length; at += 1) {
+    const char = condition[at];
+    if (char === "(") depth += 1;
+    if (char === ")") depth -= 1;
+    if (depth === 0 && condition.startsWith("||", at)) return [];
+    if (depth === 0 && condition.startsWith("&&", at)) {
+      conjuncts.push("");
+      at += 1;
+    } else {
+      conjuncts[conjuncts.length - 1] += char;
+    }
+  }
+  return conjuncts.map((conjunct) => conjunct.trim());
+};
+
+const skipsForks = (condition) =>
+  conjunctsOf(
+    String(condition ?? "")
+      .trim()
+      .replace(/^\$\{\{([\s\S]*)\}\}$/, "$1")
+  ).includes(SAME_REPOSITORY);
+
 const codeRunIn = (name, job) => {
   const found = [];
-  if (!String(job.if ?? "").includes(SAME_REPOSITORY)) {
+  if (!skipsForks(job.if)) {
     found.push(`job ${name} does not skip a fork's pull request`);
   }
   if (job.uses) found.push(`job ${name} calls a workflow`);

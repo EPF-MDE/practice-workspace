@@ -74,7 +74,10 @@ describe("check-workflow-triggers", () => {
 const SAME_REPOSITORY =
   "github.event.pull_request.head.repo.full_name == github.repository";
 
-const checkLabelWorkflow = (steps) => {
+const checkLabelWorkflow = (
+  steps,
+  condition = `github.event.label.name == 'agent:review' && ${SAME_REPOSITORY}`
+) => {
   const file = join(
     mkdtempSync(join(tmpdir(), "check-workflow-triggers-")),
     "labels.yml"
@@ -86,7 +89,7 @@ const checkLabelWorkflow = (steps) => {
     types: [labeled]
 jobs:
   answer:
-    if: github.event.label.name == 'agent:review' && ${SAME_REPOSITORY}
+    if: ${condition}
     runs-on: ubuntu-latest
     env:
       PR_NUMBER: \${{ github.event.pull_request.number }}
@@ -135,5 +138,36 @@ describe("check-workflow-triggers, on pull_request_target", () => {
     );
     expect(result.stderr).toContain(problem);
     expect(result.status).toBe(1);
+  });
+});
+
+describe("check-workflow-triggers, on a pull_request_target job's condition", () => {
+  it.each([
+    ["one that also runs on a fork's", `${SAME_REPOSITORY} || true`],
+    [
+      "one in only one branch of an or",
+      `(github.event.label.name == 'agent:review' && ${SAME_REPOSITORY}) || github.event.label.name == 'agent:rebase'`,
+    ],
+    ["one negated", `!(${SAME_REPOSITORY})`],
+  ])("refuses a job whose condition keeps %s pull request", (_, condition) => {
+    const result = checkLabelWorkflow(
+      `      - name: Answer
+        run: gh pr comment "$PR_NUMBER" --body "Rebasing first."`,
+      condition
+    );
+
+    expect(result.stderr).toContain("does not skip a fork's pull request");
+    expect(result.status).toBe(1);
+  });
+
+  it("passes a condition written inside an expression", () => {
+    const result = checkLabelWorkflow(
+      `      - name: Answer
+        run: gh pr comment "$PR_NUMBER" --body "Rebasing first."`,
+      `\${{ (github.event.label.name == 'agent:review' || github.event.label.name == 'agent:rebase') && ${SAME_REPOSITORY} }}`
+    );
+
+    expect(result.stderr).toBe("");
+    expect(result.status).toBe(0);
   });
 });
