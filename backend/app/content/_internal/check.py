@@ -25,7 +25,7 @@ def _check(
     competency: CompetencyContent,
     source: str,
     to_get_there_levels: Collection[str] | None,
-    unreadable: Collection[str],
+    unreadable: set[str],
 ) -> list[str]:
     problems: list[str] = []
     steps = competency._steps
@@ -45,10 +45,9 @@ def _check(
     points: list[tuple[str, str]] = []
     transfers: list[tuple[str, str]] = []
     check_points: list[tuple[str, str]] = []
-    broken = set(unreadable)
     for index, step in enumerate(steps):
         where = f"{source}, step '{step.id}'"
-        _check_waiting(steps[:index], step, where, group_blocks, broken, problems)
+        _check_waiting(steps[:index], step, where, group_blocks, unreadable, problems)
         if step.kind not in (None, *STEP_KINDS):
             problems.append(f"{where}: kind is one of {STEP_KINDS}")
         if step.optional and step.kind != "drawing":
@@ -71,8 +70,8 @@ def _check(
             problems,
         )
         if len(problems) > found:
-            broken.add(step.id)
-        if step.id in broken:
+            unreadable.add(step.id)
+        if step.id in unreadable:
             continue
         _check_views(step, where, group_blocks, problems)
     point_ids: set[str] = set()
