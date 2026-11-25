@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from pathlib import Path
 
 from conftest import FIXTURE_CLOSE, FIXTURE_READING_DAY, FIXTURE_TIME_ZONE
@@ -52,3 +54,20 @@ def write_course_folder(
 
 def with_every_competency(**content: str) -> dict[str, str]:
     return {c: content.get(c, ONE_STEP) for c in COMPETENCIES} | content
+
+
+BACKEND = Path(__file__).resolve().parents[1]
+
+
+def verify(folder: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "-m", "app", "verify", str(folder)],
+        cwd=BACKEND,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def problems(result: subprocess.CompletedProcess[str]) -> list[str]:
+    return [line for line in result.stdout.splitlines() if line.startswith("✖")]

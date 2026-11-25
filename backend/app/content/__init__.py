@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Collection, Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +31,7 @@ __all__ = [
     "CheckPoint",
     "CompetencyContent",
     "ContentError",
+    "ContentLoading",
     "ExampleDrawing",
     "Field",
     "Html",
@@ -43,34 +45,50 @@ __all__ = [
 ]
 
 
+@dataclass(frozen=True)
+class ContentLoading:
+    competencies: dict[str, CompetencyContent]
+    with_a_file: set[str]
+    problems: list[str]
+
+
 def load_content(
     directory: str | Path,
     groups: Mapping[str, str],
     *,
     to_get_there_levels: Collection[str] | None,
-) -> dict[str, CompetencyContent]:
+) -> ContentLoading:
     directory = Path(directory).resolve()
 
     def drawings(src: str) -> dict[str, Any]:
         path = (directory / src).resolve()
         if not path.is_relative_to(directory):
             raise ContentError(f"the drawing '{src}' is outside the content folder")
+        if not path.is_file():
+            raise ContentError(f"the Course folder holds no '{src}'")
         snapshot: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
         return snapshot
 
-    content: dict[str, CompetencyContent] = {}
+    loading = ContentLoading({}, set(), [])
     for path in sorted(directory.glob("c[0-9].md")):
-        competency = parse_competency(
-            path.read_text(encoding="utf-8"),
-            groups,
-            path.name,
-            drawings,
-            to_get_there_levels=to_get_there_levels,
-        )
+        try:
+            competency = parse_competency(
+                path.read_text(encoding="utf-8"),
+                groups,
+                path.name,
+                drawings,
+                to_get_there_levels=to_get_there_levels,
+            )
+        except ContentError as error:
+            loading.with_a_file.add(path.stem.upper())
+            loading.problems.extend(error.problems)
+            continue
         if path.name != f"{competency.id.lower()}.md":
-            raise ContentError(
+            loading.problems.append(
                 f"{path.name}: holds the content of {competency.id}, "
                 f"which belongs in {competency.id.lower()}.md"
             )
-        content[competency.id] = competency
-    return content
+            continue
+        loading.with_a_file.add(competency.id)
+        loading.competencies[competency.id] = competency
+    return loading

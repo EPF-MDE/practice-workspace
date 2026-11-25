@@ -43,7 +43,9 @@ def _options(attrs: dict[str, str]) -> tuple[str, ...]:
 
 
 class ContentError(ValueError):
-    pass
+    def __init__(self, *problems: str) -> None:
+        super().__init__("\n".join(problems))
+        self.problems = list(problems)
 
 
 @dataclass(frozen=True)

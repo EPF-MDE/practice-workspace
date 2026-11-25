@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from app.closing import Level, Phase, Scale
-from app.content import CompetencyContent, ContentError, load_content
+from app.content import CompetencyContent, load_content
 from app.roster import Repository
 
 from ._internal.competencies import COMPETENCIES, competency_problems
@@ -91,20 +91,16 @@ def load_course(folder: str | Path) -> Loading:
         )
         for group in (settings.groups if settings else ())
     }
-    try:
-        content = load_content(
-            folder,
-            {name: group.block for name, group in groups.items()},
-            to_get_there_levels=None if scale is None else scale.below_top,
-        )
-    except ContentError as error:
-        problems.append(str(error))
-    else:
-        problems += competency_problems(
-            set(content),
-            lambda c: f"{c.lower()}.md: missing, so {c} has no content",
-            lambda c: f"content for {c}, which is no Competency of the Engine",
-        )
+    content = load_content(
+        folder,
+        {name: group.block for name, group in groups.items()},
+        to_get_there_levels=None if scale is None else scale.below_top,
+    )
+    problems += content.problems + competency_problems(
+        content.with_a_file,
+        lambda c: f"{c.lower()}.md: missing, so {c} has no content",
+        lambda c: f"content for {c}, which is no Competency of the Engine",
+    )
     if settings is None or scale is None or problems:
         return Loading(None, problems)
     competencies = {
@@ -112,7 +108,7 @@ def load_course(folder: str | Path) -> Loading:
             id,
             settings.competencies[id].title,
             settings.competencies[id].minutes,
-            content[id],
+            content.competencies[id],
         )
         for id in COMPETENCIES
     }

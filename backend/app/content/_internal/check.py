@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from collections.abc import Collection, Mapping
 
 from .model import (
@@ -13,11 +14,10 @@ from .model import (
     UNVALIDATED_MARKER,
     Answer,
     Canvas,
-    ContentError,
     ReferenceDrawing,
     _options,
 )
-from .render import CompetencyContent, _step_for
+from .render import CompetencyContent, _render, _step_for
 from .tree import _Directive, _RawStep, _walk
 
 
@@ -25,177 +25,226 @@ def _check(
     competency: CompetencyContent,
     source: str,
     to_get_there_levels: Collection[str] | None,
-) -> None:
-    step_ids = [s.id for s in competency._steps]
-    if len(set(step_ids)) != len(step_ids):
-        raise ContentError(f"{source}: two steps share an id")
-    point_ids: list[str] = []
-    check_points: list[tuple[str, str]] = []
-    if sum(s.optional for s in competency._steps) > 1:
-        raise ContentError(f"{source}: one optional redraw per Competency, not more")
-    transfers: list[tuple[str, str]] = []
+    unreadable: Collection[str],
+) -> list[str]:
+    problems: list[str] = []
+    steps = competency._steps
     group_blocks = competency.groups
-    for index, step in enumerate(competency._steps):
+    shared_ids = Counter(s.id for s in steps)
+    problems += [
+        f"{source}, step '{id}': {count} steps share this id"
+        for id, count in shared_ids.items()
+        if count > 1
+    ]
+    optional = [s.id for s in steps if s.optional]
+    if len(optional) > 1:
+        problems.append(
+            f"{source}, steps {', '.join(optional)}: one optional redraw per "
+            "Competency, not more"
+        )
+    points: list[tuple[str, str]] = []
+    transfers: list[tuple[str, str]] = []
+    check_points: list[tuple[str, str]] = []
+    broken = set(unreadable)
+    for index, step in enumerate(steps):
         where = f"{source}, step '{step.id}'"
-        directives = list(_walk(step.nodes))
-        _check_waiting(competency._steps[:index], step, directives, where, group_blocks)
+        _check_waiting(steps[:index], step, where, group_blocks, broken, problems)
         if step.kind not in (None, *STEP_KINDS):
-            raise ContentError(f"{where}: kind is one of {STEP_KINDS}")
-        if step.kind == "transfer":
-            if not step.fills:
-                raise ContentError(
-                    f'{where}: a Transfer says which point\'s "To get there" it fills '
-                    "(fills=C1.b)"
-                )
-            if any(
-                "project" not in {f.id for f in _step_for(step, block).fields}
-                for block in group_blocks.values()
-            ):
-                raise ContentError(
-                    f"{where}: a Transfer has a field {{#project}}, the Evidence "
-                    "Project by default"
-                )
-            transfers.append((where, step.fills))
+            problems.append(f"{where}: kind is one of {STEP_KINDS}")
         if step.optional and step.kind != "drawing":
-            raise ContentError(f"{where}: only a redraw (kind=drawing) may be optional")
-        if step.kind != "drawing" and any(
-            d.name in DRAWING_DIRECTIVES for d in directives
+            problems.append(f"{where}: only a redraw (kind=drawing) may be optional")
+        if step.kind == "transfer" and not step.fills:
+            problems.append(
+                f'{where}: a Transfer says which point\'s "To get there" it fills '
+                "(fills=C1.b)"
+            )
+        elif step.kind == "transfer" and step.fills:
+            transfers.append((where, step.fills))
+        found = len(problems)
+        _check_directives(
+            competency.id,
+            step,
+            where,
+            to_get_there_levels,
+            points,
+            check_points,
+            problems,
+        )
+        if len(problems) > found:
+            broken.add(step.id)
+        if step.id in broken:
+            continue
+        _check_views(step, where, group_blocks, problems)
+    point_ids: set[str] = set()
+    for where, point in points:
+        if point in point_ids:
+            problems.append(f"{where}: point {point} shares its id with an earlier one")
+        point_ids.add(point)
+    problems += [
+        f"{where}: fills={point}, which is no point of {competency.id}"
+        for where, point in transfers
+        if point not in point_ids
+    ]
+    problems += [
+        f"{where}: a check-point's point={point or '?'} is no point of {competency.id}"
+        for where, point in check_points
+        if point not in point_ids
+    ]
+    problems += _served_markers(f"{source}, intro", _render(competency.intro), "")
+    return problems
+
+
+def _check_directives(
+    competency: str,
+    step: _RawStep,
+    where: str,
+    to_get_there_levels: Collection[str] | None,
+    points: list[tuple[str, str]],
+    check_points: list[tuple[str, str]],
+    problems: list[str],
+) -> None:
+    directives = list(_walk(step.nodes))
+    if step.kind != "drawing" and any(d.name in DRAWING_DIRECTIVES for d in directives):
+        problems.append(f"{where}: drawings belong in a step with kind=drawing")
+    for d in directives:
+        if d.name == "field" and (
+            "id" not in d.attrs or d.attrs.get("kind", "line") not in FIELD_KINDS
         ):
-            raise ContentError(f"{where}: drawings belong in a step with kind=drawing")
-        blocks = {d.name for d in directives if d.is_group_block}
-        missing = [name for name, block in group_blocks.items() if block not in blocks]
-        if blocks and missing:
-            raise ContentError(
-                f"{where}: has a Group block but none for {', '.join(missing)}"
+            problems.append(f"{where}: a field needs {{#id kind=line|text|choice}}")
+            continue
+        if d.name == "field" and (d.attrs.get("kind") == "choice") != (
+            "options" in d.attrs
+        ):
+            problems.append(
+                f"{where}: field {d.attrs['id']}: options go with kind=choice, and "
+                "only there"
             )
-        for d in directives:
-            if d.name == "field" and (
-                "id" not in d.attrs or d.attrs.get("kind", "line") not in FIELD_KINDS
-            ):
-                raise ContentError(
-                    f"{where}: a field needs {{#id kind=line|text|choice}}"
-                )
-            if d.name == "field" and (d.attrs.get("kind") == "choice") != (
-                "options" in d.attrs
-            ):
-                raise ContentError(
-                    f"{where}: field {d.attrs['id']}: options go with kind=choice, and "
-                    "only there"
-                )
-            if (
-                d.name == "field"
-                and d.attrs.get("kind") == "choice"
-                and len(_options(d.attrs)) < 2
-            ):
-                raise ContentError(
-                    f'{where}: field {d.attrs["id"]} offers at least two options="a|b"'
-                )
-            if d.name == "point":
-                if not re.fullmatch(rf"{competency.id}\.[a-z]", d.attrs.get("id", "")):
-                    raise ContentError(
-                        f"{where}: a point needs {{#{competency.id}.<letter> band=...}}"
-                    )
-                if d.attrs.get("band") not in BANDS:
-                    raise ContentError(
-                        f"{where}: point {d.attrs['id']}'s band is one of {BANDS}"
-                    )
-                point_ids.append(d.attrs["id"])
-                if (
-                    sum(
-                        isinstance(c, _Directive) and c.name == "proof"
-                        for c in d.children
-                    )
-                    > 1
-                ):
-                    raise ContentError(
-                        f"{where}: point {d.attrs['id']} has one proof sentence, not "
-                        "more"
-                    )
-            if (
-                d.name == "to-get-there"
-                and to_get_there_levels is not None
-                and d.attrs.get("level") not in to_get_there_levels
-            ):
-                raise ContentError(
-                    f"{where}: to-get-there's level={d.attrs.get('level', '?')} is "
-                    "not one of the Course's levels below the top: "
-                    f"{', '.join(to_get_there_levels)}"
-                )
-            if d.name in ("field", "answer") and any(
-                c.name in ("field", "answer") for c in _walk(d.children)
-            ):
-                raise ContentError(f"{where}: no field or answer inside a {d.name}")
-            if d.name == "reference-drawing":
-                inner = [c for c in d.children if isinstance(c, _Directive)]
-                if any(c.name != "check-point" for c in _walk(inner)):
-                    raise ContentError(
-                        f"{where}: a reference-drawing holds check-points only"
-                    )
-                if len(inner) not in CHECK_POINTS:
-                    raise ContentError(
-                        f"{where}: a reference-drawing has 3 to 5 check-points, not "
-                        f"{len(inner)}"
-                    )
-                ids = [c.attrs.get("id") for c in inner]
-                if None in ids or len(set(ids)) != len(ids):
-                    raise ContentError(
-                        f"{where}: each check-point needs its own {{#id}}"
-                    )
-                check_points += [(where, c.attrs.get("point", "")) for c in inner]
-        if step.kind == "drawing":
-            for group, block in group_blocks.items():
-                view = _step_for(step, block)
-                if view.fields:
-                    raise ContentError(
-                        f"{where}: a drawing step takes a drawing, not fields"
-                    )
-                if sum(isinstance(b, Canvas) for b in view.blocks) != 1:
-                    raise ContentError(
-                        f"{where}: a drawing step has one canvas for {group}"
-                    )
-                if sum(isinstance(b, ReferenceDrawing) for b in view.blocks) > 1:
-                    raise ContentError(
-                        f"{where}: one reference-drawing for {group}, not more"
-                    )
-        for group, block in group_blocks.items():
-            view = _step_for(step, block)
-            ids = [f.id for f in view.fields]
-            if len(set(ids)) != len(ids):
-                raise ContentError(f"{where}: two fields share an id for {group}")
-            if (
-                any(isinstance(b, Answer) for b in view.blocks)
-                and not ids
-                and step.kind in (None, "answer")
-            ):
-                raise ContentError(
-                    f"{where}: an answer block for {group} but no field to answer in"
-                )
-    if len(set(point_ids)) != len(point_ids):
-        raise ContentError(f"{source}: two points share an id")
-    for where, point in transfers:
-        if point not in point_ids:
-            raise ContentError(
-                f"{where}: fills={point}, which is no point of {competency.id}"
+        elif (
+            d.name == "field"
+            and d.attrs.get("kind") == "choice"
+            and len(_options(d.attrs)) < 2
+        ):
+            problems.append(
+                f'{where}: field {d.attrs["id"]} offers at least two options="a|b"'
             )
-    for where, point in check_points:
-        if point not in point_ids:
-            raise ContentError(
-                f"{where}: a check-point's point={point or '?'} is no point of "
-                f"{competency.id}"
+        if d.name == "point":
+            if not re.fullmatch(rf"{competency}\.[a-z]", d.attrs.get("id", "")):
+                problems.append(
+                    f"{where}: a point needs {{#{competency}.<letter> band=...}}"
+                )
+                continue
+            if d.attrs.get("band") not in BANDS:
+                problems.append(
+                    f"{where}: point {d.attrs['id']}'s band is one of {BANDS}"
+                )
+            points.append((where, d.attrs["id"]))
+            proofs = [
+                c for c in d.children if isinstance(c, _Directive) and c.name == "proof"
+            ]
+            if len(proofs) > 1:
+                problems.append(
+                    f"{where}: point {d.attrs['id']} has one proof sentence, not more"
+                )
+        if d.name == "to-get-there" and (
+            "level" not in d.attrs
+            or (
+                to_get_there_levels is not None
+                and d.attrs["level"] not in to_get_there_levels
             )
+        ):
+            problems.append(
+                f"{where}: to-get-there's level={d.attrs.get('level', '?')} is "
+                "not one of the Course's levels below the top: "
+                f"{', '.join(to_get_there_levels or ())}"
+            )
+        if d.name in ("field", "answer") and any(
+            c.name in ("field", "answer") for c in _walk(d.children)
+        ):
+            problems.append(f"{where}: no field or answer inside a {d.name}")
+        if d.name == "reference-drawing":
+            _check_reference(d, where, check_points, problems)
+
+
+def _check_reference(
+    d: _Directive,
+    where: str,
+    check_points: list[tuple[str, str]],
+    problems: list[str],
+) -> None:
+    inner = [c for c in d.children if isinstance(c, _Directive)]
+    if any(c.name != "check-point" for c in _walk(inner)):
+        problems.append(f"{where}: a reference-drawing holds check-points only")
+    if len(inner) not in CHECK_POINTS:
+        problems.append(
+            f"{where}: a reference-drawing has 3 to 5 check-points, not {len(inner)}"
+        )
+    ids = [c.attrs.get("id") for c in inner]
+    if None in ids or len(set(ids)) != len(ids):
+        problems.append(f"{where}: each check-point needs its own {{#id}}")
+    check_points += [(where, c.attrs.get("point", "")) for c in inner]
+
+
+GROUPS = "\0"
+
+
+def _check_views(
+    step: _RawStep, where: str, group_blocks: Mapping[str, str], problems: list[str]
+) -> None:
+    blocks = {d.name for d in _walk(step.nodes) if d.is_group_block}
+    missing = [name for name, block in group_blocks.items() if block not in blocks]
+    if blocks and missing:
+        problems.append(f"{where}: has a Group block but none for {', '.join(missing)}")
+    groups_by_problem: dict[str, list[str]] = {}
     for group, block in group_blocks.items():
-        served = repr(competency._page(block))
-        for marker in INSTRUCTOR_MARKERS:
-            if marker in served.lower():
-                raise ContentError(
-                    f"{source}: '{marker}' is Instructor Material, never served "
-                    f"({group})"
-                )
-        if UNVALIDATED_MARKER in served:
-            raise ContentError(
-                f"{source}: '{UNVALIDATED_MARKER}' would be served ({group}): "
-                "put it in an HTML comment, beside a blank such as '—'"
-            )
+        for problem in _view_problems(step, block, where):
+            groups_by_problem.setdefault(problem, []).append(group)
+    problems += [
+        problem.replace(GROUPS, ", ".join(groups))
+        for problem, groups in groups_by_problem.items()
+    ]
+
+
+def _view_problems(step: _RawStep, block: str, where: str) -> list[str]:
+    problems: list[str] = []
+    view = _step_for(step, block)
+    ids = [f.id for f in view.fields]
+    if step.kind == "transfer" and "project" not in ids:
+        problems.append(
+            f"{where}: a Transfer has a field {{#project}}, the Evidence "
+            f"Project by default ({GROUPS})"
+        )
+    if step.kind == "drawing":
+        if view.fields:
+            problems.append(f"{where}: a drawing step takes a drawing, not fields")
+        if sum(isinstance(b, Canvas) for b in view.blocks) != 1:
+            problems.append(f"{where}: a drawing step has one canvas for {GROUPS}")
+        if sum(isinstance(b, ReferenceDrawing) for b in view.blocks) > 1:
+            problems.append(f"{where}: one reference-drawing for {GROUPS}, not more")
+    if len(set(ids)) != len(ids):
+        problems.append(f"{where}: two fields share an id for {GROUPS}")
+    if (
+        any(isinstance(b, Answer) for b in view.blocks)
+        and not ids
+        and step.kind in (None, "answer")
+    ):
+        problems.append(
+            f"{where}: an answer block for {GROUPS} but no field to answer in"
+        )
+    return problems + _served_markers(where, repr(view), f" ({GROUPS})")
+
+
+def _served_markers(where: str, served: str, group: str) -> list[str]:
+    problems = [
+        f"{where}: '{marker}' is Instructor Material, never served{group}"
+        for marker in INSTRUCTOR_MARKERS
+        if marker in served.lower()
+    ]
+    if UNVALIDATED_MARKER in served:
+        problems.append(
+            f"{where}: '{UNVALIDATED_MARKER}' would be served{group}: "
+            "put it in an HTML comment, beside a blank such as '—'"
+        )
+    return problems
 
 
 def _takes_an_answer(step: _RawStep, group_blocks: Mapping[str, str]) -> bool:
@@ -207,35 +256,36 @@ def _takes_an_answer(step: _RawStep, group_blocks: Mapping[str, str]) -> bool:
 def _check_waiting(
     earlier: tuple[_RawStep, ...],
     step: _RawStep,
-    directives: list[_Directive],
     where: str,
     group_blocks: Mapping[str, str],
+    unreadable: Collection[str],
+    problems: list[str],
 ) -> None:
-    waiting = [d for d in directives if d.name == "waiting"]
+    waiting = [d for d in _walk(step.nodes) if d.name == "waiting"]
     if not step.after:
         if waiting:
-            raise ContentError(
+            problems.append(
                 f"{where}: a waiting block belongs in a step that waits (after=<step>)"
             )
         return
     before = next((s for s in earlier if s.id == step.after), None)
     if before is None:
-        raise ContentError(f"{where}: after={step.after} names no earlier step")
-    if not _takes_an_answer(before, group_blocks):
-        raise ContentError(
+        problems.append(f"{where}: after={step.after} names no earlier step")
+    elif before.id not in unreadable and not _takes_an_answer(before, group_blocks):
+        problems.append(
             f"{where}: after={step.after}, a step that takes no answer, so this one "
             "would never open"
         )
     shared = [n for n in step.nodes if isinstance(n, _Directive)]
     nested = [d for top in shared for d in _walk(top.children) if d.name == "waiting"]
     if len(waiting) > 1 or nested:
-        raise ContentError(
+        problems.append(
             f"{where}: one waiting block, outside the Group blocks and any other block"
         )
     if any(
         d.name in ("field", "answer", "canvas", "reference-drawing") for d in shared
     ):
-        raise ContentError(
+        problems.append(
             f"{where}: a step that waits keeps its fields and answers inside the Group "
             "blocks"
         )
