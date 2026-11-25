@@ -344,7 +344,10 @@ jobs:
         # review.ts kept only this run's commits. The workflow replies, not
         # the agent (ADR-0013). Each reply carries a marker the next review
         # reads as "already applied". A reply that fails is a warning: the
-        # next review applies that answer again.
+        # next review applies that answer again. Not after a rejected push:
+        # the commits are not on this pull request, so its threads stay
+        # answered.
+        if: steps.push.outputs.fallback != 'true'
         env:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: |
