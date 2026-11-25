@@ -20,6 +20,11 @@ name: Agent — Review A Pull Request
 #     3. the originating issue — what was asked for, read from the ticket the
 #                                PR closes, not from the PR description
 #
+#   And one thing that is not the implementer's: the PR's earlier review
+#   threads, each finding with the answers a person gave on it (#88). A
+#   person's answer is a decision, so the review applies it rather than
+#   asking again, and the workflow replies on the thread with the commit.
+#
 #   That independence is the whole value. An implementer that has argued
 #   itself into a shortcut will argue a reviewer that shares its context into
 #   the same shortcut. A reviewer that has never seen the argument cannot be.
@@ -47,6 +52,13 @@ name: Agent — Review A Pull Request
 #   not approved. A failing verdict is for a human to read, and the merge is
 #   still a human's.
 #
+# AND IT SETS THE `agent-review` STATUS (#89)
+#   On the head it leaves: pending while it runs, success when both axes
+#   pass, no finding is left, the fixes reached the branch and check passes
+#   after them, failure otherwise. With `agent-review` a required check,
+#   `gh pr merge --auto --squash` merges once a review passes, and never a
+#   head no review has read: a new push has no `agent-review` status yet.
+#
 # WHAT IT NEEDS
 #   secrets.CLAUDE_CODE_OAUTH_TOKEN — the agent's auth token.
 #   secrets.POSTHOG_API_KEY — the project token of the factory's own PostHog
@@ -54,8 +66,9 @@ name: Agent — Review A Pull Request
 #     the PostHog plugin's hook reads it there to send the session's trace.
 #   secrets.FACTORY_PAT — the factory's one token. Only the steps that call
 #     GitHub get it; the agent's step does not. It pushes the review's
-#     commits and posts its verdict and inline comments, so it needs
-#     Contents and Pull requests: write. Keeping it out of the agent's
+#     commits, posts its verdict, inline comments and replies, lists who has
+#     write access and sets the `agent-review` status, so it needs Contents,
+#     Pull requests and Commit statuses: write. Keeping it out of the agent's
 #     environment is tidiness, not a wall: the agent shares the machine with
 #     the steps that push and post. The real defence is who can reach the
 #     agent — same-repo PRs only, and a label only a collaborator can apply.
@@ -104,6 +117,7 @@ jobs:
       FALLBACK_BRANCH: ${{ github.event.pull_request.head.ref }}-${{ github.run_id }}
       BASE_REF: ${{ github.event.pull_request.base.ref }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_AUTHOR: ${{ github.event.pull_request.user.login }}
       RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
     steps:
@@ -121,6 +135,17 @@ jobs:
           gh pr edit "$PR_NUMBER" --remove-label "agent:review" || true
           gh pr edit "$PR_NUMBER" --remove-label "agent:blocked" || true
           gh pr edit "$PR_NUMBER" --add-label "agent:in-progress"
+
+      - name: Mark the review pending
+        # The head GitHub may not merge yet while `agent-review` is required.
+        # The last step replaces this with the verdict, however the run ends.
+        env:
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+        run: |
+          gh api --method POST "repos/$GH_REPO/statuses/$HEAD_SHA" \
+            -f state=pending -f context=agent-review \
+            -f description="The review is reading this head." \
+            -f target_url="$RUN_URL" --silent
 
       - name: Checkout the pull request
         uses: actions/checkout@v7.0.1
@@ -158,6 +183,16 @@ jobs:
               > /tmp/review-spec.md
           fi
           cat /tmp/review-spec.md
+
+          # 4. The earlier review threads, and who may answer them: the PR's
+          #    author or anyone with write access. review.ts keeps each
+          #    finding with their replies, and leaves out a bot's.
+          gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/comments?per_page=100" \
+            | jq -s 'add // []' > /tmp/review-thread-comments.json
+          gh api --paginate "repos/$GH_REPO/collaborators?per_page=100" \
+            --jq '.[] | select(.permissions.push) | .login' \
+            | jq -R -s 'split("\n") | map(select(length > 0))' > /tmp/review-writers.json
+          echo "$(jq length /tmp/review-thread-comments.json) review comments, $(jq length /tmp/review-writers.json) people with write access."
 
       - name: Setup Node.js 24
         uses: actions/setup-node@v7.1.0
@@ -304,6 +339,25 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "number=${url##*/}" >> "$GITHUB_OUTPUT"
 
+      - name: Reply on the answered threads
+        # The agent applied these answers and said with which commit;
+        # review.ts kept only this run's commits. The workflow replies, not
+        # the agent (ADR-0013). Each reply carries a marker the next review
+        # reads as "already applied". A reply that fails is a warning: the
+        # next review applies that answer again.
+        env:
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+        run: |
+          set -euo pipefail
+          replies="$RUNNER_TEMP/review-replies.json"
+          jq -c '.[]' "$replies" | while read -r reply; do
+            thread="$(jq -r .thread <<<"$reply")"
+            gh api --method POST \
+              "repos/$GH_REPO/pulls/$PR_NUMBER/comments/$thread/replies" \
+              -f body="$(jq -r .body <<<"$reply")" --silent \
+              || echo "::warning::The reply on thread $thread failed."
+          done
+
       - name: Post the verdict on the pull request
         if: always()
         env:
@@ -404,6 +458,40 @@ jobs:
             echo "The pull request stays a draft. Re-add \`agent:review\` to retry."
           } > /tmp/review-check-failed.md
           gh pr comment "$PR_NUMBER" --body-file /tmp/review-check-failed.md || true
+
+      - name: Publish the verdict as the agent-review status
+        # On the head the review leaves: its own last commit if the push
+        # went through, else the head it read. Success needs a passing
+        # verdict with no finding left (review.ts) and a passing check.
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+          PUSH: ${{ steps.push.outcome }}
+          FALLBACK: ${{ steps.push.outputs.fallback }}
+          CHECK: ${{ steps.check.outcome }}
+        run: |
+          set -euo pipefail
+          sha="$HEAD_SHA"
+          if [ "$PUSH" = "success" ] && [ "$FALLBACK" != "true" ]; then
+            sha="$(git rev-parse HEAD)"
+          fi
+          status="$RUNNER_TEMP/review-status.json"
+          if [ "$FALLBACK" = "true" ]; then
+            state=failure
+            description="The fixes went to another branch: keep one of the two pull requests."
+          elif [ ! -s "$status" ]; then
+            state=failure
+            description="The review run broke before its verdict."
+          elif [ "$CHECK" != "success" ]; then
+            state=failure
+            description="npm run check failed after the review."
+          else
+            state="$(jq -r .state "$status")"
+            description="$(jq -r .description "$status")"
+          fi
+          gh api --method POST "repos/$GH_REPO/statuses/$sha" \
+            -f state="$state" -f context=agent-review \
+            -f description="$description" -f target_url="$RUN_URL" --silent
 
       - name: Always remove in-progress
         if: always()
