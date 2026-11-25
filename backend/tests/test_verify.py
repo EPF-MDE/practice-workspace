@@ -110,6 +110,18 @@ def test_a_drawing_that_is_no_json_is_named(tmp_path: Path) -> None:
     assert "'drawings/harbour.json'" in problems(result)[0]
 
 
+def test_a_file_holding_another_competency_is_not_reported_missing(
+    tmp_path: Path,
+) -> None:
+    steps = (VERIFY / "valid" / "c2.md").read_text().split("---\n")[-1]
+
+    result = verify(with_c1(tmp_path, steps, holding="C2"))
+
+    assert result.returncode != 0
+    assert len(problems(result)) == 1, result.stdout
+    assert "belongs in c2.md" in problems(result)[0]
+
+
 def test_the_app_refuses_to_start_on_a_broken_course_folder_naming_each_problem(
     make_client: MakeClient, test_settings: Settings
 ) -> None:
