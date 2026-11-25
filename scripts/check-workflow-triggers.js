@@ -3,7 +3,7 @@ import { basename } from "node:path";
 import { parse } from "yaml";
 
 const FORBIDDEN = ["workflow_run"];
-const CODE_FREE = "pull_request_target";
+const RUNS_ONLY_GH = "pull_request_target";
 const SAME_REPOSITORY =
   "github.event.pull_request.head.repo.full_name == github.repository";
 
@@ -61,10 +61,10 @@ const problemsIn = (file) => {
   const forbidden = triggers
     .filter((trigger) => FORBIDDEN.includes(trigger))
     .map((trigger) => `${basename(file)}: ${trigger}`);
-  const codeRun = triggers.includes(CODE_FREE)
+  const codeRun = triggers.includes(RUNS_ONLY_GH)
     ? Object.entries(jobs ?? {}).flatMap(([name, job]) =>
         codeRunIn(name, job).map(
-          (problem) => `${basename(file)}: ${CODE_FREE}, ${problem}`
+          (problem) => `${basename(file)}: ${RUNS_ONLY_GH}, ${problem}`
         )
       )
     : [];
