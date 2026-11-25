@@ -152,7 +152,7 @@ def parse_competency(
     )
     problems += _check(result, source, to_get_there_levels, unreadable)
     if problems:
-        raise ContentError(*problems)
+        raise ContentError(*dict.fromkeys(problems))
     return result
 
 

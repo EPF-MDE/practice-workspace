@@ -122,6 +122,17 @@ def test_a_file_holding_another_competency_is_not_reported_missing(
     assert "belongs in c2.md" in problems(result)[0]
 
 
+def test_a_problem_repeated_in_two_steps_sharing_an_id_is_reported_once(
+    tmp_path: Path,
+) -> None:
+    sail = "## Sail {#sail minutes=5}\n\nTO VALIDATE\n\n"
+
+    result = verify(with_c1(tmp_path, sail + sail))
+
+    assert result.returncode != 0
+    assert len(problems(result)) == 2, result.stdout
+
+
 def test_the_app_refuses_to_start_on_a_broken_course_folder_naming_each_problem(
     make_client: MakeClient, test_settings: Settings
 ) -> None:
