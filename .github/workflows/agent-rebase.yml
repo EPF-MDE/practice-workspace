@@ -41,7 +41,8 @@ name: Agent — Rebase The Pull Requests That Conflict
 # WHAT IT NEEDS
 #   secrets.CLAUDE_CODE_OAUTH_TOKEN and secrets.POSTHOG_API_KEY, on the
 #     agent's step only.
-#   secrets.FACTORY_PAT — Contents, Pull requests and Issues: write.
+#   secrets.FACTORY_PAT — Contents, Pull requests and Issues: write, and
+#     Commit statuses: write, to carry the `agent-review` status over.
 #   The `agent:rebase` label. No workflow can create the label that starts
 #     it, so create it once:
 #       gh label create "agent:rebase" --color 0E8A16 \
@@ -506,9 +507,12 @@ jobs:
                     | {state, context, description, target_url}
                     | with_entries(select(.value != null))' > "$status"
               if [ -s "$status" ]; then
-                gh api --method POST "repos/$GH_REPO/statuses/$NEW_HEAD" \
-                  --input "$status" > /dev/null
-                echo "The review of $OLD_HEAD stands on $NEW_HEAD."
+                if gh api --method POST "repos/$GH_REPO/statuses/$NEW_HEAD" \
+                  --input "$status" > /dev/null; then
+                  echo "The review of $OLD_HEAD stands on $NEW_HEAD."
+                else
+                  echo "::warning::The agent-review status of $OLD_HEAD could not go on $NEW_HEAD: does FACTORY_PAT have Commit statuses: write?"
+                fi
               fi
             fi
             exit 0
