@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import type { reviewSchema } from "./review-schema";
 
 export const APPLIED_MARKER = "<!-- agent-review: applied -->";
 
@@ -114,11 +115,7 @@ export const threadsMarkdown = (threads: Thread[]): string =>
     ? "This pull request has no earlier review threads.\n"
     : `${threads.map(threadMarkdown).join("\n\n")}\n`;
 
-export type Applied = {
-  thread: number;
-  commit: string | null;
-  summary: string;
-};
+export type Applied = z.infer<typeof reviewSchema>["applied"][number];
 
 export type Reply = { thread: number; body: string };
 
@@ -139,11 +136,7 @@ export const repliesToAnswers = (
       continue;
     }
     const full =
-      commit === null
-        ? null
-        : runCommits.find(
-            (sha) => commit.length >= 7 && sha.startsWith(commit)
-          );
+      commit === null ? null : runCommits.find((sha) => sha.startsWith(commit));
     if (full === undefined) {
       refused.push(
         `Thread ${thread}: ${commit} is not a commit of this review.`
