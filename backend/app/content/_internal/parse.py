@@ -194,7 +194,7 @@ def _snapshot(
     try:
         snapshot = drawings(src)
     except (KeyError, OSError, ValueError) as error:
-        problems.append(f"{where}: cannot read the drawing: {error}")
+        problems.append(f"{where}: cannot read the drawing '{src}': {error}")
         return None
     if not isinstance(snapshot, dict) or not isinstance(snapshot.get("document"), dict):
         problems.append(

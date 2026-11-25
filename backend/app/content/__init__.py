@@ -63,9 +63,9 @@ def load_content(
     def drawings(src: str) -> dict[str, Any]:
         path = (directory / src).resolve()
         if not path.is_relative_to(directory):
-            raise ContentError(f"the drawing '{src}' is outside the content folder")
+            raise ContentError(f"the drawing '{src}' is outside the Course folder")
         if not path.is_file():
-            raise ContentError(f"the Course folder holds no '{src}'")
+            raise ContentError("the Course folder holds no such file")
         snapshot: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
         return snapshot
 

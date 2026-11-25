@@ -98,6 +98,18 @@ def test_a_step_waiting_for_a_broken_one_is_not_reported_too(tmp_path: Path) -> 
     assert "step 'sail'" in problems(result)[0]
 
 
+def test_a_drawing_that_is_no_json_is_named(tmp_path: Path) -> None:
+    redraw = (VERIFY / "missing-drawing" / "c1.md").read_text().split("---\n")[-1]
+    (tmp_path / "drawings").mkdir()
+    (tmp_path / "drawings" / "harbour.json").write_text("not json")
+
+    result = verify(with_c1(tmp_path, redraw))
+
+    assert result.returncode != 0
+    assert len(problems(result)) == 1, result.stdout
+    assert "'drawings/harbour.json'" in problems(result)[0]
+
+
 def test_the_app_refuses_to_start_on_a_broken_course_folder_naming_each_problem(
     make_client: MakeClient, test_settings: Settings
 ) -> None:
