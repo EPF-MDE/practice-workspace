@@ -5,6 +5,7 @@ import os
 import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +37,7 @@ from app.repository_reading import (
     repository_tokens,
 )
 from app.roster import RefreshingRoster, RosterError, RosterSource, StaticRoster
-from app.settings import Settings, get_settings
+from app.settings import ConfigurationError, Settings, get_settings
 from app.store import GitHubStore, InMemoryStore, SendTooLarge, Store, StoreUnavailable
 
 logger = logging.getLogger("app")
@@ -58,10 +59,6 @@ SEND_TOO_LARGE = (
 SESSION_MAX_AGE = 60 * 60 * 24 * 60
 
 
-class ConfigurationError(RuntimeError):
-    pass
-
-
 def _on_azure() -> bool:
     return bool(os.environ.get("WEBSITE_SITE_NAME"))
 
@@ -74,6 +71,7 @@ def default_roster(settings: Settings, course: Course) -> RosterSource:
     groups = set(course.groups)
     if settings.roster_file:
         return StaticRoster.from_file(settings.roster_file, groups)
+    settings.require("Reading the roster from the Store's repository", "repository")
     client = installation_client(
         settings.store_app_id,
         settings.store_app_private_key_base64,
@@ -118,13 +116,13 @@ def default_course(settings: Settings) -> Course:
     return loading.course
 
 
-def default_store(settings: Settings) -> Store:
+def default_store(settings: Settings, clock: Callable[[], datetime]) -> Store:
     if settings.store == "memory":
         if _on_azure():
             logger.warning(
                 "WORKSPACE_STORE=memory: every send is lost when the app restarts"
             )
-        return InMemoryStore()
+        return InMemoryStore(clock=clock)
     return GitHubStore.from_settings(settings)
 
 
@@ -144,6 +142,7 @@ def default_repository_reading(settings: Settings) -> RepositoryReadingSource:
         return OfflineRepositoryReading(
             DirectoryReadings(folder) if folder.is_dir() else None
         )
+    settings.require("Reading repositories through GitHub", "repository")
 
     def build() -> RepositoryReadingSource:
         token = repository_tokens(
@@ -179,6 +178,7 @@ def create_app(
     store: Store | None = None,
     repository_reading: RepositoryReadingSource | None = None,
     access_check: AccessCheck | None = None,
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> FastAPI:
     settings = settings or get_settings()
     if _on_azure():
@@ -217,7 +217,7 @@ def create_app(
     app.state.course = default_course(settings)
     app.state.roster = started_roster(roster, settings, app.state.course)
     app.state.identity = identity or default_identity(settings)
-    app.state.store = store if store is not None else default_store(settings)
+    app.state.store = store if store is not None else default_store(settings, clock)
     app.state.repository_reading = (
         repository_reading
         if repository_reading is not None
@@ -226,6 +226,7 @@ def create_app(
     app.state.access_check = (
         access_check if access_check is not None else default_access_check(settings)
     )
+    app.state.clock = clock
     app.state.signals = observability.Signals()
 
     @app.middleware("http")

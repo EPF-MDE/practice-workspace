@@ -1,1 +1,14 @@
 title = "Fixture course"
+
+[calendar]
+time_zone = "Europe/Paris"
+close = 2030-06-14T23:59:00
+reading_day = 2030-07-04T23:59:00
+
+[[levels]]
+id = "not-yet"
+label = "Not yet"
+
+[[levels]]
+id = "done"
+label = "I have done it"

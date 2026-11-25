@@ -1,10 +1,14 @@
-from datetime import datetime
-
-from conftest import MakeClient, c1_levels, sign_in
+from conftest import (
+    AFTER_THE_CLOSE,
+    AFTER_THE_READING_DAY,
+    BEFORE_THE_CLOSE,
+    MakeClient,
+    c1_levels,
+    sign_in,
+)
 from courses_under_test import OnTheRoster
 from fastapi.testclient import TestClient
 
-from app.settings import Settings
 from app.store import InMemoryStore
 
 PAGE = "/api/competencies/C1"
@@ -199,29 +203,14 @@ def test_an_edit_after_the_closing_step_keeps_the_example_and_the_confirmation(
 
 def test_the_plan_stays_editable_after_the_close_until_the_reading_day(
     make_client: MakeClient,
-    test_settings: Settings,
-    past: datetime,
-    future: datetime,
     student: OnTheRoster,
 ) -> None:
-    before = make_client(
-        settings=test_settings.model_copy(
-            update={"closes_at": future, "reading_day_at": future}
-        )
-    )
+    before = make_client(now=BEFORE_THE_CLOSE)
     sign_in(before, student.github_id)
     before.post(SELF, json=c1_levels(a="understand"))
-    closed = make_client(
-        settings=test_settings.model_copy(
-            update={"closes_at": past, "reading_day_at": future}
-        )
-    )
+    closed = make_client(now=AFTER_THE_CLOSE)
     sign_in(closed, student.github_id)
-    over = make_client(
-        settings=test_settings.model_copy(
-            update={"closes_at": past, "reading_day_at": past}
-        )
-    )
+    over = make_client(now=AFTER_THE_READING_DAY)
     sign_in(over, student.github_id)
 
     assert (

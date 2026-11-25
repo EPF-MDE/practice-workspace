@@ -1,11 +1,10 @@
 from datetime import datetime
 from typing import Any
 
-from conftest import MakeClient, sign_in
+from conftest import AFTER_THE_CLOSE, FIXTURE_CLOSE, MakeClient, sign_in
 from courses_under_test import CourseFolder, OnTheRoster, on_the_two_group_fixture
 from fastapi.testclient import TestClient
 
-from app.settings import Settings
 from app.store import InMemoryStore
 
 PAGE = "/api/competencies/C1"
@@ -215,11 +214,9 @@ def test_nothing_is_written_before_a_send(
 
 def test_an_answer_after_the_workspace_closed_is_refused(
     make_client: MakeClient,
-    test_settings: Settings,
-    past: datetime,
     student: OnTheRoster,
 ) -> None:
-    client = make_client(settings=test_settings.model_copy(update={"closes_at": past}))
+    client = make_client(now=AFTER_THE_CLOSE)
     sign_in(client, student.github_id)
 
     response = client.post(ANSWER, json={"fields": {"sentence": "late"}})
@@ -230,10 +227,8 @@ def test_an_answer_after_the_workspace_closed_is_refused(
     assert step(client.get(PAGE).json(), "guided-calculation")["sent"] is None
 
 
-def test_the_page_says_when_the_workspace_closes(
-    signed_in: TestClient, test_settings: Settings
-) -> None:
+def test_the_page_says_when_the_workspace_closes(signed_in: TestClient) -> None:
     page = signed_in.get(PAGE).json()
 
     assert page["closed"] is False
-    assert datetime.fromisoformat(page["closes_at"]) == test_settings.closes_at
+    assert datetime.fromisoformat(page["closes_at"]) == FIXTURE_CLOSE

@@ -316,6 +316,7 @@ def test_github_unreachable_makes_the_store_unavailable() -> None:
             transport=httpx.MockTransport(unreachable),
         ),
         "o/r",
+        "a-store",
     )
 
     with pytest.raises(StoreUnavailable):

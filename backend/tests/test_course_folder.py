@@ -1,22 +1,35 @@
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pytest
-from conftest import MakeClient, sign_in
+from conftest import (
+    FIXTURE_CLOSE,
+    FIXTURE_READING_DAY,
+    FIXTURE_TIME_ZONE,
+    MakeClient,
+    sign_in,
+)
 from course_folders import (
     A_SCALE,
+    CALENDAR,
     ONE_STEP,
     TWO_GROUPS,
     front_matter,
     with_every_competency,
     write_course_folder,
 )
-from courses_under_test import DEMO_COURSE, FIXTURES, TWO_GROUP_FIXTURE, CourseFolder
+from courses_under_test import (
+    DEMO_COURSE,
+    FIXTURES,
+    TWO_GROUP_FIXTURE,
+    CourseFolder,
+    OnTheRoster,
+)
 from fastapi.testclient import TestClient
 
-from app.main import ConfigurationError
-from app.settings import Settings
+from app.settings import ConfigurationError, Settings
 
 BACKEND = Path(__file__).resolve().parents[1]
 COURSES = FIXTURES / "courses"
@@ -181,7 +194,8 @@ def test_verify_names_each_competency_when_the_settings_hold_none(
 ) -> None:
     folder = write_course_folder(tmp_path, with_every_competency())
     (folder / "course.toml").write_text(
-        'name = "Fixture course"\n' + TWO_GROUPS + A_SCALE, encoding="utf-8"
+        'name = "Fixture course"\n' + TWO_GROUPS + A_SCALE + CALENDAR,
+        encoding="utf-8",
     )
 
     result = verify(folder)
@@ -291,3 +305,52 @@ def test_the_app_refuses_to_start_on_a_group_block_the_settings_do_not_hold(
 
     with pytest.raises(ConfigurationError, match="quay"):
         make_client(settings=on(test_settings, folder))
+
+
+def test_verify_reports_a_reading_day_before_the_close() -> None:
+    result = verify(COURSES / "reading-day-before-the-close")
+
+    assert result.returncode != 0
+    assert "the Reading Day comes before the Close" in result.stdout
+
+
+def test_the_app_refuses_to_start_on_a_reading_day_before_the_close(
+    make_client: MakeClient, test_settings: Settings
+) -> None:
+    with pytest.raises(ConfigurationError, match="Reading Day comes before the Close"):
+        make_client(
+            settings=on(test_settings, COURSES / "reading-day-before-the-close")
+        )
+
+
+def test_the_close_and_the_reading_day_are_the_courses_in_its_time_zone(
+    signed_in: TestClient,
+) -> None:
+    page = signed_in.get("/api/competencies/C1").json()
+
+    assert datetime.fromisoformat(page["closes_at"]) == FIXTURE_CLOSE
+    assert datetime.fromisoformat(page["reading_day_at"]) == FIXTURE_READING_DAY
+
+
+def test_a_close_written_with_an_offset_keeps_it(
+    make_client: MakeClient,
+    test_settings: Settings,
+    student: OnTheRoster,
+    tmp_path: Path,
+) -> None:
+    folder = write_course_folder(tmp_path, with_every_competency())
+    settings = folder / "course.toml"
+    settings.write_text(
+        settings.read_text(encoding="utf-8").replace(
+            "close = 2030-06-14T23:59:00", "close = 2030-06-14T23:59:00-04:00"
+        ),
+        encoding="utf-8",
+    )
+    client = make_client(settings=on(test_settings, folder))
+    sign_in(client, student.github_id)
+
+    page = client.get("/api/competencies/C1").json()
+
+    assert datetime.fromisoformat(page["closes_at"]) == datetime(
+        2030, 6, 15, 5, 59, tzinfo=FIXTURE_TIME_ZONE
+    )

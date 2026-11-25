@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from conftest import FIXTURE_CLOSE, FIXTURE_READING_DAY, FIXTURE_TIME_ZONE
+
 from app.course import COMPETENCIES
 
 ONE_STEP = "## Read {#read minutes=5}\n\nA Step to read.\n"
@@ -10,6 +12,12 @@ TWO_GROUPS = (
 A_SCALE = (
     '\n[[levels]]\nid = "not-yet"\nlabel = "Not yet"\n'
     '\n[[levels]]\nid = "done"\nlabel = "I have done it"\n'
+)
+
+CALENDAR = (
+    f'\n[calendar]\ntime_zone = "{FIXTURE_TIME_ZONE.key}"\n'
+    f"close = {FIXTURE_CLOSE.replace(tzinfo=None).isoformat()}\n"
+    f"reading_day = {FIXTURE_READING_DAY.replace(tzinfo=None).isoformat()}\n"
 )
 
 
@@ -31,7 +39,8 @@ def write_course_folder(
             f'\n[competencies.{c}]\ntitle = "{title}"\nminutes = {minutes}\n'
             for c, (title, minutes) in titled.items()
         )
-        + A_SCALE,
+        + A_SCALE
+        + CALENDAR,
         encoding="utf-8",
     )
     for competency, body in content.items():

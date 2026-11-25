@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from collections.abc import Callable
+from datetime import datetime
 from typing import cast
 
 from fastapi import HTTPException, Request
@@ -19,10 +20,9 @@ from app.content import (
     Waiting,
 )
 from app.content import Field as ContentField
-from app.course import Competency, Course
+from app.course import Calendar, Competency, Course
 from app.repository_reading import StudentToRead
 from app.roster import Student
-from app.settings import PARIS, Settings
 from app.store import (
     AnswerPayload,
     DrawingPayload,
@@ -51,35 +51,41 @@ from .models import (
 )
 
 
-def _now() -> datetime:
-    return datetime.now(UTC)
+def _now(request: Request) -> datetime:
+    clock: Callable[[], datetime] = request.app.state.clock
+    return clock()
 
 
-def _closed(settings: Settings) -> bool:
-    return _now() > settings.closes_at
+def _calendar(request: Request) -> Calendar:
+    calendar: Calendar = request.app.state.course.calendar
+    return calendar
 
 
-def _phase(settings: Settings) -> closing.Phase:
-    return closing.phase(_now(), settings.closes_at, settings.reading_day_at)
+def _closed(request: Request) -> bool:
+    return _phase(request) != "open"
 
 
-def _refuse_after_the_reading_day(settings: Settings, what: str) -> None:
-    if _phase(settings) == "over":
-        when = settings.reading_day_at.astimezone(PARIS).strftime("%-d %B %Y at %H:%M")
+def _phase(request: Request) -> closing.Phase:
+    return _calendar(request).phase(_now(request))
+
+
+def _refuse_after_the_reading_day(request: Request, what: str) -> None:
+    if _phase(request) == "over":
+        calendar = _calendar(request)
+        when = calendar.in_course_time(calendar.reading_day_at)
         raise HTTPException(
             403,
-            f"The Reading Day passed on {when}, Paris time: {what} can no longer "
-            "change.",
+            f"The Reading Day passed on {when}: {what} can no longer change.",
         )
 
 
-def _refuse_if_closed(settings: Settings, what: str) -> None:
-    if _closed(settings):
-        when = settings.closes_at.astimezone(PARIS).strftime("%-d %B %Y at %H:%M")
+def _refuse_if_closed(request: Request, what: str) -> None:
+    if _closed(request):
+        calendar = _calendar(request)
+        when = calendar.in_course_time(calendar.closes_at)
         raise HTTPException(
             403,
-            f"The workspace closed on {when}, Paris time: {what} can no longer be "
-            "sent.",
+            f"The workspace closed on {when}: {what} can no longer be sent.",
         )
 
 

@@ -1,11 +1,8 @@
-from datetime import datetime
 from typing import Any
 
-from conftest import MakeClient, sign_in
+from conftest import AFTER_THE_CLOSE, MakeClient, sign_in
 from courses_under_test import OnTheRoster
 from fastapi.testclient import TestClient
-
-from app.settings import Settings
 
 PAGE = "/api/competencies/C1"
 
@@ -66,11 +63,9 @@ def test_a_question_needs_text_and_a_real_step(
 
 def test_a_question_after_the_workspace_closed_is_refused(
     make_client: MakeClient,
-    test_settings: Settings,
-    past: datetime,
     student: OnTheRoster,
 ) -> None:
-    client = make_client(settings=test_settings.model_copy(update={"closes_at": past}))
+    client = make_client(now=AFTER_THE_CLOSE)
     sign_in(client, student.github_id)
 
     response = client.post(

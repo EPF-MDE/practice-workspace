@@ -49,12 +49,6 @@ class Refused(Exception):
         self.message = message
 
 
-def phase(now: datetime, closes_at: datetime, reading_day_at: datetime) -> Phase:
-    if now > reading_day_at:
-        return "over"
-    return "closed" if now > closes_at else "open"
-
-
 def is_project_link(url: str | None) -> bool:
     if not url:
         return False

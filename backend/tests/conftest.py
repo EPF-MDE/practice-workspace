@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any, NamedTuple, Protocol
+from zoneinfo import ZoneInfo
 
 import httpx
 import pytest
@@ -17,8 +18,15 @@ from app.evidence_panel import (
 )
 from app.main import create_app
 from app.roster import RosterSource
-from app.settings import PARIS, Settings
+from app.settings import Settings
 from app.store import GitHubStore, InMemoryStore, Store
+
+FIXTURE_TIME_ZONE = ZoneInfo("Europe/Paris")
+FIXTURE_CLOSE = datetime(2030, 6, 14, 23, 59, tzinfo=FIXTURE_TIME_ZONE)
+FIXTURE_READING_DAY = datetime(2030, 7, 4, 23, 59, tzinfo=FIXTURE_TIME_ZONE)
+BEFORE_THE_CLOSE = datetime(2030, 6, 1, tzinfo=FIXTURE_TIME_ZONE)
+AFTER_THE_CLOSE = datetime(2030, 6, 20, tzinfo=FIXTURE_TIME_ZONE)
+AFTER_THE_READING_DAY = datetime(2030, 7, 10, tzinfo=FIXTURE_TIME_ZONE)
 
 
 @pytest.fixture(params=EVERY_FIXTURE, ids=lambda course: course.label)
@@ -54,14 +62,8 @@ def store() -> InMemoryStore:
     return InMemoryStore()
 
 
-@pytest.fixture
-def past() -> datetime:
-    return datetime(2020, 1, 1, tzinfo=PARIS)
-
-
-@pytest.fixture
-def future() -> datetime:
-    return datetime(2100, 1, 1, tzinfo=PARIS)
+def store_on(github: FakeGitHub) -> GitHubStore:
+    return GitHubStore(github.client(), github.repository, github.store_app_slug)
 
 
 class MakeClient(Protocol):
@@ -73,6 +75,7 @@ class MakeClient(Protocol):
         store: Store = ...,
         repository_reading: RepositoryReadingSource | None = None,
         access_check: AccessCheck | None = None,
+        now: datetime = BEFORE_THE_CLOSE,
     ) -> TestClient: ...
 
 
@@ -85,7 +88,10 @@ def make_client(test_settings: Settings, store: InMemoryStore) -> MakeClient:
         store: Store = store,
         repository_reading: RepositoryReadingSource | None = None,
         access_check: AccessCheck | None = None,
+        now: datetime = BEFORE_THE_CLOSE,
     ) -> TestClient:
+        if isinstance(store, InMemoryStore):
+            store.clock = lambda: now
         app = create_app(
             settings=settings or test_settings,
             roster=roster,
@@ -93,6 +99,7 @@ def make_client(test_settings: Settings, store: InMemoryStore) -> MakeClient:
             store=store,
             repository_reading=repository_reading,
             access_check=access_check,
+            clock=lambda: now,
         )
         return TestClient(app)
 
@@ -133,7 +140,7 @@ def counted(
         store, writes = memory, lambda: memory.writes
     else:
         github = FakeGitHub()
-        store = GitHubStore(github.client(), github.repository)
+        store = store_on(github)
         writes = lambda: github.write_requests  # noqa: E731
     client = make_client(
         store=store,

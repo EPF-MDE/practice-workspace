@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
-from zoneinfo import ZoneInfo
 
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-PARIS = ZoneInfo("Europe/Paris")
-
 _REPOSITORY_ROOT_ENV = Path(__file__).resolve().parents[3] / ".env"
+
+
+class ConfigurationError(RuntimeError):
+    pass
 
 
 class Settings(BaseSettings):
@@ -22,14 +21,11 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    closes_at: datetime = datetime(2026, 12, 14, 23, 59, tzinfo=PARIS)
-    reading_day_at: datetime = datetime(2027, 1, 4, 23, 59, tzinfo=PARIS)
-
     sign_in: Literal["github", "fake"] = "github"
     session_secret: str = ""
     public_url: str = "http://localhost:8000"
 
-    repository: str = "EPF-MDE/complex-web-services"
+    repository: str = ""
     store: Literal["memory", "github"] = "memory"
     store_label: str = "practice"
     data_branch: str = "workspace-data"
@@ -59,10 +55,16 @@ class Settings(BaseSettings):
     posthog_environment: str = ""
     error_check_key: str = ""
 
-    @field_validator("closes_at", "reading_day_at")
-    @classmethod
-    def _in_paris_unless_told(cls, value: datetime) -> datetime:
-        return value if value.tzinfo else value.replace(tzinfo=PARIS)
+    def require(self, needed_by: str, *names: str) -> None:
+        prefix = self.model_config.get("env_prefix", "")
+        missing = [
+            f"{prefix}{name}".upper() for name in names if not getattr(self, name)
+        ]
+        if missing:
+            settings = "setting" if len(missing) == 1 else "settings"
+            raise ConfigurationError(
+                f"{needed_by} needs the Instance {settings} {' and '.join(missing)}"
+            )
 
 
 @lru_cache
