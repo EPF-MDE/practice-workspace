@@ -14,6 +14,18 @@ The human reviewer gets **decisions** only: product behaviour the ticket leaves 
 
 Every finding you leave becomes an inline comment on the first line it concerns, one comment per finding. You will be asked for them as structured output. Its body says what decision it needs.
 
+## Apply what the human already answered
+
+/tmp/review-threads.md lists this pull request's earlier review threads: each finding an earlier review left, and the answers a person gave on its thread. Each thread is in one state:
+
+- **answered**: a person answered, and no review has applied it yet. Apply the answer on `{{BRANCH}}` as a commit of its own, as you would a fix, unless it asks for no change. The answer is the decision: do not argue it or ask it again. If you cannot apply it, leave a finding that says why.
+- **applied**: an earlier review already applied the answer. Leave it settled.
+- **open**: nobody answered yet. Do not leave the same finding again, unless the diff changed what it is about: then leave a new finding that says what changed.
+
+Never raise again a question a thread already answered, even worded another way.
+
+You will be asked, as structured output, for each answered thread you applied: its id, your commit (or none, when the answer needs no change) and one sentence for the person who answered. The workflow replies on the thread with it.
+
 ## The verdict
 
 Write your verdict on the branch, after your fixes, to /tmp/review-verdict.md:
