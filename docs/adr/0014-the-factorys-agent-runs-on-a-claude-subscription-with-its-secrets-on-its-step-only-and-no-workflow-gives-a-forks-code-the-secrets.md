@@ -4,6 +4,7 @@ Every Software Factory workflow runs one agent, `claudeAgent` in `.sandcastle/ag
 
 - **The agent's step is the one whose `run` calls a script in `.sandcastle/agent-workflows/`.** An agent-only secret set in a workflow's or a job's `env`, or in any other step's, fails the check; so does `toJSON(secrets)` anywhere.
 - **`pull_request_target` and `workflow_run` run in the base repository's context**, with its secrets and a write token, even for a fork's code. On `pull_request`, GitHub gives a fork's pull request neither: it runs with a read-only token and no secret.
+- **ADR-0017 amends this:** a `pull_request_target` workflow that runs no code of the pull request, and skips forks, is allowed, because no other trigger runs on a pull request that conflicts.
 - **These come from the factory's spec**, issue #503 of the repository the Engine was first built in (story 36 and "Added on top: PostHog"), and from issue #509 of that same repository.
 
 ## Considered options
