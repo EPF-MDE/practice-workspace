@@ -95,13 +95,16 @@ describe("whether a rebase keeps the review", () => {
 type PullRequest = {
   labels?: string[];
   mergeable?: ("MERGEABLE" | "CONFLICTING" | "UNKNOWN")[];
-  statuses?: { context: string; state: string; target_url?: string }[];
+  statuses?:
+    | { context: string; state: string; target_url?: string }[]
+    | "unreadable";
 };
 
 const writeStatuses = (
   dir: string,
   statuses: NonNullable<PullRequest["statuses"]>
 ) => {
+  if (statuses === "unreadable") return;
   writeFileSync(
     join(dir, "status.json"),
     JSON.stringify({
@@ -180,6 +183,7 @@ const handOff = ({ review, pushed = true, ...pullRequest }: HandOff) => {
     readFileSync(join(dir, log), "utf8").split("\n").filter(Boolean);
   return {
     status: result.status,
+    stdout: result.stdout,
     stderr: result.stderr,
     edits: lines("edits"),
     comments: lines("comments").length,
@@ -210,6 +214,18 @@ describe("a rebased pull request that keeps its review", () => {
     const { status, edits, posted } = handOff({ review: "keep" });
 
     expect(status).toBe(0);
+    expect(edits).toEqual([]);
+    expect(posted).toEqual([]);
+  });
+
+  it("still keeps the review, and warns, when the old head's statuses cannot be read", () => {
+    const { status, stdout, edits, posted } = handOff({
+      review: "keep",
+      statuses: "unreadable",
+    });
+
+    expect(status).toBe(0);
+    expect(stdout).toContain("::warning::");
     expect(edits).toEqual([]);
     expect(posted).toEqual([]);
   });
