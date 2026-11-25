@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from conftest import MakeClient, sign_in
+from conftest import MakeClient, c1_levels, sign_in
 from course_folders import with_every_competency, write_course_folder
 from courses_under_test import (
     NOTHING_BY_DEFAULT_FIXTURE,
@@ -78,6 +78,27 @@ def test_once_withdrawn_nothing_is_read_again(
 
     assert panel["evidence_project"] is None
     assert readings.asked == []
+
+
+def test_closing_without_a_declaration_reads_nothing_and_closing_with_one_reads_it(
+    signed_in: TestClient, readings: CountedReading
+) -> None:
+    signed_in.post("/api/competencies/C1/self-assessment", json=c1_levels(a="not-yet"))
+
+    closed = signed_in.post(
+        "/api/competencies/C1/close", json={"text": "p", "example": "e"}
+    )
+
+    assert closed.status_code == 200
+    assert readings.asked == []
+
+    closed = signed_in.post(
+        "/api/competencies/C1/close",
+        json={"text": "p", "example": "e", "declaration": ORCHARD},
+    )
+
+    assert closed.status_code == 200
+    assert readings.asked == ["iris/orchard"]
 
 
 def test_verify_passes_a_course_folder_reading_nothing_by_default() -> None:
