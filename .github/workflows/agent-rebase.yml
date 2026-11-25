@@ -4,11 +4,13 @@ name: Agent — Rebase The Pull Requests That Conflict
 # pull requests ready to merge.
 #
 # WHAT TRIGGERS IT
-#   Every night, for each pull request GitHub says conflicts with its base,
-#   and each one labelled `agent:rebase`, conflicting or not.
-#   The `agent:rebase` label also starts a run at once, but GitHub runs no
-#   `pull_request` workflow on a pull request that conflicts: on one, the
-#   label waits for the night. To rebase it now:
+#   Every merge onto `main`, and every night, for each pull request GitHub
+#   says conflicts with its base, and each one labelled `agent:rebase`,
+#   conflicting or not.
+#   One pull request, at once: the `agent:rebase` label, or `agent:review` on
+#   a pull request that conflicts. GitHub runs no `pull_request` workflow on
+#   one that conflicts, so agent-answer-labels.yml answers both labels and
+#   starts this one the way a person can:
 #     gh workflow run agent-rebase.yml -f pr=<number>
 #   The label also retries a blocked pull request.
 #   A pull request labelled `agent:in-progress` is left to the agent working
@@ -19,8 +21,16 @@ name: Agent — Rebase The Pull Requests That Conflict
 #   passes, no agent runs. Only on a conflict, or a check that the base
 #   broke, does an agent resolve it. Every push is `--force-with-lease`
 #   against the head this run read: if anyone pushed meanwhile, nothing is
-#   overwritten. An agent's resolution is code nobody has read, so it goes to
-#   `agent:review`.
+#   overwritten.
+#
+# THE REVIEW STANDS WHEN NOTHING IT READ CHANGED
+#   A script's rebase that `npm run check` passes, and that leaves the pull
+#   request's own diff as it was (`git patch-id`), keeps its review: the
+#   `agent-review` status of the old head goes on the new one. Any other
+#   push goes to `agent:review`: an agent's resolution is code nobody has
+#   read, and a diff the base changed is not the one the review read. So
+#   does an `agent:review` left waiting while the pull request conflicted,
+#   once GitHub calls it mergeable.
 #
 # WHEN IT CANNOT
 #   Superseded by the base, or a conflict the agent cannot settle: the pull
@@ -37,16 +47,16 @@ name: Agent — Rebase The Pull Requests That Conflict
 #       gh label create "agent:rebase" --color 0E8A16 \
 #         --description "Ask the rebase workflow to put this pull request on top of its base"
 #
-# `pull_request`, not `pull_request_target`: a fork's pull request gets no
-# secret, so the label on it fails at the first `gh` call. The nightly
-# survey leaves forks out.
+# Never a fork's pull request: the survey leaves forks out, and so does
+# agent-answer-labels.yml.
 
 on:
+  # A merge: every squash-merge can leave the other pull requests conflicting.
+  push:
+    branches: [main]
   schedule:
     # 23:00 UTC: midnight in Paris in winter, 01:00 in summer.
     - cron: "0 23 * * *"
-  pull_request:
-    types: [labeled]
   workflow_dispatch:
     inputs:
       pr:
@@ -63,9 +73,6 @@ env:
 
 jobs:
   survey:
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.label.name == 'agent:rebase'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -75,7 +82,7 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.FACTORY_PAT }}
       GH_REPO: ${{ github.repository }}
-      REQUESTED_PR: ${{ github.event.pull_request.number || inputs.pr }}
+      REQUESTED_PR: ${{ inputs.pr }}
 
     steps:
       - name: Find the pull requests to rebase
@@ -248,6 +255,17 @@ jobs:
               outcome=superseded
             else
               outcome=rebased
+              # The diff the review read, and the one it would read now. The
+              # patch-id leaves out line numbers, so only a change of the
+              # pull request's lines, or of the lines around them, differs.
+              fork_point=$(git merge-base "origin/$BASE_REF" "$HEAD_SHA")
+              read_before=$(git diff "$fork_point" "$HEAD_SHA" | git patch-id --stable)
+              read_now=$(git diff "origin/$BASE_REF" HEAD | git patch-id --stable)
+              if [ "$read_before" = "$read_now" ]; then
+                echo "diff=unchanged" >> "$GITHUB_OUTPUT"
+              else
+                echo "diff=changed" >> "$GITHUB_OUTPUT"
+              fi
             fi
           else
             outcome=conflicts
@@ -347,6 +365,7 @@ jobs:
           if remote push --force-with-lease="refs/heads/$BRANCH:$HEAD_SHA" \
             "https://github.com/${GH_REPO}.git" "HEAD:refs/heads/$BRANCH"; then
             echo "pushed=true" >> "$GITHUB_OUTPUT"
+            echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           now=$(remote ls-remote "https://github.com/${GH_REPO}.git" "refs/heads/$BRANCH" | cut -f1)
@@ -358,13 +377,33 @@ jobs:
           gh pr comment "$PR_NUMBER" --body \
             "Not rebased: \`$BRANCH\` moved during [this run](${RUN_URL}), and nothing is pushed over someone's work. Add \`agent:rebase\` to try again on the new head."
 
-      - name: Report the rebase
+      - name: Decide whether the review stands
+        id: decide
         if: steps.push.outputs.pushed == 'true' || steps.script.outputs.outcome == 'up-to-date'
+        env:
+          OUTCOME: ${{ steps.script.outputs.outcome }}
+          DIFF: ${{ steps.script.outputs.diff }}
+          BY_AGENT: ${{ steps.agent_check.outputs.resolved }}
+        run: |
+          set -euo pipefail
+          if [ "$BY_AGENT" = "true" ]; then
+            review=request
+          elif [ "$OUTCOME" = "rebased" ] && [ "$DIFF" != "unchanged" ]; then
+            review=request
+          else
+            review=keep
+          fi
+          echo "Review: $review"
+          echo "review=$review" >> "$GITHUB_OUTPUT"
+
+      - name: Report the rebase
+        if: steps.decide.outputs.review != ''
         env:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
           BASE_REF: ${{ steps.pr.outputs.base_ref }}
           OUTCOME: ${{ steps.script.outputs.outcome }}
           BY_AGENT: ${{ steps.agent_check.outputs.resolved }}
+          REVIEW: ${{ steps.decide.outputs.review }}
         run: |
           set -euo pipefail
           if [ "$OUTCOME" = "up-to-date" ]; then
@@ -377,13 +416,12 @@ jobs:
               echo ""
               echo "Nobody has read this resolution yet, so it goes to \`agent:review\`."
             } > /tmp/report.md
+          elif [ "$REVIEW" = "keep" ]; then
+            echo "Rebased onto \`$BASE_REF\` by a script, no agent. \`npm run check\` passes, and this pull request's own diff is unchanged, so its review stands. [Logs](${RUN_URL})." > /tmp/report.md
           else
-            echo "Rebased onto \`$BASE_REF\` by a script, no agent. \`npm run check\` passes. [Logs](${RUN_URL})." > /tmp/report.md
+            echo "Rebased onto \`$BASE_REF\` by a script, no agent. \`npm run check\` passes, but \`$BASE_REF\` changed lines in or beside this pull request's diff, so it goes to \`agent:review\`. [Logs](${RUN_URL})." > /tmp/report.md
           fi
           gh pr comment "$PR_NUMBER" --body-file /tmp/report.md
-          if [ "$BY_AGENT" = "true" ]; then
-            gh pr edit "$PR_NUMBER" --add-label "agent:review"
-          fi
           gh issue list --state open --label "needs-a-human" --limit 100 --json number,body \
             | jq -r --arg marker "$MARKER" '.[] | select(.body | contains($marker)) | .number' \
             | while read -r issue; do
@@ -424,7 +462,12 @@ jobs:
               --title "Rebase #${PR_NUMBER} onto $BASE_REF by hand" --body-file /tmp/issue.md)
           fi
           gh pr edit "$PR_NUMBER" --add-label "agent:blocked"
-          gh pr comment "$PR_NUMBER" --body "Not rebased: a person has to decide, in ${where}. Nothing was pushed."
+          waiting=""
+          if gh pr view "$PR_NUMBER" --json labels \
+            | jq -e '[.labels[].name] | index("agent:review")' > /dev/null; then
+            waiting=" \`agent:review\` waits until then: once this pull request no longer conflicts, take the label off and put it back."
+          fi
+          gh pr comment "$PR_NUMBER" --body "Not rebased: a person has to decide, in ${where}. Nothing was pushed.${waiting}"
 
       - name: Mark blocked on failure
         if: failure() && steps.pr.outputs.taken == 'true'
@@ -440,3 +483,49 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: gh pr edit "$PR_NUMBER" --remove-label "agent:in-progress" || true
+
+      - name: Hand it to the review
+        # After `agent:in-progress` comes off: the review this starts puts its
+        # own on, which the step above would take off.
+        if: steps.decide.outputs.review != ''
+        env:
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+          REVIEW: ${{ steps.decide.outputs.review }}
+          OLD_HEAD: ${{ steps.pr.outputs.head_sha }}
+          NEW_HEAD: ${{ steps.push.outputs.head }}
+        run: |
+          set -euo pipefail
+          waiting=$(gh pr view "$PR_NUMBER" --json labels \
+            | jq '[.labels[].name] | index("agent:review") != null')
+          if [ "$REVIEW" = "keep" ] && [ "$waiting" = "false" ]; then
+            if [ -n "${NEW_HEAD:-}" ] && [ "$NEW_HEAD" != "$OLD_HEAD" ]; then
+              status=$(mktemp)
+              gh api "repos/$GH_REPO/commits/$OLD_HEAD/status" \
+                | jq -c '.statuses[] | select(.context == "agent-review")
+                    | select(.state == "success" or .state == "failure")
+                    | {state, context, description, target_url}
+                    | with_entries(select(.value != null))' > "$status"
+              if [ -s "$status" ]; then
+                gh api --method POST "repos/$GH_REPO/statuses/$NEW_HEAD" \
+                  --input "$status" > /dev/null
+                echo "The review of $OLD_HEAD stands on $NEW_HEAD."
+              fi
+            fi
+            exit 0
+          fi
+          # A label added while the pull request conflicts starts no
+          # workflow, so it goes on once GitHub calls it mergeable.
+          mergeable=UNKNOWN
+          for _ in $(seq "${SETTLE_TRIES:-12}"); do
+            mergeable=$(gh pr view "$PR_NUMBER" --json mergeable | jq -r '.mergeable')
+            [ "$mergeable" = "MERGEABLE" ] && break
+            sleep "${SETTLE_SECONDS:-10}"
+          done
+          if [ "$mergeable" != "MERGEABLE" ]; then
+            gh pr comment "$PR_NUMBER" --body \
+              "GitHub does not call this pull request mergeable yet, so \`agent:review\` may start no review. If none starts, take the label off and put it back."
+          fi
+          if [ "$waiting" = "true" ]; then
+            gh pr edit "$PR_NUMBER" --remove-label "agent:review"
+          fi
+          gh pr edit "$PR_NUMBER" --add-label "agent:review"
