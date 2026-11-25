@@ -1,0 +1,9 @@
+# The review applies a person's answer on its thread, and its workflow marks it applied
+
+The review leaves each decision it needs as an inline comment, and a person answers it on its thread. Until #88 no run read those threads again: the answer was never applied, and the next review asked the same question again. **So a person's answer is a decision. Before the agent runs, the review workflow collects the pull request's earlier threads. The agent applies each answered one as a commit of its own and reports which commit applied which thread. The workflow then replies on the thread with that commit, and the next review reads that reply as "already applied".**
+
+- **A thread is a finding the review posted.** A top-level review comment counts only from the account of the factory's token, which posts the findings. Its replies also carry the applied marker. Anyone can comment on a public pull request, and the agent must read no one else's text as a finding (ADR-0014).
+- **An answer comes from the pull request's author or someone with write access, never from a bot.** A reply from a GitHub `Bot` user does not count, and neither does one from the factory's own account, even when that account opened the pull request.
+- **A thread is open, answered or applied.** It is applied when the factory's marked reply comes after its last answer. A newer answer makes it answered again. Collecting the threads is a pure function over the GitHub API's JSON, `review/threads.ts`.
+- **The workflow replies, not the agent (ADR-0013).** It replies only for a thread that was answered and a commit this run made. When the push is rejected, it replies on none: the commits are not on that pull request, so the next review applies the answers again.
+- **An answered question is not asked again.** An open one is asked again only if the diff changed what it is about. Only the prompt holds the agent to this.

@@ -21,9 +21,9 @@ name: Agent — Review A Pull Request
 #                                PR closes, not from the PR description
 #
 #   And one thing that is not the implementer's: the PR's earlier review
-#   threads, each finding with the answers a person gave on it (#88). A
-#   person's answer is a decision, so the review applies it rather than
-#   asking again, and the workflow replies on the thread with the commit.
+#   threads, each finding with the answers a person gave on it. The review
+#   applies an answer rather than asking again, and the workflow replies on
+#   the thread with the commit (ADR-0017).
 #
 #   That independence is the whole value. An implementer that has argued
 #   itself into a shortcut will argue a reviewer that shares its context into
