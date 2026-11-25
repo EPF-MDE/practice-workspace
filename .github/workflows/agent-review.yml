@@ -186,7 +186,10 @@ jobs:
 
           # 4. The earlier review threads, and who may answer them: the PR's
           #    author or anyone with write access. review.ts keeps each
-          #    finding with their replies, and leaves out a bot's.
+          #    finding with their replies, and leaves out a bot's. A finding
+          #    and an "applied" reply count only from FACTORY_PAT's own
+          #    account, which posts both, and its replies are never answers.
+          gh api user --jq .login > /tmp/review-reviewer.txt
           gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/comments?per_page=100" \
             | jq -s 'add // []' > /tmp/review-thread-comments.json
           gh api --paginate "repos/$GH_REPO/collaborators?per_page=100" \

@@ -23,6 +23,7 @@ const readJson = (file: string): unknown =>
 
 const start = git("rev-parse", "HEAD").trim();
 const threads = reviewThreads(readJson("/tmp/review-thread-comments.json"), {
+  reviewer: fs.readFileSync("/tmp/review-reviewer.txt", "utf8").trim(),
   author: required("PR_AUTHOR"),
   writers: z.array(z.string()).parse(readJson("/tmp/review-writers.json")),
 });

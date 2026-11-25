@@ -13,7 +13,7 @@ const reviewCommentSchema = z.object({
   created_at: z.string(),
 });
 
-type ReviewComment = z.infer<typeof reviewCommentSchema>;
+type GitHubComment = z.infer<typeof reviewCommentSchema>;
 
 export type ThreadState = "open" | "answered" | "applied";
 
@@ -29,17 +29,22 @@ export type Thread = {
   state: ThreadState;
 };
 
-export type People = { author: string; writers: string[] };
+export type People = { reviewer: string; author: string; writers: string[] };
+
+const byReviewer =
+  ({ reviewer }: People) =>
+  ({ user }: GitHubComment): boolean =>
+    user?.login === reviewer;
 
 const canAnswer =
-  ({ author, writers }: People) =>
-  ({ user, body }: ReviewComment): boolean =>
+  ({ reviewer, author, writers }: People) =>
+  ({ user }: GitHubComment): boolean =>
     user !== null &&
     user.type !== "Bot" &&
-    (user.login === author || writers.includes(user.login)) &&
-    !body.includes(APPLIED_MARKER);
+    user.login !== reviewer &&
+    (user.login === author || writers.includes(user.login));
 
-const stateOf = (answers: ReviewComment[], applied: ReviewComment[]) => {
+const stateOf = (answers: GitHubComment[], applied: GitHubComment[]) => {
   const lastAnswer = answers.at(-1);
   if (!lastAnswer) return "open";
   const lastApplied = applied.at(-1);
@@ -50,16 +55,19 @@ export const reviewThreads = (comments: unknown, people: People): Thread[] => {
   const all = [...z.array(reviewCommentSchema).parse(comments)].sort(
     (a, b) => a.id - b.id
   );
-  const repliesTo = (root: ReviewComment) =>
+  const repliesTo = (root: GitHubComment) =>
     all.filter(({ in_reply_to_id }) => in_reply_to_id === root.id);
 
   return all
-    .filter(({ in_reply_to_id }) => in_reply_to_id == null)
+    .filter(
+      (comment) => comment.in_reply_to_id == null && byReviewer(people)(comment)
+    )
     .map((root) => {
       const replies = repliesTo(root);
       const answers = replies.filter(canAnswer(people));
-      const applied = replies.filter(({ body }) =>
-        body.includes(APPLIED_MARKER)
+      const applied = replies.filter(
+        (comment) =>
+          byReviewer(people)(comment) && comment.body.includes(APPLIED_MARKER)
       );
       return {
         id: root.id,
