@@ -30,11 +30,10 @@ class OnTheRoster:
         return f"{self.block}-{n}"
 
     def to_read(self, evidence_project: str | None = None) -> StudentToRead:
-        return StudentToRead(
-            self.github_login,
-            self.group,
-            Repository(evidence_project or self.evidence_project or ""),
-        )
+        to_read = evidence_project or self.evidence_project
+        if to_read is None:
+            raise ValueError(f"{self.github_login} has no Evidence Project to read")
+        return StudentToRead(self.github_login, self.group, Repository(to_read))
 
 
 @dataclass(frozen=True)
