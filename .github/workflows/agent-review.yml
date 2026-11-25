@@ -387,7 +387,8 @@ jobs:
             echo "---"
             echo ""
             echo "Reviewed by the review workflow — [logs](${RUN_URL}). This run"
-            echo "saw the diff, the standards and the ticket, and nothing else."
+            echo "saw the diff, the standards, the ticket and the earlier review"
+            echo "threads, and nothing else."
           } >> /tmp/review-verdict.md
           # Uploads the agent's screenshots and swaps each /tmp/evidence path
           # in the body for its URL. nullglob: none means no --attach.
