@@ -2,14 +2,14 @@ from pathlib import Path
 
 import pytest
 from conftest import MakeClient, c1_levels, sign_in
-from course_folders import with_every_competency, write_course_folder
+from course_folders import verify, with_every_competency, write_course_folder
 from courses_under_test import (
     ONE_GROUP_FIXTURE,
     READS_NOTHING_FIXTURE,
     CourseFolder,
 )
 from fastapi.testclient import TestClient
-from test_course_folder import on, verify
+from test_course_folder import on
 from test_evidence_project_reading import CountedReading
 
 from app.evidence_panel import FakeAccessCheck
