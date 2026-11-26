@@ -451,6 +451,10 @@ export type EvidencePanel = {
      */
     nothing_found_text: string | null;
     /**
+     * Received
+     */
+    received: Array<ReceivedPoint>;
+    /**
      * Not Visible
      */
     not_visible: Array<NotVisible>;
@@ -711,6 +715,10 @@ export type PanelFact = {
      */
     link: string | null;
     /**
+     * Received From
+     */
+    received_from?: string | null;
+    /**
      * Files
      */
     files?: Array<ChangedFile>;
@@ -817,6 +825,17 @@ export type Question = {
  * QuestionIn
  */
 export type QuestionIn = {
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * ReceivedPoint
+ */
+export type ReceivedPoint = {
+    point: PointId;
     /**
      * Text
      */

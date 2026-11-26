@@ -176,3 +176,19 @@ async function expectNotRead(panel: Locator, repository: string) {
   await expect(panel.getByTestId("evidence-panel-unavailable")).toBeVisible();
   await expect(panel.getByTestId("evidence-panel-empty")).toHaveCount(0);
 }
+
+test("a point the Student only received from a Fallback Branch shows as received from the course, not as found", async ({
+  page,
+}) => {
+  await signIn(page, READS_A_BRANCH);
+  await page.goto("/competencies/C2");
+  const panel = sidebar(page);
+
+  await expect(panel.getByTestId("received-C2.b")).toContainText(
+    "received from the course"
+  );
+  await expect(panel.getByTestId("received-C2.b")).toContainText(
+    "Clean Bench Fallback Branch"
+  );
+  await expect(panel.getByTestId("received-C2.c")).toHaveCount(0);
+});

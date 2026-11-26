@@ -98,6 +98,14 @@ class CompetencyReading:
     def facts_for(self, point: PointId) -> list[Fact]:
         return [f for f in self.facts if f.point == point]
 
+    def received(self) -> dict[PointId, list[Credit]]:
+        credits: dict[PointId, list[Credit]] = {}
+        for f in self.facts:
+            credits.setdefault(f.point, [])
+            if f.credited_to not in credits[f.point]:
+                credits[f.point].append(f.credited_to)
+        return {p: c for p, c in credits.items() if STUDENT not in c}
+
 
 @dataclass(frozen=True)
 class RepositoryReading:

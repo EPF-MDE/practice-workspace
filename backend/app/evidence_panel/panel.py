@@ -12,8 +12,9 @@ from app.repository_reading import (
     Fact,
     PointId,
     RepositoryReading,
+    branch_name,
 )
-from app.repository_reading.reading import not_read_on_gitlab
+from app.repository_reading.reading import STUDENT, not_read_on_gitlab
 from app.roster import Repository
 from app.store import GITLAB, Host
 
@@ -93,7 +94,21 @@ class PanelFact(BaseModel):
     text: str
     credited_to: Credit
     link: str | None
+    received_from: str | None = None
     files: list[ChangedFile] = []
+
+
+class ReceivedPoint(BaseModel):
+    point: PointId
+    text: str
+
+
+def received_text(credits: list[Credit]) -> str:
+    return (
+        "Not found in your own work yet: it comes from "
+        f"{' and '.join(branch_name(c) for c in credits)}, which you started from. "
+        "It counts as found once your own work shows it."
+    )
 
 
 class NotVisible(BaseModel):
@@ -143,6 +158,7 @@ class EvidencePanel(BaseModel):
     facts: list[PanelFact]
     nothing_found: list[PointId]
     nothing_found_text: str | None
+    received: list[ReceivedPoint]
     not_visible: list[NotVisible]
     not_judged: str | None
     declaration: Declaration | None
@@ -156,6 +172,9 @@ def _fact(fact: Fact) -> PanelFact:
         text=fact.text,
         credited_to=fact.credited_to,
         link=fact.link,
+        received_from=None
+        if fact.credited_to == STUDENT
+        else branch_name(fact.credited_to),
         files=[ChangedFile.model_validate(f) for f in files if isinstance(f, dict)]
         if isinstance(files, list)
         else [],
@@ -190,6 +209,10 @@ def build_panel(
             if nothing
             else None
         ),
+        received=[
+            ReceivedPoint(point=p, text=received_text(credits))
+            for p, credits in found.received().items()
+        ],
         not_visible=[
             NotVisible(
                 point=p, text=NOT_VISIBLE_C3 if competency == "C3" else NOT_VISIBLE
@@ -226,6 +249,7 @@ def unavailable_panel(
         facts=[],
         nothing_found=[],
         nothing_found_text=None,
+        received=[],
         not_visible=[],
         not_judged=None,
         declaration=declaration,

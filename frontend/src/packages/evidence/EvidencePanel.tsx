@@ -14,14 +14,13 @@ function when(iso: string | null | undefined) {
 }
 
 function Fact({ fact }: { fact: PanelFact }) {
-  const credited =
-    fact.credited_to !== "student"
-      ? ` (the code of \`${fact.credited_to}\`, credited to it)`
-      : "";
+  const received = fact.received_from
+    ? ` (received from the course: ${fact.received_from})`
+    : "";
   return (
     <li data-testid={`fact-${fact.point}`} className="flex flex-col gap-1">
       <span>
-        <Sentence text={fact.text + credited} />{" "}
+        <Sentence text={fact.text + received} />{" "}
         <span className="whitespace-nowrap font-semibold">→ {fact.point}</span>
         {fact.link && (
           <>
@@ -105,6 +104,23 @@ export function EvidencePanelView({
   );
 }
 
+function Received({ received }: { received: EvidencePanel["received"] }) {
+  if (received.length === 0) return null;
+  return (
+    <ul className="flex flex-col gap-1">
+      {received.map((r) => (
+        <li key={r.point} data-testid={`received-${r.point}`}>
+          <span className="font-semibold">{r.point}</span>:{" "}
+          <span className="rounded bg-amber-100 px-1 text-amber-900">
+            received from the course
+          </span>{" "}
+          <Sentence text={r.text} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function PanelFindings({ panel }: { panel: EvidencePanel }) {
   return (
     <>
@@ -128,6 +144,7 @@ function PanelFindings({ panel }: { panel: EvidencePanel }) {
           ))}
         </ul>
       )}
+      <Received received={panel.received} />
       {panel.nothing_found_text && (
         <p className="text-muted-foreground">{panel.nothing_found_text}</p>
       )}

@@ -1,3 +1,4 @@
+from ._internal.branch_names import branch_name
 from .github import (
     GitHub,
     HttpGitHub,
@@ -41,6 +42,7 @@ __all__ = [
     "Response",
     "StudentToRead",
     "WorkspaceDataReadings",
+    "branch_name",
     "installation_token",
     "repository_tokens",
     "static_token",
