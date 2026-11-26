@@ -244,7 +244,7 @@ def test_the_loader_refuses_a_drawing_step(body: str) -> None:
         parse_drawing(body)
 
 
-def test_a_drawing_is_read_from_the_content_folder_and_never_outside_it(
+def test_a_drawing_is_read_from_the_course_folder_and_never_outside_it(
     tmp_path: Path,
 ) -> None:
     import json
