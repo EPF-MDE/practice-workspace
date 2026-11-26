@@ -5,6 +5,7 @@ from pathlib import Path
 from conftest import FIXTURE_CLOSE, FIXTURE_READING_DAY, FIXTURE_TIME_ZONE
 
 from app.course import COMPETENCIES
+from app.settings import Settings
 
 ONE_STEP = "## Read {#read minutes=5}\n\nA Step to read.\n"
 TWO_GROUPS = (
@@ -21,6 +22,10 @@ CALENDAR = (
     f"close = {FIXTURE_CLOSE.replace(tzinfo=None).isoformat()}\n"
     f"reading_day = {FIXTURE_READING_DAY.replace(tzinfo=None).isoformat()}\n"
 )
+
+
+def on(test_settings: Settings, folder: Path) -> Settings:
+    return test_settings.model_copy(update={"course_folder": str(folder)})
 
 
 def front_matter(competency: str) -> str:

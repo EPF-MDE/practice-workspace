@@ -15,6 +15,7 @@ from course_folders import (
     ONE_STEP,
     TWO_GROUPS,
     front_matter,
+    on,
     problems,
     verify,
     with_every_competency,
@@ -37,10 +38,6 @@ COURSES = FIXTURES / "courses"
 @pytest.fixture
 def course() -> CourseFolder:
     return TWO_GROUP_FIXTURE
-
-
-def on(test_settings: Settings, folder: Path) -> Settings:
-    return test_settings.model_copy(update={"course_folder": str(folder)})
 
 
 def test_the_api_serves_the_courses_name_and_each_competencys_title_and_minutes(
