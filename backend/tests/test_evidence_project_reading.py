@@ -5,11 +5,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from conftest import MakeClient, sign_in
+from conftest import CountedReading, MakeClient, sign_in
 from courses_under_test import OnTheRoster
 from fastapi.testclient import TestClient
 
-from app.evidence_panel import FakeAccessCheck, OfflineRepositoryReading
+from app.evidence_panel import FakeAccessCheck
 from app.repository_reading import (
     CompetencyReading,
     Fact,
@@ -18,7 +18,6 @@ from app.repository_reading import (
     RepositoryReader,
     RepositoryReading,
     Response,
-    StudentToRead,
 )
 
 DECLARATION = "/api/evidence-project/declaration"
@@ -58,16 +57,6 @@ def reading_of(
             "C3": CompetencyReading("C3", [], [PointId.C3_B, PointId.C3_E], []),
         },
     )
-
-
-class CountedReading(OfflineRepositoryReading):
-    def __init__(self) -> None:
-        super().__init__()
-        self.asked: list[str] = []
-
-    def read(self, student: StudentToRead) -> RepositoryReading:
-        self.asked.append(student.evidence_project)
-        return super().read(student)
 
 
 @pytest.fixture

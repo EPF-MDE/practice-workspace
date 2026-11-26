@@ -17,6 +17,7 @@ from app.evidence_panel import (
     RepositoryReadingSource,
 )
 from app.main import create_app
+from app.repository_reading import RepositoryReading, StudentToRead
 from app.roster import RosterSource
 from app.settings import Settings
 from app.store import GitHubStore, InMemoryStore, Store
@@ -27,6 +28,16 @@ FIXTURE_READING_DAY = datetime(2030, 7, 4, 23, 59, tzinfo=FIXTURE_TIME_ZONE)
 BEFORE_THE_CLOSE = datetime(2030, 6, 1, tzinfo=FIXTURE_TIME_ZONE)
 AFTER_THE_CLOSE = datetime(2030, 6, 20, tzinfo=FIXTURE_TIME_ZONE)
 AFTER_THE_READING_DAY = datetime(2030, 7, 10, tzinfo=FIXTURE_TIME_ZONE)
+
+
+class CountedReading(OfflineRepositoryReading):
+    def __init__(self) -> None:
+        super().__init__()
+        self.asked: list[str] = []
+
+    def read(self, student: StudentToRead) -> RepositoryReading:
+        self.asked.append(student.evidence_project)
+        return super().read(student)
 
 
 @pytest.fixture(params=EVERY_FIXTURE, ids=lambda course: course.label)
