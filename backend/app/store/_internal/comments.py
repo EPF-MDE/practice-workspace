@@ -27,7 +27,7 @@ from app.store._internal.payloads import (
 FENCE = "json practice"
 _BLOCK = re.compile(r"^```json practice\n(\{.*\})\n```$", re.MULTILINE)
 _MARKER = "<!-- practice-student-id: {} -->"
-_MARKER_RE = re.compile(r"<!-- practice-student-id: (\d+) -->")
+MARKER_RE = re.compile(r"<!-- practice-student-id: (\d+) -->")
 _STEP_OR_DRAWING_FIELD: dict[str, str] = {
     Kind.ANSWER: "step",
     Kind.QUESTION: "step",
@@ -109,7 +109,7 @@ def comment_body(
     return f"{line}\n\n```{FENCE}\n{data}\n```\n"
 
 
-def _entry(comment: dict[str, Any], bot_login: str) -> Entry[Payload] | None:
+def comment_entry(comment: dict[str, Any], bot_login: str) -> Entry[Payload] | None:
     user = comment.get("user") or {}
     if user.get("type") != "Bot" or user.get("login") != bot_login:
         return None
@@ -132,11 +132,11 @@ def _entry(comment: dict[str, Any], bot_login: str) -> Entry[Payload] | None:
         step_or_drawing,
         payload,
         block["version"],
-        _time(comment["created_at"]),
+        github_time(comment["created_at"]),
     )
 
 
-def _renumbered(entries: list[Entry[Payload]]) -> list[Entry[Payload]]:
+def renumbered(entries: list[Entry[Payload]]) -> list[Entry[Payload]]:
     seen: dict[tuple[Any, ...], int] = {}
     out = []
     for entry in entries:
@@ -148,7 +148,7 @@ def _renumbered(entries: list[Entry[Payload]]) -> list[Entry[Payload]]:
     return out
 
 
-def _time(value: str) -> datetime:
+def github_time(value: str) -> datetime:
     return datetime.fromisoformat(value)
 
 
@@ -158,7 +158,7 @@ def _linked(evidence_project: str | None) -> str:
     return f"[{evidence_project}](https://github.com/{evidence_project})"
 
 
-def _header(student: Student) -> str:
+def header(student: Student) -> str:
     return (
         f"{_MARKER.format(student.github_id)}\n"
         f"**Student:** {student.name} (`{student.github_login}`)\n"

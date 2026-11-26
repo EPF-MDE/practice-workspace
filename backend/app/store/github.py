@@ -13,10 +13,10 @@ from app.github_app import installation_client
 from app.roster import Student
 from app.settings import Settings
 from app.store._internal.comments import (
-    _entry,
-    _renumbered,
-    _time,
     comment_body,
+    comment_entry,
+    github_time,
+    renumbered,
 )
 from app.store._internal.data_branch import DataBranch
 from app.store._internal.github_api import GitHubApi
@@ -102,10 +102,10 @@ class GitHubStore:
                     comments = self._api.all_pages(f"issues/{number}/comments", {})
                     entries += [
                         e
-                        for e in (_entry(c, self._bot_login) for c in comments)
+                        for e in (comment_entry(c, self._bot_login) for c in comments)
                         if e is not None
                     ]
-                self._records[student.github_id] = _renumbered(
+                self._records[student.github_id] = renumbered(
                     sorted(entries, key=lambda e: e.at)
                 )
             return self._records[student.github_id]
@@ -123,14 +123,14 @@ class GitHubStore:
         found: dict[int, list[Entry[Payload]]] = {}
         for comment in comments:
             number = _OnIssue.model_validate(comment).number
-            entry = _entry(comment, self._bot_login)
+            entry = comment_entry(comment, self._bot_login)
             if entry is not None and number in owners:
                 found.setdefault(owners[number], []).append(entry)
         return [
             Record(
                 student,
                 tuple(
-                    _renumbered(
+                    renumbered(
                         sorted(found.get(student.github_id, []), key=lambda e: e.at)
                     )
                 ),
@@ -170,7 +170,7 @@ class GitHubStore:
                 step_or_drawing,
                 payload,
                 version,
-                _time(comment["created_at"]),
+                github_time(comment["created_at"]),
             )
             entries.append(entry)
             return entry

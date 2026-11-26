@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 
 from app.roster import Student
-from app.store._internal.comments import _MARKER_RE, _header
+from app.store._internal.comments import MARKER_RE, header
 from app.store._internal.github_api import GitHubApi
 
 type IssuesByGitHubId = dict[int, list[int]]
@@ -39,7 +39,7 @@ class IssueIndex:
                     "issues",
                     json={
                         "title": f"Practice: {student.name} ({student.group})",
-                        "body": _header(student),
+                        "body": header(student),
                         "labels": [self._label],
                     },
                 ).json()
@@ -55,7 +55,7 @@ class IssueIndex:
             )
             issues: IssuesByGitHubId = {}
             for issue in sorted(found, key=lambda i: i["number"]):
-                marker = _MARKER_RE.search(issue.get("body") or "")
+                marker = MARKER_RE.search(issue.get("body") or "")
                 if marker and "pull_request" not in issue:
                     issues.setdefault(int(marker[1]), []).append(issue["number"])
             self._issues = issues
