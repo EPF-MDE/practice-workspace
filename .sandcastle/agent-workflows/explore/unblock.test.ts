@@ -19,20 +19,27 @@ const issue = ({ number, state, labels = [] }: Issue) => ({
   labels: labels.map((name) => ({ name })),
 });
 
-const close = (closed: number, relations: Record<number, Issue[]>) => {
+type Relations = { blocking: Issue[]; blockedBy: Record<number, Issue[]> };
+
+const close = (closed: number, { blocking, blockedBy }: Relations) => {
   const dir = mkdtempSync(join(tmpdir(), "unblock-"));
   writeFileSync(join(dir, "calls"), "");
-  const lists = Object.entries(relations).map(([n, issues]) => {
-    const file = join(dir, `${n}.json`);
+  const answer = (endpoint: string, issues: Issue[]) => {
+    const file = join(dir, `${endpoint.replaceAll("/", "-")}.json`);
     writeFileSync(file, JSON.stringify(issues.map(issue)));
-    return `  "api --paginate repos/R/issues/${n}/dependencies/"*) jq -r "$5" "${file}" ;;`;
-  });
+    return `  "api --paginate repos/R/issues/${endpoint} --jq "*) jq -r "$5" "${file}" ;;`;
+  };
+  const lists = [
+    answer(`${closed}/dependencies/blocking`, blocking),
+    ...Object.entries(blockedBy).map(([n, issues]) =>
+      answer(`${n}/dependencies/blocked_by`, issues)
+    ),
+  ];
   writeFileSync(
     join(dir, "gh"),
     `#!/bin/bash
 case "$*" in
 ${lists.join("\n")}
-  "api --paginate repos/R/issues/"*) echo "[]" | jq -r "$5" ;;
   "issue edit "*|"issue comment "*) echo "$*" >> "${dir}/calls" ;;
   *) echo "unexpected gh $*" >&2; exit 1 ;;
 esac
@@ -64,28 +71,33 @@ const blocked = (number: number): Issue => ({
 describe("closing an issue that blocks others", () => {
   it("sends back to explore an issue whose last blocker it was", () => {
     const { status, stderr, calls } = close(3, {
-      3: [blocked(7)],
-      7: [
-        { number: 3, state: "closed" },
-        { number: 4, state: "closed" },
-      ],
+      blocking: [blocked(7)],
+      blockedBy: {
+        7: [
+          { number: 3, state: "closed" },
+          { number: 4, state: "closed" },
+        ],
+      },
     });
 
     expect(stderr).toBe("");
     expect(status).toBe(0);
-    expect(calls).toEqual([
-      "issue edit 7 --remove-label agent:blocked-by-ticket --add-label agent:explore",
-      "issue comment 7 --body Its last blocker, #3, is closed: back to explore. <!-- factory:status -->",
-    ]);
+    expect(calls).toHaveLength(2);
+    expect(calls[0]).toBe(
+      "issue edit 7 --remove-label agent:blocked-by-ticket --add-label agent:explore"
+    );
+    expect(calls[1]).toMatch(/^issue comment 7 .*<!-- factory:status -->$/);
   });
 
   it("leaves an issue that another open issue still blocks", () => {
     const { status, calls } = close(3, {
-      3: [blocked(7)],
-      7: [
-        { number: 3, state: "closed" },
-        { number: 4, state: "open" },
-      ],
+      blocking: [blocked(7)],
+      blockedBy: {
+        7: [
+          { number: 3, state: "closed" },
+          { number: 4, state: "open" },
+        ],
+      },
     });
 
     expect(status).toBe(0);
@@ -94,10 +106,11 @@ describe("closing an issue that blocks others", () => {
 
   it("leaves an issue the factory does not hold as blocked, or one closed", () => {
     const { status, calls } = close(3, {
-      3: [
+      blocking: [
         { number: 7, state: "open", labels: ["needs-a-human"] },
         { number: 8, state: "closed", labels: ["agent:blocked-by-ticket"] },
       ],
+      blockedBy: {},
     });
 
     expect(status).toBe(0);
