@@ -4,6 +4,7 @@ import { parse } from "yaml";
 
 const WRITER = "warm-caches.yml";
 const READER = /^agent-.*\.yml$/;
+const CACHE_ACTIONS = new Set(["actions/cache", "actions/cache/restore"]);
 
 const lines = (value) =>
   String(value ?? "")
@@ -22,7 +23,7 @@ const cacheOf = (step) => {
   if (action === "astral-sh/setup-uv" && given["enable-cache"]) {
     return { cache: "uv", key: lines(given["cache-dependency-glob"]) };
   }
-  if (action === "actions/cache") {
+  if (CACHE_ACTIONS.has(action)) {
     return { cache: lines(given.path), key: String(given.key) };
   }
   return undefined;

@@ -107,3 +107,19 @@ describe("check-cache-keys, beyond the agent workflows", () => {
     expect(result.status).toBe(1);
   });
 });
+
+describe("check-cache-keys, on the steps it reads", () => {
+  it("refuses a restore-only cache under another key", () => {
+    const result = check({
+      "warm-caches.yml": WARM,
+      "agent-review.yml": workflow(
+        chrome("0.28.0").replace("actions/cache@", "actions/cache/restore@")
+      ),
+    });
+
+    expect(result.stderr).toContain(
+      "agent-review.yml: job work, step Cache agent-browser's Chrome reads the ~/.agent-browser/browsers cache"
+    );
+    expect(result.status).toBe(1);
+  });
+});
