@@ -19,7 +19,10 @@ const cacheOf = (step) => {
   if (action === "actions/setup-node" && given.cache === "npm") {
     return { cache: "npm", key: lines(given["cache-dependency-path"]) };
   }
-  if (action === "astral-sh/setup-uv" && given["enable-cache"]) {
+  if (
+    action === "astral-sh/setup-uv" &&
+    String(given["enable-cache"]) !== "false"
+  ) {
     return { cache: "uv", key: lines(given["cache-dependency-glob"]) };
   }
   if (action === "actions/cache" || action.startsWith("actions/cache/")) {

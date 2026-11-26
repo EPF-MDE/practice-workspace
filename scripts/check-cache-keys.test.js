@@ -124,4 +124,28 @@ describe("check-cache-keys, on every form of a cache step", () => {
     );
     expect(result.status).toBe(1);
   });
+
+  it("refuses a uv cache that setup-uv enables by default", () => {
+    const result = check({
+      "warm-caches.yml": WARM,
+      "agent-review.yml": workflow(`      - uses: astral-sh/setup-uv@v10.3.3`),
+    });
+
+    expect(result.stderr).toContain(
+      'agent-review.yml: job work, step 1 reads the uv cache under ""'
+    );
+    expect(result.status).toBe(1);
+  });
+
+  it("leaves a setup-uv step alone when it turns its cache off", () => {
+    const result = check({
+      "warm-caches.yml": WARM,
+      "agent-review.yml": workflow(`      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: false`),
+    });
+
+    expect(result.stderr).toBe("");
+    expect(result.status).toBe(0);
+  });
 });
