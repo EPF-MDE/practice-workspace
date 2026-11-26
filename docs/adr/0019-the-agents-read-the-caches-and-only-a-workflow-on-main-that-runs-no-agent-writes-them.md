@@ -1,0 +1,13 @@
+# The agents read the caches, and only a workflow on `main` that runs no agent writes them
+
+Every agent run logged `Cache reservation failed: cache write denied: token has no writable scopes`. The run's own log says why, on its first lines: `Cache mode: read`. Since June 2026 GitHub gives a read-only cache token to a job started by an event that someone without write access can start, when that job uses the default branch's cache scope ([GitHub's changelog](https://github.blog/changelog/2026-06-26-read-only-actions-cache-for-untrusted-triggers/)). The explore and implement runs start on `issues: labeled`, so they read `main`'s caches and never write them. The review runs start on `pull_request: labeled`, so they write a pull request's scope, which no later run reads. Neither a repository setting nor an organisation setting is involved. Only `agent-rebase.yml` and `agent-implement-spec.yml`, on `push`, `schedule` and `workflow_dispatch`, could write `main`'s caches. They did so by chance, when they had work to do, and their npm key hashed the root lock file alone.
+
+**So the agents only read the caches. `warm-caches.yml` writes them on `main`: on a push that changes a lock file, twice a week so that GitHub's seven-day eviction does not empty them, and on demand. It runs no agent and holds no secret. Every agent workflow looks up the keys it writes, which are `check.yml`'s: npm's on both lock files, uv's on `backend/uv.lock`, and Chrome's on agent-browser's version.**
+
+- **No agent job declares `cache-mode: write`.** GitHub would allow it. But such a job runs an agent on text a stranger wrote, and whatever it saved would be restored by every later run on `main`, the ones holding `FACTORY_PAT` included. That is the cache poisoning the read-only default is there to stop, and it would break ADR-0014's rule that no stranger's code reaches the secrets.
+- **The npm cache holds `~/.npm`, not `node_modules`.** `npm ci` still runs on every agent run, but it no longer downloads anything.
+
+## Considered options
+
+- **A `push: main` trigger on `check.yml`.** It warms the same keys, but it runs the whole check after every merge, and its concurrency group is keyed by the pull request's number, which a push does not have.
+- **`cache-mode: write` on the agent jobs.** It is refused above.

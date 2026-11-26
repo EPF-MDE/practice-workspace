@@ -187,6 +187,9 @@ jobs:
         with:
           node-version: "24"
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
 
       - name: Install dependencies
         if: steps.batch.outputs.numbers != '[]'
