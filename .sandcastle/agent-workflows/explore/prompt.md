@@ -30,7 +30,7 @@ Include filenames, and lines of code. Remember that the agent that implements wi
 
    Tickets that would change the same files run one after the other. Among them, whether in the batch, a spec queue or an open pull request, at most one is `easy-call`; tag the others `blocked` on it, by number.
 
-   A one-way door takes `needs-a-human` or `blocked`. If you are weighing it up, that weighing is the answer: it is not an easy call.
+   A one-way door takes `needs-a-human`, its decision the door itself, unless it only waits on a ticket. If you are weighing it up, that weighing is the answer: it is not an easy call.
 
 5. COMMENT. Write one Markdown `comment` per issue.
    - A duplicate's comment is ONE line: why it is the same issue. The workflow adds "Closed as duplicate of #N." under it.
