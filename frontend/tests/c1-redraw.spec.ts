@@ -1,10 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import {
-  DRAWING_TEST_TIMEOUT,
-  drawChain,
-  expectChainKept,
-  shapesOfChain,
-} from "./helpers/draw";
+import { drawChain, expectChainKept, shapesOfChain } from "./helpers/draw";
 import { path, signIn, step } from "./helpers/path";
 
 const STUDENTS = [
@@ -18,7 +13,6 @@ for (const student of STUDENTS) {
     page,
     browser,
   }, testInfo) => {
-    test.setTimeout(DRAWING_TEST_TIMEOUT);
     await signIn(page, student.id);
     await page.goto("/competencies/C1");
     await drawAndReload(page);

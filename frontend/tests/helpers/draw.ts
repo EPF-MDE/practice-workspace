@@ -1,7 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
-export const DRAWING_TEST_TIMEOUT = 120_000;
-
 type Point = { x: number; y: number };
 
 const WIDTH = 150;

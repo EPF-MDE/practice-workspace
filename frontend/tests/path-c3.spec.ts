@@ -1,6 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
 import { closing } from "./helpers/closing";
-import { DRAWING_TEST_TIMEOUT } from "./helpers/draw";
 import {
   answerStep,
   BAKERY,
@@ -61,7 +60,6 @@ for (const student of STUDENTS) {
   test(`${student.group}: C3's Path, a step waiting for the ranking, a GitHub Evidence Project`, async ({
     page,
   }) => {
-    test.setTimeout(DRAWING_TEST_TIMEOUT);
     await signIn(page, student.id);
     await openCompetency(page, "C3");
     await expect(step(page, "read-the-errors")).toContainText("Pantry");
