@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 SESSION_ID = "github_id"
 SESSION_STATE = "oauth_state"
 SESSION_REFUSED = "refused_login"
-SESSION_IDLE_LIMIT = timedelta(days=60)
+_SESSION_IDLE_LIMIT = timedelta(days=60)
 
 NOTICE = (
     "What you send here (your answers, drawings, Self-assessment, Evidence Plan "
@@ -174,7 +174,7 @@ def add_session(
         secret_key=secret or secrets.token_urlsafe(32),
         clock=clock,
         session_cookie="cws_session",
-        max_age=int(SESSION_IDLE_LIMIT.total_seconds()),
+        max_age=int(_SESSION_IDLE_LIMIT.total_seconds()),
         same_site="lax",
         https_only=https_only,
     )
