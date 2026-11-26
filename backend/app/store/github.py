@@ -111,7 +111,7 @@ class GitHubStore:
             return self._records[student.github_id]
 
     def open_record(self, student: Student) -> None:
-        self._issues.issue(student, create=True)
+        self._issues.issue(student)
 
     def record(self, student: Student) -> Record:
         with self._student_lock(student):
@@ -148,7 +148,7 @@ class GitHubStore:
         check_size(payload)
         with self._student_lock(student):
             entries = self._entries(student)
-            number = self._issues.issue(student, create=True)
+            number = self._issues.issue(student)
             version = 1 + sum(
                 1
                 for e in entries

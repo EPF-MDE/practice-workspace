@@ -28,23 +28,23 @@ class IssueIndex:
                 for number in numbers
             }
 
-    def issue(self, student: Student, create: bool) -> int | None:
+    def issue(self, student: Student) -> int:
         with self._index_lock:
             issues = self._loaded()
             numbers = issues.get(student.github_id)
-            number = numbers[0] if numbers else None
-            if number is None and create:
-                issue = self._api.call(
-                    "POST",
-                    "issues",
-                    json={
-                        "title": f"Practice: {student.name} ({student.group})",
-                        "body": header(student),
-                        "labels": [self._label],
-                    },
-                ).json()
-                number = issue["number"]
-                issues[student.github_id] = [number]
+            if numbers:
+                return numbers[0]
+            issue = self._api.call(
+                "POST",
+                "issues",
+                json={
+                    "title": f"Practice: {student.name} ({student.group})",
+                    "body": header(student),
+                    "labels": [self._label],
+                },
+            ).json()
+            number: int = issue["number"]
+            issues[student.github_id] = [number]
             return number
 
     def _loaded(self) -> IssuesByGitHubId:
