@@ -58,9 +58,12 @@ jobs:
           cache-dependency-glob: backend/uv.lock
 
       - name: Install the dependencies into the caches
+        # The global packages too, which every agent job installs: npm's cache
+        # keeps them even when Chrome's cache needs no install.
         run: |
           npm ci --no-audit --no-fund
           npm --prefix frontend ci --no-audit --no-fund
+          npm install -g agent-browser@0.27.0 @anthropic-ai/claude-code
           (cd backend && uv sync)
 
       - name: Cache agent-browser's Chrome
@@ -72,6 +75,4 @@ jobs:
 
       - name: Install agent-browser's Chrome
         if: steps.chrome.outputs.cache-hit != 'true'
-        run: |
-          npm install -g agent-browser@0.27.0
-          agent-browser install
+        run: agent-browser install

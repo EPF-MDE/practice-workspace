@@ -5,7 +5,7 @@ Every agent run logged `Cache reservation failed: cache write denied: token has 
 **So the agents only read the caches. `warm-caches.yml` writes them on `main`: on a push that changes a lock file, twice a week so that GitHub's seven-day eviction does not empty them, and on demand. It runs no agent and holds no secret. Every agent workflow looks up the keys it writes, which are those of `check.yml`'s `frontend` job: npm's on both lock files, uv's on `backend/uv.lock`, and Chrome's on agent-browser's version.**
 
 - **No agent job declares `cache-mode: write`.** GitHub would allow it. But such a job runs an agent on text a stranger wrote, and whatever it saved would be restored by every later run on `main`, the ones holding `FACTORY_PAT` included. That is the cache poisoning the read-only default is there to stop, and it would break ADR-0014's rule that no stranger's code reaches the secrets.
-- **The npm cache holds `~/.npm`, not `node_modules`.** `npm ci` still runs on every agent run, but it no longer downloads anything.
+- **The npm cache holds `~/.npm`, not `node_modules`.** `npm ci` still runs on every agent run, but it no longer downloads anything, nor does the global install of agent-browser, which `warm-caches.yml` installs into that cache too. Claude Code's install is unpinned, so once a newer version is out than the one the cache holds, it downloads again until a lock file changes and the cache is written anew.
 
 ## Considered options
 
