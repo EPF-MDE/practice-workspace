@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Iterable, Mapping
 
 from .model import (
     BANDS,
@@ -18,7 +18,7 @@ from .model import (
     _options,
 )
 from .render import CompetencyContent, _render, _step_for
-from .tree import _Directive, _RawStep, _walk
+from .tree import _Directive, _Node, _RawStep, _walk
 
 
 def _check(
@@ -72,6 +72,7 @@ def _check(
         if len(problems) > found:
             unreadable.add(step.id)
         if step.id in unreadable:
+            problems += _served_markers(where, _text(step.nodes), "")
             continue
         _check_views(step, where, group_blocks, problems)
     point_ids: set[str] = set()
@@ -230,6 +231,15 @@ def _view_problems(step: _RawStep, block: str, where: str) -> list[str]:
             f"{where}: an answer block for {GROUPS} but no field to answer in"
         )
     return problems + _served_markers(where, repr(view), f" ({GROUPS})")
+
+
+def _text(nodes: Iterable[_Node]) -> str:
+    return "\n".join(
+        node
+        if isinstance(node, str)
+        else " ".join([*node.attrs.values(), _text(node.children)])
+        for node in nodes
+    )
 
 
 def _served_markers(where: str, served: str, group: str) -> list[str]:

@@ -4,7 +4,7 @@ import re
 from collections.abc import Callable, Collection, Mapping
 from typing import Any
 
-from .check import _check
+from .check import _check, _served_markers
 from .model import (
     DIRECTIVES,
     ContentError,
@@ -137,6 +137,7 @@ def parse_competency(
         step = _raw_step(title, attrs, lines, where, blocks, problems)
         if step is None:
             unreadable.add(attrs.get("id", title))
+            problems += _served_markers(where, "\n".join(lines), "")
             continue
         for d in _walk(step.nodes):
             if d.name in ("example-drawing", "reference-drawing"):
