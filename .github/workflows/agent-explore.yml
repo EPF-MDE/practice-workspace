@@ -258,8 +258,6 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
 
       - name: Install Playwright's Chromium
-        # `npm run check` runs the browser tests in it. Without it here, the
-        # agent installs it mid-session.
         if: steps.batch.outputs.numbers != '[]'
         run: (cd frontend && npx playwright install --with-deps --only-shell chromium)
 

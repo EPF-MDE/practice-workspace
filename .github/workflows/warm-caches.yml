@@ -1,19 +1,9 @@
-# Writes the caches the agent workflows read: npm's, uv's, agent-browser's
-# Chrome and Playwright's Chromium, on `main`, under the keys those workflows
-# look up. Why this workflow and not the agents' own runs is ADR-0019.
-#
-# Every key here must stay the one the agent workflows use, and npm's and
-# uv's the ones check.yml's frontend job uses too:
-#   npm         setup-node, cache-dependency-path on both lock files
-#   uv          setup-uv, cache-dependency-glob backend/uv.lock
-#   Chrome      agent-browser-<version>-<os>
-#   Playwright  playwright-<os>-<hash of frontend/package-lock.json>
-# A key that drifts would be written here and read by nobody, so
-# scripts/check-cache-keys.js refuses it.
+# Writes, on `main`, the caches the agent workflows only read (ADR-0019).
+# scripts/check-cache-keys.js refuses an agent workflow that looks one up
+# under a key this workflow does not write.
 name: Warm the caches
 
 on:
-  # A lock file changed on main: the agents' next keys are new.
   push:
     branches: [main]
     paths:
@@ -21,8 +11,6 @@ on:
       - frontend/package-lock.json
       - backend/uv.lock
       - .github/workflows/warm-caches.yml
-  # GitHub evicts a cache nobody read for seven days. Twice a week reads, or
-  # writes, each one, so a quiet week does not leave the agents cold.
   schedule:
     - cron: "30 4 * * 1,4"
   workflow_dispatch:
@@ -60,8 +48,6 @@ jobs:
           cache-dependency-glob: backend/uv.lock
 
       - name: Install the dependencies into the caches
-        # The global packages too, which every agent job installs: npm's cache
-        # keeps them even when Chrome's cache needs no install.
         run: |
           npm ci --no-audit --no-fund
           npm --prefix frontend ci --no-audit --no-fund
