@@ -184,7 +184,7 @@ def _ticks(
                 "Drawing",
             )
         ticks[drawing] = [c for c in known if c in missed]
-        if phase is not closing.Phase.BEFORE_THE_CLOSE and ticks[drawing] != (
+        if phase.after_the_close and ticks[drawing] != (
             record.missed_check_points(page.competency, drawing) or []
         ):
             raise HTTPException(

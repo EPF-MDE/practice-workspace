@@ -16,6 +16,14 @@ class Phase(Enum):
     AFTER_THE_CLOSE = "after-the-close"
     AFTER_THE_READING_DAY = "after-the-reading-day"
 
+    @property
+    def after_the_close(self) -> bool:
+        return self is not Phase.BEFORE_THE_CLOSE
+
+    @property
+    def after_the_reading_day(self) -> bool:
+        return self is Phase.AFTER_THE_READING_DAY
+
 
 _LINK = re.compile(r"https://(github\.com|gitlab\.com)/[\w.-]+/[\w.-]+(/\S*)?")
 
@@ -99,9 +107,9 @@ def check_move(
     now: Phase,
     scale: Scale,
 ) -> None:
-    if now is Phase.BEFORE_THE_CLOSE:
+    if not now.after_the_close:
         return
-    if now is Phase.AFTER_THE_READING_DAY:
+    if now.after_the_reading_day:
         raise Refused(
             403,
             "The Reading Day has passed: your Self-assessment can no longer change.",

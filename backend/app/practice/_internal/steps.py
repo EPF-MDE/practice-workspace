@@ -61,11 +61,11 @@ def _calendar(request: Request) -> Calendar:
 
 
 def _closed(request: Request) -> bool:
-    return _phase(request) is not closing.Phase.BEFORE_THE_CLOSE
+    return _phase(request).after_the_close
 
 
 def _after_the_reading_day(request: Request) -> bool:
-    return _phase(request) is closing.Phase.AFTER_THE_READING_DAY
+    return _phase(request).after_the_reading_day
 
 
 def _phase(request: Request) -> closing.Phase:
