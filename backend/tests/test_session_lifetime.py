@@ -1,14 +1,11 @@
 from datetime import datetime, timedelta
 
 import pytest
-from conftest import BEFORE_THE_CLOSE, sign_in
+from conftest import BEFORE_THE_CLOSE, MakeClient, sign_in
 from courses_under_test import OnTheRoster
 from fastapi.testclient import TestClient
 
-from app.auth import SESSION_IDLE_LIMIT, FakeIdentity
-from app.main import create_app
-from app.settings import Settings
-from app.store import InMemoryStore
+SIXTY_DAYS = timedelta(days=60)
 
 
 class Clock:
@@ -28,33 +25,26 @@ def clock() -> Clock:
 
 
 @pytest.fixture
-def signed_in_on(
-    clock: Clock, test_settings: Settings, store: InMemoryStore, student: OnTheRoster
+def signed_in_with_clock(
+    clock: Clock, make_client: MakeClient, student: OnTheRoster
 ) -> TestClient:
-    client = TestClient(
-        create_app(
-            settings=test_settings,
-            identity=FakeIdentity(),
-            store=store,
-            clock=clock,
-        )
-    )
+    client = make_client(clock=clock)
     sign_in(client, student.github_id)
     return client
 
 
-def test_a_student_who_comes_back_stays_signed_in_past_the_idle_limit(
-    clock: Clock, signed_in_on: TestClient
+def test_a_student_who_comes_back_stays_signed_in_past_sixty_days(
+    clock: Clock, signed_in_with_clock: TestClient
 ) -> None:
     for _ in range(4):
-        clock.advance(SESSION_IDLE_LIMIT * 3 / 4)
+        clock.advance(SIXTY_DAYS * 3 / 4)
 
-        assert signed_in_on.get("/api/me").status_code == 200
+        assert signed_in_with_clock.get("/api/me").status_code == 200
 
 
-def test_a_student_away_longer_than_the_idle_limit_signs_in_again(
-    clock: Clock, signed_in_on: TestClient
+def test_a_student_away_longer_than_sixty_days_signs_in_again(
+    clock: Clock, signed_in_with_clock: TestClient
 ) -> None:
-    clock.advance(SESSION_IDLE_LIMIT + timedelta(days=1))
+    clock.advance(SIXTY_DAYS + timedelta(days=1))
 
-    assert signed_in_on.get("/api/me").status_code == 401
+    assert signed_in_with_clock.get("/api/me").status_code == 401

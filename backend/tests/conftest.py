@@ -87,6 +87,7 @@ class MakeClient(Protocol):
         repository_reading: RepositoryReadingSource | None = None,
         access_check: AccessCheck | None = None,
         now: datetime = BEFORE_THE_CLOSE,
+        clock: Callable[[], datetime] | None = None,
     ) -> TestClient: ...
 
 
@@ -100,9 +101,11 @@ def make_client(test_settings: Settings, store: InMemoryStore) -> MakeClient:
         repository_reading: RepositoryReadingSource | None = None,
         access_check: AccessCheck | None = None,
         now: datetime = BEFORE_THE_CLOSE,
+        clock: Callable[[], datetime] | None = None,
     ) -> TestClient:
+        read_clock = clock or (lambda: now)
         if isinstance(store, InMemoryStore):
-            store.clock = lambda: now
+            store.clock = read_clock
         app = create_app(
             settings=settings or test_settings,
             roster=roster,
@@ -110,7 +113,7 @@ def make_client(test_settings: Settings, store: InMemoryStore) -> MakeClient:
             store=store,
             repository_reading=repository_reading,
             access_check=access_check,
-            clock=lambda: now,
+            clock=read_clock,
         )
         return TestClient(app)
 
