@@ -120,6 +120,7 @@ jobs:
     # reads both.
     outputs:
       batch: ${{ steps.batch.outputs.numbers }}
+      open: ${{ steps.batch.outputs.open }}
       plan: ${{ steps.plan.outputs.json }}
 
     env:
@@ -172,6 +173,14 @@ jobs:
           numbers="$(jq -c '[.[].number] | sort' /tmp/explore/issues.json)"
           echo "Batch: $numbers"
           echo "numbers=$numbers" >> "$GITHUB_OUTPUT"
+
+          # Every open issue, pull requests left out, with the id GitHub's
+          # "blocked by" relation takes. Only these can block an issue of the
+          # batch: one already closed would send it straight back to explore,
+          # to be found blocked again, forever.
+          open="$(gh api --paginate "repos/$GH_REPO/issues?state=open&per_page=100" \
+            --jq '.[] | select(.pull_request | not) | {number, id}' | jq -sc .)"
+          echo "open=$open" >> "$GITHUB_OUTPUT"
 
           # The trigger comes off, so putting it back on is how you retry.
           # `agent:in-progress` stays on until apply moves the issue on.
@@ -323,6 +332,7 @@ jobs:
           # `run:` is text bash runs, and the plan was written by an agent
           # that has just read a pile of untrusted issues.
           BATCH: ${{ needs.explore.outputs.batch }}
+          OPEN: ${{ needs.explore.outputs.open }}
           PLAN: ${{ needs.explore.outputs.plan }}
         run: |
           set -euo pipefail
@@ -330,7 +340,7 @@ jobs:
           [ -s /tmp/plan.json ] || { echo "The explore run returned no plan." >&2; exit 1; }
 
           # Every rule, written as "what is wrong". An empty list means apply.
-          jq -r --argjson batch "$BATCH" '
+          jq -r --argjson batch "$BATCH" --argjson open "$OPEN" '
             .issues as $plan
             | [
                 # Every issue in the batch, exactly once.
@@ -356,6 +366,12 @@ jobs:
                  | "#\(.number) names blockers but is not a surviving blocked issue."),
                 ($plan[] | select(.number as $n | (.blocked_by // []) | index($n))
                  | "#\(.number) is blocked by itself."),
+                ($plan[] | .number as $n | (.blocked_by // [])[]
+                 | select(IN($open[].number) | not)
+                 | "#\($n) is blocked by #\(.), which is not an open issue."),
+                ($plan[] | .number as $n | (.blocked_by // [])[] | . as $b
+                 | select(any($plan[]; .number == $b and .duplicate_of))
+                 | "#\($n) is blocked by #\(.), which this run closes as a duplicate."),
 
                 # A survivor tagged `needs-a-human` asks one question, with
                 # options, and only it does.

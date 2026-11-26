@@ -18,12 +18,18 @@ const checkThePlan = workflow.jobs.apply.steps.find(
   (step) => step.name === "Check the plan"
 )?.run;
 
+const openIssuesOneToNine = Array.from({ length: 9 }, (_, i) => ({
+  number: i + 1,
+  id: 100 + i,
+}));
+
 const check = (batch: number[], plan: unknown) =>
   spawnSync("bash", ["-c", checkThePlan ?? "exit 99"], {
     encoding: "utf8",
     env: {
       ...process.env,
       BATCH: JSON.stringify(batch),
+      OPEN: JSON.stringify(openIssuesOneToNine),
       PLAN: JSON.stringify(plan),
     },
   });
@@ -141,5 +147,34 @@ describe("the explore workflow's plan check, on blocked and needs-a-human", () =
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("#3 asks a question but does not need");
+  });
+});
+
+describe("the explore workflow's plan check, on blockers", () => {
+  it("refuses a blocker that is not an open issue, so nothing loops through explore", () => {
+    const result = check([3], {
+      issues: [entry(3, { tag: "blocked", blocked_by: [1, 42] })],
+    });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(
+      "#3 is blocked by #42, which is not an open issue"
+    );
+    expect(result.stderr).not.toContain("#1,");
+  });
+
+  it("refuses a blocker this run closes as a duplicate", () => {
+    const result = check([3, 4, 5], {
+      issues: [
+        entry(3),
+        entry(4, { duplicate_of: 3 }),
+        entry(5, { tag: "blocked", blocked_by: [4] }),
+      ],
+    });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(
+      "#5 is blocked by #4, which this run closes"
+    );
   });
 });
