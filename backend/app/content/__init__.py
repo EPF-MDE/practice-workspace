@@ -73,7 +73,8 @@ def load_content(
         snapshot: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
         return snapshot
 
-    loading = ContentLoading({}, set(), read_images(directory), [])
+    held = read_images(directory)
+    loading = ContentLoading({}, set(), {}, [])
     for path in sorted(directory.glob("c[0-9].md")):
         try:
             competency = parse_competency(
@@ -82,7 +83,7 @@ def load_content(
                 path.name,
                 drawings,
                 to_get_there_levels=to_get_there_levels,
-                images=loading.images,
+                images=held,
             )
         except ContentError as error:
             loading.with_a_file.add(path.stem.upper())
@@ -96,4 +97,8 @@ def load_content(
             continue
         loading.with_a_file.add(competency.id)
         loading.competencies[competency.id] = competency
+    for competency in loading.competencies.values():
+        loading.images.update(
+            (name, held[name]) for name in competency.images_shown if name in held
+        )
     return loading

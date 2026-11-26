@@ -28,6 +28,7 @@ class CompetencyContent:
     intro: str
     _steps: tuple[_RawStep, ...]
     group_block_ids: dict[str, str] = field(hash=False)
+    images_shown: frozenset[str] = frozenset()
 
     def for_group(self, group_name: str) -> Page:
         return self._page(self.group_block_ids[group_name])

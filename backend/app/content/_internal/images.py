@@ -72,6 +72,14 @@ def _sources_in(tokens: list[Token]) -> Iterator[str]:
             yield from _sources_in(token.children)
 
 
+def images_shown(text: str) -> set[str]:
+    return {
+        name
+        for src in _sources_in(markdown.parse(text))
+        if (name := _name_in_images(src)) is not None
+    }
+
+
 def image_problems(text: str, held: Collection[str], where: str) -> list[str]:
     problems: list[str] = []
     for src in _sources_in(markdown.parse(text)):

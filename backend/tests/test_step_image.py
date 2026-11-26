@@ -51,5 +51,11 @@ def test_no_path_reads_another_file_than_an_image_of_the_course_folder(
     assert response.content != HARBOUR.read_bytes()
 
 
+def test_an_image_only_the_instructor_material_shows_is_not_served(
+    signed_in: TestClient,
+) -> None:
+    assert signed_in.get("/api/course/images/instructor-only.png").status_code == 404
+
+
 def test_a_steps_image_is_not_served_before_sign_in(client: TestClient) -> None:
     assert client.get("/api/course/images/harbour.png").status_code == 401

@@ -5,7 +5,7 @@ from collections.abc import Callable, Collection, Iterable, Mapping
 from typing import Any
 
 from .check import _check, _served_markers
-from .images import image_problems
+from .images import image_problems, images_shown
 from .model import (
     DIRECTIVES,
     ContentError,
@@ -139,6 +139,7 @@ def parse_competency(
     if any(isinstance(n, _Directive) for n in intro_nodes):
         problems.append(f"{source}, intro: blocks belong in a step, not the intro")
     problems += image_problems(_text(intro_nodes), images, f"{source}, intro")
+    shown = images_shown(_text(intro_nodes))
     raw_steps: list[_RawStep] = []
     unreadable: set[str] = set()
     for title, attrs, lines in steps:
@@ -153,6 +154,7 @@ def parse_competency(
             if d.name in ("example-drawing", "reference-drawing"):
                 d.snapshot = _snapshot(d, drawings, where, problems)
         problems += image_problems(_text(step.nodes), images, where)
+        shown |= images_shown(_text(step.nodes))
         if len(problems) > found:
             unreadable.add(step.id)
         raw_steps.append(step)
@@ -161,6 +163,7 @@ def parse_competency(
         "\n".join(n for n in intro_nodes if isinstance(n, str)),
         tuple(raw_steps),
         dict(group_block_ids),
+        frozenset(shown),
     )
     problems += _check(result, source, to_get_there_levels, unreadable)
     if problems:
