@@ -22,7 +22,7 @@ from .render import CompetencyContent, _render, _step_for
 from .tree import _Directive, _Node, _RawStep, _walk
 
 
-class _PointReference(NamedTuple):
+class _PointAt(NamedTuple):
     where: str
     point: str
 
@@ -48,9 +48,9 @@ def _check(
             f"{source}, steps {', '.join(optional)}: one optional redraw per "
             "Competency, not more"
         )
-    points: list[_PointReference] = []
-    transfers: list[_PointReference] = []
-    check_points: list[_PointReference] = []
+    points: list[_PointAt] = []
+    transfers: list[_PointAt] = []
+    check_points: list[_PointAt] = []
     for index, step in enumerate(steps):
         where = f"{source}, step '{step.id}'"
         _check_waiting(steps[:index], step, where, group_blocks, unreadable, problems)
@@ -64,7 +64,7 @@ def _check(
                 "(fills=C1.b)"
             )
         elif step.kind == "transfer" and step.fills:
-            transfers.append(_PointReference(where, step.fills))
+            transfers.append(_PointAt(where, step.fills))
         found = len(problems)
         _check_directives(
             competency.id,
@@ -105,8 +105,8 @@ def _check_directives(
     step: _RawStep,
     where: str,
     to_get_there_levels: Collection[str] | None,
-    points: list[_PointReference],
-    check_points: list[_PointReference],
+    points: list[_PointAt],
+    check_points: list[_PointAt],
     problems: list[str],
 ) -> None:
     directives = list(_walk(step.nodes))
@@ -143,7 +143,7 @@ def _check_directives(
                 problems.append(
                     f"{where}: point {d.attrs['id']}'s band is one of {BANDS}"
                 )
-            points.append(_PointReference(where, d.attrs["id"]))
+            points.append(_PointAt(where, d.attrs["id"]))
             proofs = [
                 c for c in d.children if isinstance(c, _Directive) and c.name == "proof"
             ]
@@ -173,7 +173,7 @@ def _check_directives(
 def _check_reference(
     d: _Directive,
     where: str,
-    check_points: list[_PointReference],
+    check_points: list[_PointAt],
     problems: list[str],
 ) -> None:
     inner = [c for c in d.children if isinstance(c, _Directive)]
@@ -189,7 +189,7 @@ def _check_reference(
     ids = [c.attrs.get("id") for c in inner]
     if None in ids or len(set(ids)) != len(ids):
         problems.append(f"{where}: each check-point needs its own {{#id}}")
-    check_points += [_PointReference(where, c.attrs.get("point", "")) for c in inner]
+    check_points += [_PointAt(where, c.attrs.get("point", "")) for c in inner]
 
 
 GROUP_NAMES_SLOT = "\0"
