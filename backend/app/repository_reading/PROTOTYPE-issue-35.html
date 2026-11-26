@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>PROTOTYPE #35 : ta page, quand le cours change de semestre</title>
+    <style>
+      body { margin: 0; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1d2330; background: #fafbfc; }
+      main { max-width: 1180px; margin: 0 auto; padding: 24px; }
+      h1 { font-size: 24px; margin: 0 0 4px; }
+      h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280; margin: 0 0 10px; }
+      .sub { color: #6b7280; margin: 0 0 18px; }
+      .stepper { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+      .stepper button { font: inherit; padding: 8px 14px; border-radius: 20px; border: 1px solid #d0d5dd; background: #fff; cursor: pointer; }
+      .stepper button.on { background: #2b5fd9; border-color: #2b5fd9; color: #fff; }
+      .headline { font-size: 17px; background: #fff; border-left: 4px solid #2b5fd9; padding: 12px 16px; border-radius: 8px; margin-bottom: 18px; }
+      .headline.bad { border-color: #d92d20; }
+      .grid { display: grid; grid-template-columns: 330px 1fr; gap: 24px; align-items: start; }
+      .card { background: #fff; border: 1px solid #e3e6ec; border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+      label { display: block; margin: 7px 0; cursor: pointer; }
+      select { font: inherit; width: 100%; margin-top: 4px; }
+      h3 { font-size: 16px; margin: 10px 0 6px; }
+      .row { display: grid; grid-template-columns: 120px 1fr; gap: 10px; padding: 8px 10px; border-radius: 8px; margin: 4px 0; }
+      .pill { font-size: 13px; text-align: center; border-radius: 12px; padding: 2px 4px; height: fit-content; }
+      .done .pill { background: #ecfdf3; color: #067647; }
+      .gift .pill { background: #eef4ff; color: #3538cd; }
+      .todo .pill { background: #fffaeb; color: #b54708; }
+      .eval .pill { background: #f2f4f7; color: #475467; }
+      .note { font-size: 14px; color: #475467; }
+      .done .note { color: #067647; }
+      .gift .note { color: #3538cd; }
+      .row.wrong { background: #fef3f2; outline: 1px solid #fda29b; }
+      .tag { display: inline-block; margin-top: 4px; font-size: 14px; color: #fff; background: #d92d20; border-radius: 6px; padding: 1px 8px; }
+      .changes li { margin: 4px 0; }
+      .decision { font-size: 15px; }
+      footer { color: #6b7280; font-size: 13px; margin-top: 20px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Ce que tu vois sur ta page, à côté de chaque Competency</h1>
+      <p class="sub">Coche à gauche ce que tu as fait dans ton dépôt. À droite, ce que la page te dit, point par point.</p>
+      <nav class="stepper">
+        <button data-stage="1">1 · Ce semestre</button>
+        <button data-stage="2">2 · Le semestre prochain, aujourd'hui</button>
+        <button data-stage="3">3 · Le semestre prochain, si le cours décrit ses points</button>
+      </nav>
+      <div id="headline" class="headline"></div>
+      <div class="grid">
+        <div class="card"><h2>Ton dépôt</h2><div id="repo"></div></div>
+        <div id="right"></div>
+      </div>
+      <footer>
+        Prototype jetable pour EPF-MDE/practice-workspace#35. Les numéros de points et ce que la page cherche viennent du code d'aujourd'hui ;
+        les énoncés des points et les changements du semestre prochain sont inventés pour l'exemple. Des cases remplacent la lecture de GitHub.
+      </footer>
+    </main>
+    <script>
+      const START_NOW = ["le code de départ du cours", "la branche de secours « Clean Bench »", "la branche de secours « CI »", "la branche de secours « Prêt à déployer »", "la branche de secours « PostHog »"];
+      const START_NEXT = [...START_NOW.slice(0, 4), "la branche de secours « Observabilité »"];
+      const TOGGLES = [
+        ["ownCode", "J'ai écrit mon propre code"],
+        ["redGreen", "Une de mes pull requests est passée du rouge au vert"],
+        ["archCheck", "Ma CI lance l'Architecture Check sur main"],
+        ["rules", "main est protégée : une pull request doit passer les tests"],
+        ["ciRan", "Ma CI a tourné"],
+        ["deployWaits", "Mon déploiement attend que les tests passent"],
+        ["deployed", "J'ai déployé en production"],
+        ["fix", "Une de mes corrections est arrivée en production"],
+        ["posthog", "Mon code envoie ses erreurs à PostHog, avec l'identité de l'utilisateur"],
+      ];
+      const own = (why) => ({ s: "done", why });
+      const gift = (start) => ({ s: "gift", why: `parce que ta branche de départ contient ${start} : ce travail vient du cours, pas de toi` });
+      const evalOnly = (id, text) => ({ id, text, eval: true });
+      const point = (id, text, todo, check) => ({ id, text, todo, check });
+
+      const C2D = (r) =>
+        r.ciRan ? own("parce que ta CI a tourné, qu'elle ait réussi ou non") : r.deployWaits ? own("parce que ta CI contient un déploiement") : null;
+      const NOW = [
+        point("C1", "Tu as écrit ton propre code, au-delà de celui du cours", "pousse ton travail sur une branche de ton dépôt", (r) => r.ownCode && own("parce que des fichiers diffèrent du code du cours")),
+        point("C2.a", "Une de tes pull requests est passée du rouge au vert", "ouvre une pull request, laisse ta CI la refuser, corrige-la jusqu'au vert", (r) => r.redGreen && own("parce qu'une pull request est passée du rouge au vert")),
+        point("C2.b", "Ton Architecture Check tourne sur main", "ajoute l'Architecture Check à ta CI sur main", (r, st) => (r.archCheck ? own("parce que ta CI le lance sur main") : r.start >= 1 && gift(st[1]))),
+        point("C2.c", "main est protégée : une pull request doit passer les tests", "ajoute une règle sur main qui exige tes tests", (r) => r.rules && own("parce qu'une règle protège main")),
+        point("C2.d", "Ta CI tourne sur ton dépôt", "fais tourner ta CI au moins une fois", C2D),
+        point("C2.e", "Tu as déployé", "déploie en staging ou en production", (r) => r.deployed && own("parce que tu as déployé en production")),
+        evalOnly("C2.f", "Tu sais revenir en arrière après un déploiement raté"),
+        evalOnly("C2.g", "Tu sais expliquer ton pipeline de bout en bout"),
+        evalOnly("C3.a", "Tu sais retrouver une erreur dans PostHog"),
+        point("C3.b", "Ton code envoie ses erreurs à PostHog, avec l'identité de l'utilisateur", "branche PostHog et envoie l'identité avec chaque erreur", (r, st) =>
+          r.posthog && r.ownCode ? own("parce que ton code appelle PostHog avec une identité") : r.start === 4 && st === START_NOW && gift(st[4])),
+        evalOnly("C3.c", "Tu sais classer tes erreurs par gravité"),
+        evalOnly("C3.d", "Tu sais dire combien d'utilisateurs une erreur touche"),
+        point("C3.e", "Une correction est passée par ta CI jusqu'en production", "fusionne une pull request de correction, puis déploie en production", (r) => r.fix && r.deployed && own("parce que ta correction a été déployée")),
+        evalOnly("C3.f", "Tu sais vérifier qu'une correction a marché"),
+      ];
+      const byId = (id) => NOW.find((p) => p.id === id);
+      const NEXT = [
+        ...NOW.slice(0, 3),
+        { ...byId("C2.d"), id: "C2.c" },
+        byId("C2.e"), byId("C2.f"), byId("C2.g"),
+        point("C2.h", "Ton déploiement attend que tes tests passent", "fais attendre tes tests à ton déploiement", (r) => r.deployWaits && own("parce que ton déploiement attend les tests")),
+        byId("C3.a"),
+        { ...byId("C3.b"), check: (r, st) => (r.posthog && r.ownCode ? own("parce que ton code appelle PostHog avec une identité") : r.start === 4 && gift(st[4])) },
+        ...NOW.slice(10),
+      ];
+      const CHANGES = [
+        "C2.c (main protégée) disparaît.",
+        "C2.d devient C2.c : « Ta CI tourne sur ton dépôt ».",
+        "Nouveau point C2.h : « Ton déploiement attend que tes tests passent ».",
+        "La branche de secours « PostHog » s'appelle maintenant « Observabilité ». Elle compte toujours pour C3.b.",
+      ];
+
+      function status(p, repo, starts) {
+        if (p.eval) return { s: "eval", note: "à montrer à l'Eval : ton dépôt ne le montre pas." };
+        const f = p.check(repo, starts);
+        if (f) return { s: f.s, note: `${f.s === "done" ? "✓" : "↳"} ${f.why}` };
+        return { s: "todo", note: `pour ça : ${p.todo}` };
+      }
+
+      function wrongIn(p, st) {
+        const next = NEXT.find((q) => q.id === p.id && q.text === p.text);
+        if (next) {
+          const truth = status(next, repo, START_NEXT).s;
+          return truth !== st.s && truth !== "todo" ? "Ton dépôt le montre, mais la page ne le voit pas : la branche de secours a changé de nom." : null;
+        }
+        const moved = NEXT.find((q) => q.text === p.text);
+        return moved ? `Ce point s'appelle maintenant ${moved.id}.` : "Ce point n'existe plus ce semestre.";
+      }
+
+      const LABEL = { done: "✓ trouvé", gift: "reçu du cours", todo: "à faire", eval: "à l'Eval" };
+      function row(p, st, wrong) {
+        return `<div class="row ${st.s} ${wrong ? "wrong" : ""}" data-id="${p.id}"><div class="pill">${LABEL[st.s]}</div><div>
+          <div><b>${p.id}</b> — ${p.text}</div><div class="note">${st.note}</div>${wrong ? `<div class="tag">${wrong}</div>` : ""}</div></div>`;
+      }
+
+      let stage = 1;
+      const repo = { start: 0, ownCode: true, ciRan: true, deployed: true };
+
+      function pageView() {
+        const points = stage === 3 ? NEXT : NOW;
+        const starts = stage === 1 ? START_NOW : START_NEXT;
+        let h = "";
+        for (const c of ["C1", "C2", "C3"]) {
+          h += `<h3>${c}</h3>`;
+          for (const p of points.filter((q) => q.id.startsWith(c))) {
+            const st = status(p, repo, starts);
+            h += row(p, st, stage === 2 ? wrongIn(p, st) : null);
+          }
+          if (stage === 2 && c === "C2") {
+            const added = NEXT.find((q) => q.id === "C2.h");
+            h += row(added, status(added, repo, START_NEXT), "Ce point est nouveau ce semestre, et la page ne te le montre pas.");
+          }
+        }
+        return `<div class="card"><h2>Ta page</h2>${h}</div>`;
+      }
+
+      const HEAD = {
+        1: "Ce semestre : chaque ligne te dit ce que tu as, ce qui te reste à faire, et ce que tu montreras à l'Eval.",
+        2: "Le semestre prochain, le cours a changé ses points, mais la page montre encore ceux de ce semestre. La plupart des lignes restent justes ; celles en rouge sont fausses pour toi.",
+        3: "Le semestre prochain, si le cours décrit ses points lui-même : la page suit ses changements, et chaque ligne est juste.",
+      };
+
+      function render() {
+        document.querySelectorAll(".stepper button").forEach((b) => b.classList.toggle("on", Number(b.dataset.stage) === stage));
+        const head = document.getElementById("headline");
+        head.textContent = HEAD[stage];
+        head.classList.toggle("bad", stage === 2);
+        const starts = stage === 1 ? START_NOW : START_NEXT;
+        document.getElementById("repo").innerHTML =
+          `<label>Tu es parti de :<select id="start">${starts.map((s, i) => `<option value="${i}" ${i === repo.start ? "selected" : ""}>${s}</option>`).join("")}</select></label>` +
+          TOGGLES.map(([k, l]) => `<label><input type="checkbox" data-k="${k}" ${repo[k] ? "checked" : ""}> ${l}</label>`).join("");
+        let right = pageView();
+        if (stage > 1) right = `<div class="card"><h2>Ce que le cours a changé ce semestre</h2><ul class="changes">${CHANGES.map((c) => `<li>${c}</li>`).join("")}</ul></div>` + right;
+        if (stage === 3)
+          right += `<p class="decision"><b>Décision (Xavier, 2026-11-26) :</b> rien pour la v0.1. Laisser le cours décrire ses points demande une spec à part, nécessaire avant le premier semestre dont les points changent.</p>`;
+        document.getElementById("right").innerHTML = right;
+      }
+
+      document.addEventListener("click", (event) => {
+        const b = event.target.closest("[data-stage]");
+        if (!b) return;
+        stage = Number(b.dataset.stage);
+        render();
+      });
+      document.addEventListener("change", (event) => {
+        const t = event.target;
+        if (t.id === "start") repo.start = Number(t.value);
+        else if (t.dataset.k) repo[t.dataset.k] = t.checked;
+        render();
+      });
+      render();
+    </script>
+  </body>
+</html>
