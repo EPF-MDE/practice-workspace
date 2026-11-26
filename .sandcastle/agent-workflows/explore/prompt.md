@@ -21,8 +21,12 @@ Include filenames, and lines of code. Remember that the agent that implements wi
 
 4. VERDICT. Give each issue one `tag`. The workflow branches on it.
    - `easy-call`: the right change is clear, nobody would disagree with any decision in it, and you would be happy for the pull request to land without you. It goes straight to the implementer.
-   - `needs-a-human`: somebody has to decide something first (a migration, a name, a policy, a trade), or the issue's claims did not hold up.
-   - `blocked`: waiting on another open issue or pull request of this repository, named by number in the comment; on something outside this repository; or on information only the reporter has.
+   - `blocked`: waiting on other open issues of this repository, and on nothing a person has to decide. List them, by number, in `blocked_by`. The workflow marks them as its blockers on GitHub, and sends the issue back to explore when the last one closes. For an open pull request, name the issue it closes.
+   - `needs-a-human`: a person has to decide something first (a migration, a policy, a trade, a one-way door), has to supply something only they have (what the reporter meant, something outside this repository), or the issue's claims did not hold up. Put that decision in `decision`: one question, with at least two options, each with what it costs. The workflow posts it at the end of the comment.
+
+   Some calls are not a person's to make:
+   - A name the GLOSSARY.md, an ADR in docs/adr/ or CODING_STANDARDS.md settles is no decision. Use it, and cite where it is settled. Only a new idea the glossary has no word for needs its name decided.
+   - A two-way choice those settle, or one cheap to undo, is no decision either. Make it, and say which and why in the comment: the implementer carries the reasoning into its pull request, where the review can turn it back.
 
    Tickets that would change the same files run one after the other. Among them, whether in the batch, a spec queue or an open pull request, at most one is `easy-call`; tag the others `blocked` on it, by number.
 
@@ -36,7 +40,8 @@ Include filenames, and lines of code. Remember that the agent that implements wi
      - the blast radius, in prose: the 2–3 places that matter (Deep Modules: subpackages of backend/app, folders under frontend/src/packages; routes; the Store). A schema change or a migration goes first, and loudly;
      - whether it's a one-way or a two-way door
      - the duplicates closed onto it, crediting by number any detail only they had;
-     - last, the open questions a human has to settle. An empty list is a claim, and usually a wrong one.
+     - the two-way choices you made, each with its reasoning, for the implementer to carry into its pull request.
+   - A `needs-a-human` comment does not repeat its `decision`: the workflow puts the question and its options last.
    - When an issue shows in the UI, save a screenshot of it as /tmp/evidence/<issue-number>-<name>.png. Reference it in that issue's comment by its absolute path, e.g. `![now](/tmp/evidence/12-now.png)`. The workflow uploads them.
 
 You and every subagent are read-only, apart from /tmp/evidence/. The plan is your only output, and you will be asked for it as structured output. The workflow checks it, posts every comment and closes every duplicate.

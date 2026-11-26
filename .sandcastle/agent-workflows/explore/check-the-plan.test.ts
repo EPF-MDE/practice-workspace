@@ -35,13 +35,19 @@ const entry = (number: number, overrides = {}) => ({
   ...overrides,
 });
 
+const decision = {
+  question: "Which name does the Step take?",
+  options: ["Keep the old one", "Use the new one"],
+};
+
 describe("the explore workflow's plan check", () => {
   it("accepts one entry per issue of the batch, with a duplicate on a survivor", () => {
-    const result = check([3, 4, 5], {
+    const result = check([3, 4, 5, 6], {
       issues: [
         entry(3),
-        entry(4, { tag: "needs-a-human" }),
+        entry(4, { tag: "needs-a-human", decision }),
         entry(5, { duplicate_of: 3 }),
+        entry(6, { tag: "blocked", blocked_by: [3] }),
       ],
     });
 
@@ -88,5 +94,52 @@ describe("the explore workflow's plan check", () => {
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("#3 is a duplicate of #1");
+  });
+});
+
+describe("the explore workflow's plan check, on blocked and needs-a-human", () => {
+  it("refuses a blocked issue that names no issue it is blocked by", () => {
+    const result = check([3], { issues: [entry(3, { tag: "blocked" })] });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("#3 is blocked but names no issue");
+  });
+
+  it("refuses blockers on an issue that is not blocked", () => {
+    const result = check([3], { issues: [entry(3, { blocked_by: [1] })] });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("#3 names blockers but is not");
+  });
+
+  it("refuses an issue blocked by itself", () => {
+    const result = check([3], {
+      issues: [entry(3, { tag: "blocked", blocked_by: [3] })],
+    });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("#3 is blocked by itself");
+  });
+
+  it("refuses an issue that needs a human but asks no question with options", () => {
+    for (const asked of [
+      {},
+      { decision: { question: "Which one?", options: ["This one"] } },
+      { decision: { question: " ", options: ["This", "That"] } },
+    ]) {
+      const result = check([3], {
+        issues: [entry(3, { tag: "needs-a-human", ...asked })],
+      });
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("#3 needs a human but asks no question");
+    }
+  });
+
+  it("refuses a question on an issue that does not need a human", () => {
+    const result = check([3], { issues: [entry(3, { decision })] });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("#3 asks a question but does not need");
   });
 });
