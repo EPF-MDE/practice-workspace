@@ -69,7 +69,7 @@ export async function drawChain(page: Page, canvas: Locator, labels: string[]) {
   }
 }
 
-type KeptDrawing = { shapes: number; shapeProps: string };
+type KeptDrawing = { shapes: number; labels: string[] };
 type DrawingStep = { competency: string; step: string };
 
 async function keptDrawing(
@@ -85,26 +85,34 @@ async function keptDrawing(
         {}
     ) as { typeName?: string; props?: unknown }[];
     const shapes = records.filter((record) => record.typeName === "shape");
+    const textIn = (node: unknown): string => {
+      if (Array.isArray(node)) return node.map(textIn).join("");
+      if (typeof node !== "object" || node === null) return "";
+      if ("text" in node && typeof node.text === "string") return node.text;
+      return "content" in node ? textIn(node.content) : "";
+    };
     return {
       shapes: shapes.length,
-      shapeProps: JSON.stringify(shapes.map((shape) => shape.props)),
+      labels: shapes
+        .map((shape) =>
+          textIn((shape.props as { richText?: unknown })?.richText)
+        )
+        .filter((label) => label !== ""),
     };
   }, `:${competency}:drawing:${step}`);
 }
 
 export async function expectChainKept(
   page: Page,
-  where: DrawingStep,
+  drawing: DrawingStep,
   labels: string[]
 ) {
   await expect
     .poll(async () => {
-      const kept = await keptDrawing(page, where);
-      return (
-        kept !== null &&
-        kept.shapes === shapesOfChain(labels) &&
-        labels.every((label) => kept.shapeProps.includes(label))
-      );
+      const kept = await keptDrawing(page, drawing);
+      return kept === null
+        ? null
+        : { shapes: kept.shapes, labels: [...kept.labels].sort() };
     })
-    .toBe(true);
+    .toEqual({ shapes: shapesOfChain(labels), labels: [...labels].sort() });
 }
