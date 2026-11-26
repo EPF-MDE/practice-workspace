@@ -840,6 +840,10 @@ export type ReceivedPoint = {
      * Text
      */
     text: string;
+    /**
+     * Facts
+     */
+    facts: Array<PanelFact>;
 };
 
 /**

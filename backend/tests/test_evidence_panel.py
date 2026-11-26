@@ -120,7 +120,8 @@ def test_each_fact_names_the_point_it_supports(
         "C2.c",
         "The ruleset on `main` requires `architecture` and `test`.",
     )
-    assert c2["facts"][1]["credited_to"] == "course-2026-fallback-clean-bench"
+    received = c2["received"][0]["facts"][0]
+    assert received["credited_to"] == "course-2026-fallback-clean-bench"
     assert panel["facts"][0]["point"] == "C1"
 
 

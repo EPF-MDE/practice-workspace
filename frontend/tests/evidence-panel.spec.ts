@@ -191,4 +191,8 @@ test("a point the Student only received from a Fallback Branch shows as received
     "Clean Bench Fallback Branch"
   );
   await expect(panel.getByTestId("received-C2.c")).toHaveCount(0);
+  await expect(
+    panel.getByTestId("received-C2.b").getByTestId("fact-C2.b")
+  ).toBeVisible();
+  await expect(panel.getByTestId("fact-C2.b")).toHaveCount(1);
 });

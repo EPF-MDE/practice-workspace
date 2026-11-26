@@ -67,7 +67,9 @@ def test_a_point_whose_only_facts_come_from_a_fallback_branch_is_received_from_t
     assert [r["point"] for r in panel["received"]] == ["C2.b"]
     assert "Clean Bench Fallback Branch" in panel["received"][0]["text"]
     assert panel["nothing_found"] == ["C2.a"]
-    assert panel["facts"][0]["received_from"] == "the Clean Bench Fallback Branch"
+    assert panel["facts"] == []
+    received_fact = panel["received"][0]["facts"][0]
+    assert received_fact["received_from"] == "the Clean Bench Fallback Branch"
 
 
 def test_a_point_the_students_own_work_shows_is_found_not_received(
@@ -83,6 +85,7 @@ def test_a_point_the_students_own_work_shows_is_found_not_received(
     )
 
     assert panel["received"] == []
+    assert [f["point"] for f in panel["facts"]] == ["C2.b", "C2.b"]
     assert panel["nothing_found"] == ["C2.a"]
     assert panel["facts"][1]["received_from"] is None
 

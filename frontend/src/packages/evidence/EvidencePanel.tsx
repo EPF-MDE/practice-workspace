@@ -13,15 +13,46 @@ function when(iso: string | null | undefined) {
   return iso ? new Date(iso).toLocaleString() : "never";
 }
 
-function Fact({ fact }: { fact: PanelFact }) {
-  const received = fact.received_from
-    ? ` (received from the course: ${fact.received_from})`
-    : "";
+function ChangedFiles({ files }: { files: NonNullable<PanelFact["files"]> }) {
+  if (files.length === 0) return null;
+  return (
+    <details className="text-xs text-muted-foreground">
+      <summary className="cursor-pointer">The {files.length} files</summary>
+      <ul className="pl-4">
+        {files.map((file) => (
+          <li key={file.path}>
+            <code>{file.path}</code>
+            {typeof file.additions === "number" && ` +${file.additions}`}
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+function Fact({
+  fact,
+  underItsPoint = false,
+}: {
+  fact: PanelFact;
+  underItsPoint?: boolean;
+}) {
+  const received =
+    fact.received_from && !underItsPoint
+      ? ` (received from the course: ${fact.received_from})`
+      : "";
   return (
     <li data-testid={`fact-${fact.point}`} className="flex flex-col gap-1">
       <span>
-        <Sentence text={fact.text + received} />{" "}
-        <span className="whitespace-nowrap font-semibold">→ {fact.point}</span>
+        <Sentence text={fact.text + received} />
+        {!underItsPoint && (
+          <>
+            {" "}
+            <span className="whitespace-nowrap font-semibold">
+              → {fact.point}
+            </span>
+          </>
+        )}
         {fact.link && (
           <>
             {" "}
@@ -36,21 +67,7 @@ function Fact({ fact }: { fact: PanelFact }) {
           </>
         )}
       </span>
-      {(fact.files ?? []).length > 0 && (
-        <details className="text-xs text-muted-foreground">
-          <summary className="cursor-pointer">
-            The {fact.files?.length} files
-          </summary>
-          <ul className="pl-4">
-            {fact.files?.map((file) => (
-              <li key={file.path}>
-                <code>{file.path}</code>
-                {typeof file.additions === "number" && ` +${file.additions}`}
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
+      <ChangedFiles files={fact.files ?? []} />
     </li>
   );
 }
@@ -115,6 +132,11 @@ function Received({ received }: { received: EvidencePanel["received"] }) {
             received from the course
           </span>{" "}
           <Sentence text={r.text} />
+          <ul className="list-disc pl-5 text-muted-foreground">
+            {r.facts.map((fact) => (
+              <Fact key={fact.text} fact={fact} underItsPoint />
+            ))}
+          </ul>
         </li>
       ))}
     </ul>

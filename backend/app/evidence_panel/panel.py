@@ -101,6 +101,7 @@ class PanelFact(BaseModel):
 class ReceivedPoint(BaseModel):
     point: PointId
     text: str
+    facts: list[PanelFact]
 
 
 def received_text(credits: list[Credit]) -> str:
@@ -185,6 +186,7 @@ def build_panel(
     competency: str, reading: RepositoryReading, declaration: Declaration | None
 ) -> EvidencePanel:
     found = reading[competency]
+    received = found.received()
     nothing = [p for p in found.nothing_found if p != PointId.CHANGED_FILES]
     looked = _looked(reading.branches_read, reading.pull_requests_read)
     return EvidencePanel(
@@ -200,7 +202,7 @@ def build_panel(
         empty_text=empty_text(reading.branches_read, reading.pull_requests_read)
         if reading.empty
         else None,
-        facts=[_fact(f) for f in found.facts],
+        facts=[_fact(f) for f in found.facts if f.point not in received],
         nothing_found=list(found.nothing_found),
         nothing_found_text=(
             f"Looked for on your Evidence Project ({looked} read), "
@@ -210,8 +212,12 @@ def build_panel(
             else None
         ),
         received=[
-            ReceivedPoint(point=p, text=received_text(credits))
-            for p, credits in found.received().items()
+            ReceivedPoint(
+                point=p,
+                text=received_text(credits),
+                facts=[_fact(f) for f in found.facts_for(p)],
+            )
+            for p, credits in received.items()
         ],
         not_visible=[
             NotVisible(
