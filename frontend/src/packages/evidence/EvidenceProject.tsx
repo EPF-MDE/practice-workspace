@@ -1,4 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { type Access, type EvidencePanel, PracticeService } from "@/client";
 import { Button } from "@/components/ui/button";
 import { courseQuery } from "@/course";
@@ -273,7 +277,7 @@ export function EvidenceProject(props: Props) {
   const data = panel.data;
   const declared = data?.declaration;
   const readsNothing =
-    useQuery(courseQuery).data?.read_when_none_declared === "nothing";
+    useSuspenseQuery(courseQuery).data.read_when_none_declared === "nothing";
   const edit = (next: Partial<EvidenceDraft>) => {
     check.reset();
     onDraft({ ...draft, ...next });
