@@ -5,7 +5,7 @@ import { parse } from "yaml";
 const WRITER = "warm-caches.yml";
 const READER = /^agent-.*\.yml$/;
 
-const lines = (value) =>
+const sortedList = (value) =>
   String(value ?? "")
     .split("\n")
     .map((line) => line.trim())
@@ -17,16 +17,16 @@ const cacheOf = (step) => {
   const action = String(step.uses ?? "").split("@")[0];
   const given = step.with ?? {};
   if (action === "actions/setup-node" && given.cache === "npm") {
-    return { cache: "npm", key: lines(given["cache-dependency-path"]) };
+    return { cache: "npm", key: sortedList(given["cache-dependency-path"]) };
   }
   if (
     action === "astral-sh/setup-uv" &&
     String(given["enable-cache"]) !== "false"
   ) {
-    return { cache: "uv", key: lines(given["cache-dependency-glob"]) };
+    return { cache: "uv", key: sortedList(given["cache-dependency-glob"]) };
   }
   if (action === "actions/cache" || action.startsWith("actions/cache/")) {
-    return { cache: lines(given.path), key: String(given.key) };
+    return { cache: sortedList(given.path), key: String(given.key) };
   }
   return undefined;
 };
@@ -35,9 +35,9 @@ const keysIn = (file) => {
   const { jobs } = parse(readFileSync(file, "utf8")) ?? {};
   return Object.entries(jobs ?? {}).flatMap(([name, job]) =>
     (job.steps ?? []).flatMap((step, index) => {
-      const read = cacheOf(step);
+      const cache = cacheOf(step);
       const where = `${basename(file)}: job ${name}, step ${step.name ?? index + 1}`;
-      return read ? [{ where, ...read }] : [];
+      return cache ? [{ where, ...cache }] : [];
     })
   );
 };
