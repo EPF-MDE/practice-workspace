@@ -268,7 +268,7 @@ jobs:
 
           parked_count=$(jq '[ .[] | select(.state=="OPEN") | select(.labels | index("agent:blocked")) ] | length' /tmp/queue-sorted.json)
           open_count=$(jq '[ .[] | select(.state=="OPEN") | select(.labels | index("agent:blocked") | not) ] | length' /tmp/queue-sorted.json)
-          waiting_count=$(jq 'length' <<< "$awaiting_merge")
+          waiting_count=$(jq --argjson awaiting "$awaiting_merge" '[ .[] | select(.state=="OPEN") | select($awaiting[.number | tostring] != null) ] | length' /tmp/queue-sorted.json)
           echo "remaining=$open_count" >> "$GITHUB_OUTPUT"
           if [ "$parked_count" -gt 0 ]; then
             echo "::notice::Spec #$spec has $parked_count ticket(s) parked for a person. Take \`agent:blocked\` off one to put it back in the queue."
@@ -276,17 +276,20 @@ jobs:
 
           if [ -z "$ticket" ]; then
             # What each open ticket waits on: its own pull request, or its
-            # open blockers and theirs, e.g. `#31 waits on #30 (pull request #95)`.
+            # open blockers and theirs, e.g. `#31 waits on #30 (pull request #95)`,
+            # or `#32 waits on #31 (parked)` when only a person can unblock it.
             waits=$(jq -r --argjson awaiting "$awaiting_merge" '
               def pull_request: $awaiting[.number | tostring];
-              [ .[]
+              [ .[] | select(.state=="OPEN") | select(.labels | index("agent:blocked")) | .number ] as $parked
+              | [ .[]
                 | select(.state=="OPEN")
                 | select(.labels | index("agent:blocked") | not)
                 | if pull_request then
                     "#\(.number) waits on its pull request #\(pull_request)"
                   else
                     "#\(.number) waits on " + ([ .blockers[] | select(.state=="OPEN")
-                      | "#\(.number)" + (if pull_request then " (pull request #\(pull_request))" else "" end)
+                      | "#\(.number)" + (if pull_request then " (pull request #\(pull_request))"
+                                         elif (.number as $n | $parked | index($n)) then " (parked)" else "" end)
                     ] | join(", "))
                   end
               ] | join("; ")

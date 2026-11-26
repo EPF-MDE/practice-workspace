@@ -176,4 +176,20 @@ describe("the implement-spec survey's blockers", () => {
     expect(stdout).toContain("#3 waits on #2 (pull request #102)");
     expect(stdout).toContain("#4 waits on #3");
   });
+
+  it("names a parked blocker as parked", () => {
+    const { stdout, outputs } = survey([
+      open(1, [], ["agent:blocked"]),
+      open(2, [1]),
+    ]);
+
+    expect(outputs.mode).toBe("drained");
+    expect(stdout).toContain("#2 waits on #1 (parked)");
+  });
+
+  it("does not wait on the pull request of a ticket already closed", () => {
+    const { outputs } = survey([closed(1), open(2, [3]), open(3, [2])], [1]);
+
+    expect(outputs.mode).toBe("drained");
+  });
 });
