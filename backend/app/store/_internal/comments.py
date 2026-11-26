@@ -158,7 +158,7 @@ def _linked(evidence_project: str | None) -> str:
     return f"[{evidence_project}](https://github.com/{evidence_project})"
 
 
-def header(student: Student) -> str:
+def issue_header(student: Student) -> str:
     return (
         f"{_MARKER.format(student.github_id)}\n"
         f"**Student:** {student.name} (`{student.github_login}`)\n"

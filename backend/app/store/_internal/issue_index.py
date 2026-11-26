@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 
 from app.roster import Student
-from app.store._internal.comments import MARKER_RE, header
+from app.store._internal.comments import MARKER_RE, issue_header
 from app.store._internal.github_api import GitHubApi
 
 type IssuesByGitHubId = dict[int, list[int]]
@@ -39,7 +39,7 @@ class IssueIndex:
                 "issues",
                 json={
                     "title": f"Practice: {student.name} ({student.group})",
-                    "body": header(student),
+                    "body": issue_header(student),
                     "labels": [self._label],
                 },
             ).json()
