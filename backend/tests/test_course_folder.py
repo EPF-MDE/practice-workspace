@@ -1,5 +1,3 @@
-import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -17,6 +15,8 @@ from course_folders import (
     ONE_STEP,
     TWO_GROUPS,
     front_matter,
+    problems,
+    verify,
     with_every_competency,
     write_course_folder,
 )
@@ -31,23 +31,12 @@ from fastapi.testclient import TestClient
 
 from app.settings import ConfigurationError, Settings
 
-BACKEND = Path(__file__).resolve().parents[1]
 COURSES = FIXTURES / "courses"
 
 
 @pytest.fixture
 def course() -> CourseFolder:
     return TWO_GROUP_FIXTURE
-
-
-def verify(folder: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [sys.executable, "-m", "app", "verify", str(folder)],
-        cwd=BACKEND,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
 
 
 def on(test_settings: Settings, folder: Path) -> Settings:
@@ -121,10 +110,6 @@ def test_verify_reports_every_settings_problem_and_fails() -> None:
     assert result.returncode != 0
     assert "'name'" in result.stdout
     assert "'title'" in result.stdout
-
-
-def problems(result: subprocess.CompletedProcess[str]) -> list[str]:
-    return [line for line in result.stdout.splitlines() if line.startswith("✖")]
 
 
 def test_the_app_refuses_to_start_on_a_course_folder_missing_the_content_of_c2(

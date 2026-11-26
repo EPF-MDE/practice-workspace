@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Collection, Mapping
-from typing import Any, cast
+from typing import Any
 
-from .check import _check
+from .check import _check, _served_markers
 from .model import (
     DIRECTIVES,
     ContentError,
@@ -33,7 +33,9 @@ def _attrs(text: str | None) -> dict[str, str]:
     return attrs
 
 
-def _tree(lines: list[str], where: str, blocks: Collection[str]) -> list[_Node]:
+def _tree(
+    lines: list[str], where: str, blocks: Collection[str], problems: list[str]
+) -> list[_Node]:
     root = _Directive("", {})
     stack = [root]
     fenced = False
@@ -43,7 +45,7 @@ def _tree(lines: list[str], where: str, blocks: Collection[str]) -> list[_Node]:
         elif not fenced and (opened := _OPEN.match(line)):
             name = opened.group(1)
             if name not in DIRECTIVES and name not in blocks:
-                raise ContentError(
+                problems.append(
                     f"{where}: unknown block '::: {name}', neither a directive nor "
                     "a Group block the Course's settings name"
                 )
@@ -53,12 +55,12 @@ def _tree(lines: list[str], where: str, blocks: Collection[str]) -> list[_Node]:
             continue
         elif not fenced and _CLOSE.match(line):
             if len(stack) == 1:
-                raise ContentError(f"{where}: ':::' closes no block")
-            stack.pop()
+                problems.append(f"{where}: ':::' closes no block")
+            else:
+                stack.pop()
             continue
         stack[-1].children.append(line)
-    if len(stack) > 1:
-        raise ContentError(f"{where}: '::: {stack[-1].name}' is never closed")
+    problems += [f"{where}: '::: {d.name}' is never closed" for d in stack[1:]]
     return _without_instructor(root.children)
 
 
@@ -123,23 +125,35 @@ def parse_competency(
 
     competency = meta["competency"]
     blocks = set(groups.values())
-    intro_nodes = _tree(intro, f"{source}, intro", blocks)
+    problems: list[str] = []
+    intro_nodes = _tree(intro, f"{source}, intro", blocks, problems)
     if any(isinstance(n, _Directive) for n in intro_nodes):
-        raise ContentError(f"{source}: blocks belong in a step, not the intro")
-    raw_steps = tuple(
-        _raw_step(title, attrs, lines, source, blocks) for title, attrs, lines in steps
-    )
-    for step in raw_steps:
+        problems.append(f"{source}, intro: blocks belong in a step, not the intro")
+    raw_steps: list[_RawStep] = []
+    unreadable: set[str] = set()
+    for title, attrs, lines in steps:
+        where = f"{source}, step '{attrs.get('id', title)}'"
+        found = len(problems)
+        step = _raw_step(title, attrs, lines, where, blocks, problems)
+        if step is None:
+            unreadable.add(attrs.get("id", title))
+            problems += _served_markers(where, "\n".join(lines), "")
+            continue
         for d in _walk(step.nodes):
             if d.name in ("example-drawing", "reference-drawing"):
-                d.snapshot = _snapshot(d, drawings, f"{source}, step '{step.id}'")
+                d.snapshot = _snapshot(d, drawings, where, problems)
+        if len(problems) > found:
+            unreadable.add(step.id)
+        raw_steps.append(step)
     result = CompetencyContent(
         competency,
-        "\n".join(cast(list[str], intro_nodes)),
-        raw_steps,
+        "\n".join(n for n in intro_nodes if isinstance(n, str)),
+        tuple(raw_steps),
         dict(groups),
     )
-    _check(result, source, to_get_there_levels)
+    problems += _check(result, source, to_get_there_levels, unreadable)
+    if problems:
+        raise ContentError(*dict.fromkeys(problems))
     return result
 
 
@@ -147,15 +161,16 @@ def _raw_step(
     title: str,
     attrs: dict[str, str],
     lines: list[str],
-    source: str,
+    where: str,
     blocks: Collection[str],
-) -> _RawStep:
-    where = f"{source}, step '{title}'"
+    problems: list[str],
+) -> _RawStep | None:
     if "id" not in attrs or not attrs.get("minutes", "").isdigit():
-        raise ContentError(f"{where}: a step needs {{#id minutes=<n>}}")
+        problems.append(f"{where}: a step needs {{#id minutes=<n>}}")
+        return None
     optional = attrs.get("optional", "no")
     if optional not in ("yes", "no"):
-        raise ContentError(f"{where}: optional is yes or no")
+        problems.append(f"{where}: optional is yes or no")
     return _RawStep(
         attrs["id"],
         title,
@@ -164,24 +179,27 @@ def _raw_step(
         attrs.get("fills"),
         optional == "yes",
         attrs.get("after"),
-        tuple(_tree(lines, where, blocks)),
+        tuple(_tree(lines, where, blocks, problems)),
     )
 
 
-def _snapshot(directive: _Directive, drawings: Drawings, where: str) -> dict[str, Any]:
+def _snapshot(
+    directive: _Directive, drawings: Drawings, where: str, problems: list[str]
+) -> dict[str, Any] | None:
     src = directive.attrs.get("src")
     if not src:
-        raise ContentError(
+        problems.append(
             f"{where}: '{directive.name}' needs {{src=<a tldraw snapshot>}}"
         )
+        return None
     try:
         snapshot = drawings(src)
     except (KeyError, OSError, ValueError) as error:
-        raise ContentError(
-            f"{where}: cannot read the drawing '{src}': {error}"
-        ) from error
+        problems.append(f"{where}: cannot read the drawing '{src}': {error}")
+        return None
     if not isinstance(snapshot, dict) or not isinstance(snapshot.get("document"), dict):
-        raise ContentError(
+        problems.append(
             f"{where}: '{src}' is not a tldraw snapshot ({{document, session}})"
         )
+        return None
     return snapshot

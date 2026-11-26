@@ -244,7 +244,7 @@ def test_the_loader_refuses_a_drawing_step(body: str) -> None:
         parse_drawing(body)
 
 
-def test_a_drawing_is_read_from_the_content_folder_and_never_outside_it(
+def test_a_drawing_is_read_from_the_course_folder_and_never_outside_it(
     tmp_path: Path,
 ) -> None:
     import json
@@ -258,7 +258,8 @@ def test_a_drawing_is_read_from_the_content_folder_and_never_outside_it(
     (tmp_path / "c1.md").write_text(text)
 
     reference = (
-        load_content(tmp_path, GROUPS, to_get_there_levels=BELOW_THE_TOP)["C1"]
+        load_content(tmp_path, GROUPS, to_get_there_levels=BELOW_THE_TOP)
+        .competencies["C1"]
         .for_group("OcéENS")
         .steps[0]
         .reference
@@ -269,8 +270,8 @@ def test_a_drawing_is_read_from_the_content_folder_and_never_outside_it(
     (tmp_path / "c1.md").write_text(
         text.replace("src=drawings/example.json", "src=../c1.md")
     )
-    with pytest.raises(ContentError):
-        load_content(tmp_path, GROUPS, to_get_there_levels=BELOW_THE_TOP)
+    loading = load_content(tmp_path, GROUPS, to_get_there_levels=BELOW_THE_TOP)
+    assert loading.problems != []
 
 
 TRANSFER = (
