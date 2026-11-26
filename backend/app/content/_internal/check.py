@@ -7,7 +7,7 @@ from typing import NamedTuple
 
 from .model import (
     BANDS,
-    CHECK_POINTS_PER_REFERENCE,
+    CHECK_POINTS_PER_REFERENCE_DRAWING,
     DRAWING_DIRECTIVES,
     FIELD_KINDS,
     INSTRUCTOR_MARKERS,
@@ -179,8 +179,9 @@ def _check_reference(
     inner = [c for c in d.children if isinstance(c, _Directive)]
     if any(c.name != "check-point" for c in _walk(inner)):
         problems.append(f"{where}: a reference-drawing holds check-points only")
-    if len(inner) not in CHECK_POINTS_PER_REFERENCE:
-        fewest, most = CHECK_POINTS_PER_REFERENCE[0], CHECK_POINTS_PER_REFERENCE[-1]
+    if len(inner) not in CHECK_POINTS_PER_REFERENCE_DRAWING:
+        fewest = min(CHECK_POINTS_PER_REFERENCE_DRAWING)
+        most = max(CHECK_POINTS_PER_REFERENCE_DRAWING)
         problems.append(
             f"{where}: a reference-drawing has {fewest} to {most} check-points, "
             f"not {len(inner)}"
