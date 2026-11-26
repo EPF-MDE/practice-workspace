@@ -1,12 +1,13 @@
-# Writes the caches the agent workflows read: npm's, uv's and agent-browser's
-# Chrome, on `main`, under the keys those workflows look up. Why this
-# workflow and not the agents' own runs is ADR-0019.
+# Writes the caches the agent workflows read: npm's, uv's, agent-browser's
+# Chrome and Playwright's Chromium, on `main`, under the keys those workflows
+# look up. Why this workflow and not the agents' own runs is ADR-0019.
 #
-# Every key here must stay the one the agent workflows and check.yml's
-# frontend job use:
-#   npm   setup-node, Node 24, cache-dependency-path on both lock files
-#   uv    setup-uv, cache-dependency-glob backend/uv.lock
-#   Chrome  agent-browser-<version>-<os>
+# Every key here must stay the one the agent workflows use, and npm's and
+# uv's the ones check.yml's frontend job uses too:
+#   npm         setup-node, cache-dependency-path on both lock files
+#   uv          setup-uv, cache-dependency-glob backend/uv.lock
+#   Chrome      agent-browser-<version>-<os>
+#   Playwright  playwright-<os>-<hash of frontend/package-lock.json>
 # A key that drifts would be written here and read by nobody, so
 # scripts/check-cache-keys.js refuses it.
 name: Warm the caches
@@ -77,3 +78,14 @@ jobs:
       - name: Install agent-browser's Chrome
         if: steps.chrome.outputs.cache-hit != 'true'
         run: agent-browser install
+
+      - name: Cache Playwright's Chromium
+        id: playwright
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install Playwright's Chromium
+        if: steps.playwright.outputs.cache-hit != 'true'
+        run: (cd frontend && npx playwright install --only-shell chromium)
