@@ -98,7 +98,5 @@ def load_content(
         loading.with_a_file.add(competency.id)
         loading.competencies[competency.id] = competency
     for competency in loading.competencies.values():
-        loading.images.update(
-            (name, held[name]) for name in competency.images_shown if name in held
-        )
+        loading.images.update((name, held[name]) for name in competency.images_shown)
     return loading

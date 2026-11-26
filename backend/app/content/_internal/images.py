@@ -72,15 +72,10 @@ def _sources_in(tokens: list[Token]) -> Iterator[str]:
             yield from _sources_in(token.children)
 
 
-def images_shown(text: str) -> set[str]:
-    return {
-        name
-        for src in _sources_in(markdown.parse(text))
-        if (name := _name_in_images(src)) is not None
-    }
-
-
-def image_problems(text: str, held: Collection[str], where: str) -> list[str]:
+def images_in(
+    text: str, held: Collection[str], where: str
+) -> tuple[set[str], list[str]]:
+    shown: set[str] = set()
     problems: list[str] = []
     for src in _sources_in(markdown.parse(text)):
         name = _name_in_images(src)
@@ -94,4 +89,6 @@ def image_problems(text: str, held: Collection[str], where: str) -> list[str]:
                 f"{where}: the Course folder holds no image '{src}' "
                 f"({', '.join(IMAGE_TYPES)})"
             )
-    return problems
+        else:
+            shown.add(name)
+    return shown, problems
