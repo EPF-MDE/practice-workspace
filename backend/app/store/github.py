@@ -99,9 +99,7 @@ class GitHubStore:
             if student.github_id not in self._records:
                 entries: list[Entry[Payload]] = []
                 for number in self._issues.issues_of(student):
-                    comments = self._api.all_pages(
-                        f"/repos/{self._api.repository}/issues/{number}/comments", {}
-                    )
+                    comments = self._api.all_pages(f"issues/{number}/comments", {})
                     entries += [
                         e
                         for e in (_entry(c, self._bot_login) for c in comments)
@@ -121,9 +119,7 @@ class GitHubStore:
 
     def records(self, students: list[Student]) -> list[Record]:
         owners = self._issues.owners()
-        comments = self._api.all_pages(
-            f"/repos/{self._api.repository}/issues/comments", {}
-        )
+        comments = self._api.all_pages("issues/comments", {})
         found: dict[int, list[Entry[Payload]]] = {}
         for comment in comments:
             number = _OnIssue.model_validate(comment).number
@@ -166,7 +162,7 @@ class GitHubStore:
                 )
             comment = self._api.call(
                 "POST",
-                f"/repos/{self._api.repository}/issues/{number}/comments",
+                f"issues/{number}/comments",
                 json={"body": body},
             ).json()
             entry = Entry(

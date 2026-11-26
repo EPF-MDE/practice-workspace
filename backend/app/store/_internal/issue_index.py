@@ -36,7 +36,7 @@ class IssueIndex:
             if number is None and create:
                 issue = self._api.call(
                     "POST",
-                    f"/repos/{self._api.repository}/issues",
+                    "issues",
                     json={
                         "title": f"Practice: {student.name} ({student.group})",
                         "body": _header(student),
@@ -50,7 +50,7 @@ class IssueIndex:
     def _loaded(self) -> IssuesByGitHubId:
         if self._issues is None:
             found = self._api.all_pages(
-                f"/repos/{self._api.repository}/issues",
+                "issues",
                 {"labels": self._label, "state": "all"},
             )
             issues: IssuesByGitHubId = {}

@@ -3,8 +3,6 @@ from __future__ import annotations
 import base64
 from collections.abc import Callable
 
-import httpx
-
 from app.github_app import data_branch_lock
 from app.store._internal.github_api import GitHubApi
 from app.store._internal.model import StoreUnavailable
@@ -29,13 +27,12 @@ class DataBranch:
     def read(self, path: str, ref: str) -> bytes:
         return self._api.call(
             "GET",
-            f"/repos/{self._api.repository}/contents/{path}",
+            f"contents/{path}",
             params={"ref": ref},
             headers={"Accept": "application/vnd.github.raw+json"},
         ).content
 
     def _put_file(self, folder: str, path: str, data: bytes, message: str) -> str:
-        url = f"/repos/{self._api.repository}/contents/"
         for attempt in range(DATA_RETRIES):
             body = {
                 "message": message,
@@ -45,35 +42,25 @@ class DataBranch:
             current = self._file_sha(folder, path)
             if current:
                 body["sha"] = current
-            try:
-                response = self._api.http.put(url + path, json=body)
-            except httpx.HTTPError as error:
-                raise StoreUnavailable(f"GitHub did not answer: {error}") from error
+            response = self._api.call(
+                "PUT", f"contents/{path}", handled=frozenset({409}), json=body
+            )
             if response.status_code == 409:
                 self._sleep(0.5 * (attempt + 1))
                 continue
-            if response.is_error:
-                raise StoreUnavailable(
-                    f"GitHub answered {response.status_code} to PUT {path}"
-                )
             sha: str = response.json()["commit"]["sha"]
             return sha
         raise StoreUnavailable(f"{self.branch} kept moving: {path} not written")
 
     def _file_sha(self, folder: str, path: str) -> str | None:
-        try:
-            response = self._api.http.get(
-                f"/repos/{self._api.repository}/contents/{folder}",
-                params={"ref": self.branch},
-            )
-        except httpx.HTTPError as error:
-            raise StoreUnavailable(f"GitHub did not answer: {error}") from error
+        response = self._api.call(
+            "GET",
+            f"contents/{folder}",
+            handled=frozenset({404}),
+            params={"ref": self.branch},
+        )
         if response.status_code == 404:
             return None
-        if response.is_error:
-            raise StoreUnavailable(
-                f"GitHub answered {response.status_code} to GET {folder}"
-            )
         return next(
             (item["sha"] for item in response.json() if item["path"] == path), None
         )
