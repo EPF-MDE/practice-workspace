@@ -194,6 +194,10 @@ jobs:
           for n in $(jq -r '.[]' <<< "$numbers"); do
             gh issue edit "$n" --remove-label "agent:explore" || true
             gh issue edit "$n" --remove-label "agent:blocked" || true
+            # Explore decides again whether it waits on a ticket. Left on, the
+            # label would send it back here when an old blocker closes, even
+            # once it is being implemented.
+            gh issue edit "$n" --remove-label "agent:blocked-by-ticket" || true
             gh issue edit "$n" --add-label "agent:in-progress"
           done
 
