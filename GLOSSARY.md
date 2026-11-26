@@ -14,7 +14,7 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Course**: A taught course that runs an Instance. Its material and what it says of its Students stay in its own repository, never here. _Avoid_: class, module
 
-**Course folder**: Everything a Course gives the Engine: its settings, its content (one Markdown file per Competency) and its drawings. The Engine reads it at start and refuses to start on one that is incomplete or inconsistent. _Avoid_: course config, content directory
+**Course folder**: Everything a Course gives the Engine: its settings, its content (one Markdown file per Competency), its drawings and its images, the pictures a Step shows, under `images/`. The Engine reads it at start and refuses to start on one that is incomplete or inconsistent. _Avoid_: course config, content directory
 
 **Demo course**: The fictional Course folder shipped with the Engine, for its own tests and its README. No real Course, Student or answer is in it.
 
