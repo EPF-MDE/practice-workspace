@@ -6,7 +6,7 @@ const WRITER = "warm-caches.yml";
 const READER = /^agent-.*\.yml$/;
 const CACHE_ACTIONS = new Set(["actions/cache", "actions/cache/restore"]);
 
-const lines = (value) =>
+const sortedLines = (value) =>
   String(value ?? "")
     .split("\n")
     .map((line) => line.trim())
@@ -18,13 +18,13 @@ const cacheOf = (step) => {
   const action = String(step.uses ?? "").split("@")[0];
   const given = step.with ?? {};
   if (action === "actions/setup-node" && given.cache === "npm") {
-    return { cache: "npm", key: lines(given["cache-dependency-path"]) };
+    return { cache: "npm", key: sortedLines(given["cache-dependency-path"]) };
   }
   if (action === "astral-sh/setup-uv" && given["enable-cache"]) {
-    return { cache: "uv", key: lines(given["cache-dependency-glob"]) };
+    return { cache: "uv", key: sortedLines(given["cache-dependency-glob"]) };
   }
   if (CACHE_ACTIONS.has(action)) {
-    return { cache: lines(given.path), key: String(given.key) };
+    return { cache: sortedLines(given.path), key: String(given.key) };
   }
   return undefined;
 };
