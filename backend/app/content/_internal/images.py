@@ -44,7 +44,10 @@ def read_images(course_folder: Path) -> dict[str, Image]:
 
 def _name_in_images(src: str) -> str | None:
     within = src.removeprefix("./").removeprefix(f"{IMAGES_FOLDER}/")
-    return None if within == src.removeprefix("./") else within
+    parts = within.split("/")
+    if within == src.removeprefix("./") or "" in parts or ".." in parts:
+        return None
+    return within
 
 
 def _image(

@@ -33,6 +33,11 @@ def test_verify_passes_a_valid_course_folder() -> None:
         ("missing-drawing", "c1.md, step 'redraw'", "'drawings/harbour.json'"),
         ("missing-image", "c1.md, step 'sail'", "no image 'images/harbour.png'"),
         ("image-outside-images", "c1.md, step 'sail'", "image 'course.toml'"),
+        (
+            "image-escaping-images",
+            "c1.md, step 'sail'",
+            "image 'images/../course.toml' is not in",
+        ),
     ],
 )
 def test_verify_names_the_problem_its_file_and_its_step_and_fails(
