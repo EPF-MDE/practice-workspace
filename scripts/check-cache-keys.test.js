@@ -122,4 +122,20 @@ describe("check-cache-keys, on the steps it reads", () => {
     );
     expect(result.status).toBe(1);
   });
+
+  it("leaves a setup step that caches nothing alone", () => {
+    const result = check({
+      "warm-caches.yml": WARM,
+      "agent-review.yml": workflow(`      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "24"
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          cache-dependency-glob: other/uv.lock
+      - uses: actions/checkout@v7.0.1`),
+    });
+
+    expect(result.stderr).toBe("");
+    expect(result.status).toBe(0);
+  });
 });
