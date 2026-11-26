@@ -150,7 +150,7 @@ def test_a_point_the_repository_cannot_show_gives_its_statement_and_says_to_show
     assert all("show your PostHog at the Eval" in n["text"] for n in c3["not_visible"])
 
 
-def test_a_point_not_found_yet_gives_its_statement_and_a_to_get_there_from_its_to_get_there(  # noqa: E501
+def test_a_point_not_found_yet_gives_its_statement_and_its_to_get_there(  # noqa: E501
     panel_client: TestClient,
     repositories: OfflineRepositoryReading,
     student: OnTheRoster,
