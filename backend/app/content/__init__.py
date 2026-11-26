@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ._internal.images import Image, read_images
+from ._internal.images import IMAGES_URL, Image, read_images
 from ._internal.model import (
     Answer,
     Block,
@@ -26,6 +26,7 @@ from ._internal.parse import parse_competency
 from ._internal.render import CompetencyContent
 
 __all__ = [
+    "IMAGES_URL",
     "Answer",
     "Block",
     "Canvas",

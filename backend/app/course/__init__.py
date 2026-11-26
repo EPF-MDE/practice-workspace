@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app.auth import current_student
 from app.closing import Level, Phase, Scale
-from app.content import CompetencyContent, Image, load_content
+from app.content import IMAGES_URL, CompetencyContent, Image, load_content
 from app.roster import Repository, Student
 
 from ._internal.competencies import COMPETENCIES, competency_problems
@@ -179,7 +179,7 @@ def course(request: Request) -> CourseOut:
 
 
 @router.get(
-    "/api/course/images/{name:path}",
+    IMAGES_URL + "{name:path}",
     tags=["course"],
     response_class=Response,
     responses={200: {"content": {"image/*": {}}}},

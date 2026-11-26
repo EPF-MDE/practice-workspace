@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from markdown_it import MarkdownIt
-from markdown_it.renderer import RendererHTML
-from markdown_it.token import Token
-from markdown_it.utils import EnvType, OptionsDict
-
+from .images import markdown
 from .model import (
     Answer,
     Block,
@@ -42,28 +38,6 @@ class CompetencyContent:
             _step_for(s, block_id, titles.get(s.after or "", "")) for s in self._steps
         )
         return Page(self.id, _render(self.intro), steps)
-
-
-IMAGES_FOLDER = "images"
-IMAGES_URL = "/api/course/images/"
-
-markdown = MarkdownIt("commonmark", {"html": False}).enable("table")
-
-
-def _image(
-    renderer: RendererHTML,
-    tokens: Sequence[Token],
-    idx: int,
-    options: OptionsDict,
-    env: EnvType,
-) -> str:
-    src = str(tokens[idx].attrGet("src") or "")
-    if src.startswith(f"{IMAGES_FOLDER}/"):
-        tokens[idx].attrSet("src", IMAGES_URL + src.removeprefix(f"{IMAGES_FOLDER}/"))
-    return renderer.image(tokens, idx, options, env)
-
-
-markdown.add_render_rule("image", _image)
 
 
 def _render(text: str) -> str:
