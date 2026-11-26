@@ -7,7 +7,8 @@
 #   npm   setup-node, Node 24, cache-dependency-path on both lock files
 #   uv    setup-uv, cache-dependency-glob backend/uv.lock
 #   Chrome  agent-browser-<version>-<os>
-# A key that drifts is written here and read by nobody.
+# A key that drifts would be written here and read by nobody, so
+# scripts/check-cache-keys.js refuses it.
 name: Warm the caches
 
 on:
