@@ -2,16 +2,19 @@ from __future__ import annotations
 
 import logging
 import secrets
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import timedelta
-from typing import Protocol, cast
+from datetime import datetime, timedelta
+from typing import Any, Protocol, cast
 from urllib.parse import urlencode
 
 import httpx
+import itsdangerous
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.types import ASGIApp
 
 from app.roster import RosterSource, Student
 from app.store import StoreUnavailable
@@ -141,10 +144,35 @@ def _open_record(request: Request, student: Student) -> None:
         )
 
 
-def add_session(app: FastAPI, secret: str, https_only: bool) -> None:
+class _ClockSigner(itsdangerous.TimestampSigner):
+    def __init__(self, secret: str, clock: Callable[[], datetime]) -> None:
+        super().__init__(secret)
+        self._clock = clock
+
+    def get_timestamp(self) -> int:
+        return int(self._clock().timestamp())
+
+
+class _ClockSessionMiddleware(SessionMiddleware):
+    def __init__(
+        self,
+        app: ASGIApp,
+        /,
+        secret_key: str,
+        clock: Callable[[], datetime],
+        **options: Any,
+    ) -> None:
+        super().__init__(app, secret_key=secret_key, **options)
+        self.signer = _ClockSigner(secret_key, clock)
+
+
+def add_session(
+    app: FastAPI, secret: str, https_only: bool, clock: Callable[[], datetime]
+) -> None:
     app.add_middleware(
-        SessionMiddleware,
+        _ClockSessionMiddleware,
         secret_key=secret or secrets.token_urlsafe(32),
+        clock=clock,
         session_cookie="cws_session",
         max_age=int(SESSION_IDLE_LIMIT.total_seconds()),
         same_site="lax",

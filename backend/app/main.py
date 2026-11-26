@@ -267,6 +267,7 @@ def create_app(
         app,
         settings.session_secret,
         https_only=settings.public_url.startswith("https://"),
+        clock=clock,
     )
 
     app.include_router(auth.router)
