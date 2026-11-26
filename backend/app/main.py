@@ -56,7 +56,6 @@ SEND_TOO_LARGE = (
     "pasted into it), "
     "then send again. What you typed is still in this browser."
 )
-SESSION_MAX_AGE = 60 * 60 * 24 * 60
 
 
 def _on_azure() -> bool:
@@ -269,7 +268,7 @@ def create_app(
         SessionMiddleware,
         secret_key=settings.session_secret or secrets.token_urlsafe(32),
         session_cookie="cws_session",
-        max_age=SESSION_MAX_AGE,
+        max_age=auth.SESSION_IDLE_LIMIT,
         same_site="lax",
         https_only=settings.public_url.startswith("https://"),
     )

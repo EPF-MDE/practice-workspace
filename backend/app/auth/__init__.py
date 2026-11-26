@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 SESSION_ID = "github_id"
 SESSION_STATE = "oauth_state"
 SESSION_REFUSED = "refused_login"
+SESSION_IDLE_LIMIT = 60 * 60 * 24 * 60
 
 NOTICE = (
     "What you send here (your answers, drawings, Self-assessment, Evidence Plan "
@@ -146,6 +147,7 @@ def current_student(request: Request) -> Student:
     if student is None:
         request.session.pop(SESSION_ID, None)
         raise HTTPException(401, "Not signed in")
+    request.session[SESSION_ID] = student.github_id
     return student
 
 
