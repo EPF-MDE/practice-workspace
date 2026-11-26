@@ -145,12 +145,11 @@ def _check_directives(
                 problems.append(
                     f"{where}: point {d.attrs['id']} has one proof sentence, not more"
                 )
-        if d.name == "to-get-there" and (
-            "level" not in d.attrs
-            or (
-                to_get_there_levels is not None
-                and d.attrs["level"] not in to_get_there_levels
-            )
+        if d.name == "to-get-there" and to_get_there_levels is None:
+            if "level" not in d.attrs:
+                problems.append(f"{where}: a to-get-there needs a level=<level>")
+        elif d.name == "to-get-there" and (
+            d.attrs.get("level") not in (to_get_there_levels or ())
         ):
             problems.append(
                 f"{where}: to-get-there's level={d.attrs.get('level', '?')} is "

@@ -113,6 +113,21 @@ def test_a_marker_in_a_step_with_another_problem_is_reported_too(
     assert any("'TO VALIDATE' would be served" in p for p in problems(result))
 
 
+def test_a_to_get_there_with_no_level_is_named_when_the_settings_are_broken(
+    tmp_path: Path,
+) -> None:
+    closing = (VERIFY / "unknown-level" / "c1.md").read_text().split("---\n")[-1]
+    with_c1(tmp_path, closing.replace(" {level=someday}", ""))
+    (tmp_path / "course.toml").write_text("name = \n")
+
+    result = verify(tmp_path)
+
+    assert result.returncode != 0
+    assert any(
+        "step 'closing'" in p and "needs a level" in p for p in problems(result)
+    ), result.stdout
+
+
 def test_a_drawing_that_is_no_json_is_named(tmp_path: Path) -> None:
     redraw = (VERIFY / "missing-drawing" / "c1.md").read_text().split("---\n")[-1]
     (tmp_path / "drawings").mkdir()
