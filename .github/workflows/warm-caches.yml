@@ -2,7 +2,8 @@
 # Chrome, on `main`, under the keys those workflows look up. Why this
 # workflow and not the agents' own runs is ADR-0019.
 #
-# Every key here must stay the one the agent workflows and check.yml use:
+# Every key here must stay the one the agent workflows and check.yml's
+# frontend job use:
 #   npm   setup-node, Node 24, cache-dependency-path on both lock files
 #   uv    setup-uv, cache-dependency-glob backend/uv.lock
 #   Chrome  agent-browser-<version>-<os>
