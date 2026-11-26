@@ -472,16 +472,16 @@ jobs:
                 gh api --method POST "repos/$GH_REPO/issues/$n/dependencies/blocked_by" \
                   -F issue_id="$(jq -r --argjson b "$b" '.[] | select(.number == $b) | .id' <<< "$OPEN")" --silent
               done
-              # Read after the relations are drawn: a blocker that closed
-              # before then sent nothing back, so this run does it.
+              gh issue edit "$n" \
+                --remove-label "agent:in-progress" --add-label "agent:blocked-by-ticket"
+              # Read after the label is on: a blocker that closes from then on
+              # finds it, and the unblock job sends it back. One that closed
+              # before sent nothing back, so this run does it.
               still_open="$(gh api --paginate "repos/$GH_REPO/issues/$n/dependencies/blocked_by" \
                 --jq '.[] | select(.state == "open") | .number')"
-              if [ -n "$still_open" ]; then
+              if [ -z "$still_open" ]; then
                 gh issue edit "$n" \
-                  --remove-label "agent:in-progress" --add-label "agent:blocked-by-ticket"
-              else
-                gh issue edit "$n" \
-                  --remove-label "agent:in-progress" --add-label "agent:explore"
+                  --remove-label "agent:blocked-by-ticket" --add-label "agent:explore"
               fi
             else
               gh issue edit "$n" \

@@ -91,14 +91,23 @@ describe("applying a plan to an issue that waits on a ticket", () => {
     );
 
     expect(result.status).toBe(0);
-    expect(calls).toContain(
-      "issue edit 7 --remove-label agent:in-progress --add-label agent:explore"
+    const labels = calls.filter((call) => call.startsWith("issue edit 7 "));
+    expect(labels.at(-1)).toBe(
+      "issue edit 7 --remove-label agent:blocked-by-ticket --add-label agent:explore"
     );
-    expect(
-      calls.filter((call) =>
-        call.includes("--add-label agent:blocked-by-ticket")
-      )
-    ).toEqual([]);
+  });
+
+  it("labels it blocked before it reads whether a blocker is still open", () => {
+    const { calls } = apply([blocked([3])], [{ number: 3, state: "open" }]);
+
+    const labelled = calls.indexOf(
+      "issue edit 7 --remove-label agent:in-progress --add-label agent:blocked-by-ticket"
+    );
+    const lastRead = calls.lastIndexOf(
+      'api --paginate repos/R/issues/7/dependencies/blocked_by --jq .[] | select(.state == "open") | .number'
+    );
+    expect(labelled).toBeGreaterThanOrEqual(0);
+    expect(labelled).toBeLessThan(lastRead);
   });
 });
 
