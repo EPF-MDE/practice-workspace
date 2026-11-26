@@ -200,9 +200,8 @@ class GitHubStore:
                 f"drawing: {student.github_login} {competency} {drawing} "
                 f"(version {version})"
             )
-            folder = png_path.rsplit("/", 1)[0]
             commit = self._data_branch.write(
-                folder, {png_path: png, snapshot_path: snapshot_bytes}, message
+                {png_path: png, snapshot_path: snapshot_bytes}, message
             )
             payload = drawing_payload(
                 student, competency, drawing, png, snapshot_bytes, commit
@@ -224,7 +223,7 @@ class GitHubStore:
                 )
                 if latest is None:
                     return None
-                at = latest.payload.commit or self._data_branch.branch
+                at = latest.payload.commit
                 png = self._data_branch.read(latest.payload.png, at)
                 snapshot = json.loads(
                     self._data_branch.read(latest.payload.snapshot, at)
