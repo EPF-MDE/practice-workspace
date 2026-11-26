@@ -184,7 +184,7 @@ def _check_reference(
     check_points += [(where, c.attrs.get("point", "")) for c in inner]
 
 
-GROUPS = "\0"
+GROUP_NAMES_SLOT = "\0"
 
 
 def _check_views(
@@ -199,7 +199,7 @@ def _check_views(
         for problem in _view_problems(step, block, where):
             groups_by_problem.setdefault(problem, []).append(group)
     problems += [
-        problem.replace(GROUPS, ", ".join(groups))
+        problem.replace(GROUP_NAMES_SLOT, ", ".join(groups))
         for problem, groups in groups_by_problem.items()
     ]
 
@@ -211,26 +211,30 @@ def _view_problems(step: _RawStep, block: str, where: str) -> list[str]:
     if step.kind == "transfer" and "project" not in ids:
         problems.append(
             f"{where}: a Transfer has a field {{#project}}, the Evidence "
-            f"Project by default ({GROUPS})"
+            f"Project by default ({GROUP_NAMES_SLOT})"
         )
     if step.kind == "drawing":
         if view.fields:
             problems.append(f"{where}: a drawing step takes a drawing, not fields")
         if sum(isinstance(b, Canvas) for b in view.blocks) != 1:
-            problems.append(f"{where}: a drawing step has one canvas for {GROUPS}")
+            problems.append(
+                f"{where}: a drawing step has one canvas for {GROUP_NAMES_SLOT}"
+            )
         if sum(isinstance(b, ReferenceDrawing) for b in view.blocks) > 1:
-            problems.append(f"{where}: one reference-drawing for {GROUPS}, not more")
+            problems.append(
+                f"{where}: one reference-drawing for {GROUP_NAMES_SLOT}, not more"
+            )
     if len(set(ids)) != len(ids):
-        problems.append(f"{where}: two fields share an id for {GROUPS}")
+        problems.append(f"{where}: two fields share an id for {GROUP_NAMES_SLOT}")
     if (
         any(isinstance(b, Answer) for b in view.blocks)
         and not ids
         and step.kind in (None, "answer")
     ):
         problems.append(
-            f"{where}: an answer block for {GROUPS} but no field to answer in"
+            f"{where}: an answer block for {GROUP_NAMES_SLOT} but no field to answer in"
         )
-    return problems + _served_markers(where, repr(view), f" ({GROUPS})")
+    return problems + _served_markers(where, repr(view), f" ({GROUP_NAMES_SLOT})")
 
 
 def _text(nodes: Iterable[_Node]) -> str:
