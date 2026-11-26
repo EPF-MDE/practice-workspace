@@ -191,17 +191,19 @@ def _check_views(
 ) -> None:
     block_ids = {d.name for d in _walk(step.nodes) if d.is_group_block}
     missing = [
-        name for name, block_id in group_blocks.items() if block_id not in block_ids
+        group_name
+        for group_name, block_id in group_blocks.items()
+        if block_id not in block_ids
     ]
     if block_ids and missing:
         problems.append(f"{where}: has a Group block but none for {', '.join(missing)}")
-    groups_by_problem: dict[str, list[str]] = {}
+    group_names_by_problem: dict[str, list[str]] = {}
     for group_name, block_id in group_blocks.items():
         for problem in _view_problems(step, block_id, where):
-            groups_by_problem.setdefault(problem, []).append(group_name)
+            group_names_by_problem.setdefault(problem, []).append(group_name)
     problems += [
-        problem.replace(GROUP_NAMES_SLOT, ", ".join(groups))
-        for problem, groups in groups_by_problem.items()
+        problem.replace(GROUP_NAMES_SLOT, ", ".join(group_names))
+        for problem, group_names in group_names_by_problem.items()
     ]
 
 
