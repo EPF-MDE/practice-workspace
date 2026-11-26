@@ -28,10 +28,10 @@ class CompetencyContent:
     id: str
     intro: str
     _steps: tuple[_RawStep, ...]
-    group_blocks: dict[str, str] = field(hash=False)
+    group_block_ids: dict[str, str] = field(hash=False)
 
     def for_group(self, group_name: str) -> Page:
-        return self._page(self.group_blocks[group_name])
+        return self._page(self.group_block_ids[group_name])
 
     def _page(self, block_id: str) -> Page:
         titles = {s.id: s.title for s in self._steps}

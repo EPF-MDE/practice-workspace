@@ -29,7 +29,7 @@ def _check(
 ) -> list[str]:
     problems: list[str] = []
     steps = competency._steps
-    group_blocks = competency.group_blocks
+    group_block_ids = competency.group_block_ids
     shared_ids = Counter(s.id for s in steps)
     problems += [
         f"{source}, step '{id}': {count} steps share this id"
@@ -47,7 +47,9 @@ def _check(
     check_points: list[tuple[str, str]] = []
     for index, step in enumerate(steps):
         where = f"{source}, step '{step.id}'"
-        _check_waiting(steps[:index], step, where, group_blocks, unreadable, problems)
+        _check_waiting(
+            steps[:index], step, where, group_block_ids, unreadable, problems
+        )
         if step.kind not in (None, *STEP_KINDS):
             problems.append(f"{where}: kind is one of {STEP_KINDS}")
         if step.optional and step.kind != "drawing":
@@ -74,7 +76,7 @@ def _check(
         if step.id in unreadable:
             problems += _served_markers(where, _text(step.nodes), "")
             continue
-        _check_views(step, where, group_blocks, problems)
+        _check_views(step, where, group_block_ids, problems)
     point_ids: set[str] = set()
     for where, point in points:
         if point in point_ids:
@@ -187,18 +189,18 @@ GROUP_NAMES_SLOT = "\0"
 
 
 def _check_views(
-    step: _RawStep, where: str, group_blocks: Mapping[str, str], problems: list[str]
+    step: _RawStep, where: str, group_block_ids: Mapping[str, str], problems: list[str]
 ) -> None:
     block_ids = {d.name for d in _walk(step.nodes) if d.is_group_block}
     missing = [
         group_name
-        for group_name, block_id in group_blocks.items()
+        for group_name, block_id in group_block_ids.items()
         if block_id not in block_ids
     ]
     if block_ids and missing:
         problems.append(f"{where}: has a Group block but none for {', '.join(missing)}")
     group_names_by_problem: dict[str, list[str]] = {}
-    for group_name, block_id in group_blocks.items():
+    for group_name, block_id in group_block_ids.items():
         for problem in _view_problems(step, block_id, where):
             group_names_by_problem.setdefault(problem, []).append(group_name)
     problems += [
@@ -263,9 +265,9 @@ def _served_markers(where: str, served: str, to_whom: str) -> list[str]:
     return problems
 
 
-def _takes_an_answer(step: _RawStep, group_blocks: Mapping[str, str]) -> bool:
+def _takes_an_answer(step: _RawStep, group_block_ids: Mapping[str, str]) -> bool:
     return step.kind == "drawing" or all(
-        _step_for(step, block_id).fields for block_id in group_blocks.values()
+        _step_for(step, block_id).fields for block_id in group_block_ids.values()
     )
 
 
@@ -273,7 +275,7 @@ def _check_waiting(
     earlier: tuple[_RawStep, ...],
     step: _RawStep,
     where: str,
-    group_blocks: Mapping[str, str],
+    group_block_ids: Mapping[str, str],
     unreadable: Collection[str],
     problems: list[str],
 ) -> None:
@@ -290,7 +292,7 @@ def _check_waiting(
     elif (
         before
         and before.id not in unreadable
-        and not _takes_an_answer(before, group_blocks)
+        and not _takes_an_answer(before, group_block_ids)
     ):
         problems.append(
             f"{where}: after={step.after}, a step that takes no answer, so this one "

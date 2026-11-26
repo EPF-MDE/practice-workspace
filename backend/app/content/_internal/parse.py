@@ -84,13 +84,13 @@ def _no_drawings(src: str) -> dict[str, Any]:
 
 def parse_competency(
     text: str,
-    group_blocks: Mapping[str, str],
+    group_block_ids: Mapping[str, str],
     source: str = "content",
     drawings: Drawings = _no_drawings,
     *,
     to_get_there_levels: Collection[str] | None,
 ) -> CompetencyContent:
-    clashing = sorted(set(group_blocks.values()) & DIRECTIVES)
+    clashing = sorted(set(group_block_ids.values()) & DIRECTIVES)
     if clashing:
         raise ContentError(
             f"{source}: a Group block is named like a directive: {clashing}"
@@ -124,7 +124,7 @@ def parse_competency(
             (steps[-1][2] if steps else intro).append(line)
 
     competency = meta["competency"]
-    block_ids = set(group_blocks.values())
+    block_ids = set(group_block_ids.values())
     problems: list[str] = []
     intro_nodes = _tree(intro, f"{source}, intro", block_ids, problems)
     if any(isinstance(n, _Directive) for n in intro_nodes):
@@ -149,7 +149,7 @@ def parse_competency(
         competency,
         "\n".join(n for n in intro_nodes if isinstance(n, str)),
         tuple(raw_steps),
-        dict(group_blocks),
+        dict(group_block_ids),
     )
     problems += _check(result, source, to_get_there_levels, unreadable)
     if problems:
