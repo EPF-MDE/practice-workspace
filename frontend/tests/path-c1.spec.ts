@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { closing } from "./helpers/closing";
+import { DRAWING_TEST_TIMEOUT } from "./helpers/draw";
 import {
   answerStep,
   BAKERY,
@@ -55,7 +56,7 @@ for (const student of STUDENTS) {
   test(`${student.group}: C1's Path, each reference only after the Student's own`, async ({
     page,
   }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(DRAWING_TEST_TIMEOUT);
     await signIn(page, student.id);
     await openCompetency(page, "C1");
     await expect(page.getByTestId("time-spent")).toContainText("out of 40");

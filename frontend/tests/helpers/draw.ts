@@ -1,4 +1,6 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+
+export const DRAWING_TEST_TIMEOUT = 120_000;
 
 type Point = { x: number; y: number };
 
@@ -67,4 +69,41 @@ export async function drawChain(page: Page, canvas: Locator, labels: string[]) {
     await drag(page, canvas, [previous, centre]);
     await page.keyboard.press("Escape");
   }
+}
+
+type KeptDrawing = { shapes: number; text: string };
+type DrawingStep = { competency: string; step: string };
+
+async function keptDrawing(
+  page: Page,
+  { competency, step }: DrawingStep
+): Promise<KeptDrawing | null> {
+  return page.evaluate((suffix) => {
+    const name = Object.keys(localStorage).find((key) => key.endsWith(suffix));
+    const text = name === undefined ? null : localStorage.getItem(name);
+    if (text === null) return null;
+    const records = Object.values(
+      (JSON.parse(text) as { document?: { store?: object } }).document?.store ??
+        {}
+    ) as { typeName?: string }[];
+    const shapes = records.filter((record) => record.typeName === "shape");
+    return { shapes: shapes.length, text };
+  }, `:${competency}:drawing:${step}`);
+}
+
+export async function expectChainKept(
+  page: Page,
+  where: DrawingStep,
+  labels: string[]
+) {
+  await expect
+    .poll(async () => {
+      const kept = await keptDrawing(page, where);
+      return (
+        kept !== null &&
+        kept.shapes === shapesOfChain(labels) &&
+        labels.every((label) => kept.text.includes(label))
+      );
+    })
+    .toBe(true);
 }

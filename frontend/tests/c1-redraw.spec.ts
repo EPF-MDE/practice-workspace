@@ -1,5 +1,10 @@
 import { expect, type Page, test } from "@playwright/test";
-import { drawChain, shapesOfChain } from "./helpers/draw";
+import {
+  DRAWING_TEST_TIMEOUT,
+  drawChain,
+  expectChainKept,
+  shapesOfChain,
+} from "./helpers/draw";
 import { path, signIn, step } from "./helpers/path";
 
 const STUDENTS = [
@@ -13,7 +18,7 @@ for (const student of STUDENTS) {
     page,
     browser,
   }, testInfo) => {
-    test.setTimeout(90_000);
+    test.setTimeout(DRAWING_TEST_TIMEOUT);
     await signIn(page, student.id);
     await page.goto("/competencies/C1");
     await drawAndReload(page);
@@ -60,7 +65,7 @@ async function drawAndReload(page: Page) {
   const shapes = canvas.locator(".tl-shape");
   await expect(shapes).toHaveCount(shapesOfChain(CHAIN));
   await expect(canvas.getByText("Worker")).toBeVisible();
-  await page.waitForTimeout(500);
+  await expectChainKept(page, { competency: "C1", step: "redraw" }, CHAIN);
   await page.reload();
   await expect(shapes).toHaveCount(shapesOfChain(CHAIN));
   await expect(redraw.getByTestId("reference-locked")).toBeVisible();
