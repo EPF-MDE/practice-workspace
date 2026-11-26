@@ -402,6 +402,8 @@ jobs:
           fi
 
       - name: Apply the plan
+        env:
+          OPEN: ${{ needs.explore.outputs.open }}
         # Every label below goes on with FACTORY_PAT, and that matters for
         # `agent:implement`: a label applied by the built-in token does not
         # fire `issues: labeled`, so agent-implement.yml would never wake up
@@ -465,17 +467,16 @@ jobs:
               # GitHub's own "blocked by" relation, which takes the blocker's
               # id, not its number. One already there is left as it is.
               existing="$(gh api --paginate "repos/$GH_REPO/issues/$n/dependencies/blocked_by" --jq '.[].number')"
-              still_open=0
               for b in $(jq -r '.blocked_by[]' <<< "$entry"); do
-                blocker="$(gh api "repos/$GH_REPO/issues/$b" --jq '{id, state}')"
-                [ "$(jq -r '.state' <<< "$blocker")" = "open" ] && still_open=1
                 grep -qx "$b" <<< "$existing" && continue
                 gh api --method POST "repos/$GH_REPO/issues/$n/dependencies/blocked_by" \
-                  -F issue_id="$(jq -r '.id' <<< "$blocker")" --silent
+                  -F issue_id="$(jq -r --argjson b "$b" '.[] | select(.number == $b) | .id' <<< "$OPEN")" --silent
               done
-              # A blocker that closed while this run explored sent nothing
-              # back: the relation was not there yet. So this run does it.
-              if [ "$still_open" = 1 ]; then
+              # Read after the relations are drawn: a blocker that closed
+              # before then sent nothing back, so this run does it.
+              still_open="$(gh api --paginate "repos/$GH_REPO/issues/$n/dependencies/blocked_by" \
+                --jq '.[] | select(.state == "open") | .number')"
+              if [ -n "$still_open" ]; then
                 gh issue edit "$n" \
                   --remove-label "agent:in-progress" --add-label "agent:blocked-by-ticket"
               else
