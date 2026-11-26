@@ -104,12 +104,12 @@ def clean_levels(
 def check_move(
     previous: dict[str, PointLevelPayload],
     new: dict[str, PointLevelPayload],
-    now: Phase,
+    phase: Phase,
     scale: Scale,
 ) -> None:
-    if not now.after_the_close:
+    if not phase.after_the_close:
         return
-    if now.after_the_reading_day:
+    if phase.after_the_reading_day:
         raise Refused(
             403,
             "The Reading Day has passed: your Self-assessment can no longer change.",
