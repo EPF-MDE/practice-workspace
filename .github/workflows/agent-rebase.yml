@@ -27,6 +27,19 @@ name: Agent — Rebase The Pull Requests That Conflict
 #   Only a script's rebase that leaves the pull request's own diff as it
 #   was keeps the review; any other push goes to `agent:review`.
 #
+# WITH THE MERGE QUEUE (#110)
+#   The queue merges each pull request onto `main` through a merge group
+#   commit, and that is still a push to `main`, so this still runs on every
+#   merge. It still matters: the queue tests a pull request on top of
+#   `main` but cannot settle a conflict, and a pull request that conflicts
+#   cannot go in the queue. What the queue adds is a pull request that
+#   rebases cleanly and fails `check` on top of `main`, as #94 and #95 did
+#   (#109). The queue drops it and `main` stays green; GitHub does not call
+#   it conflicting, so the survey skips it. Label it `agent:rebase`: when
+#   `npm run check` fails after the script's rebase, an agent resolves it.
+#   Take a pull request out of the queue before labelling it: the queue
+#   tested the head it had, not the one a rebase pushes.
+#
 # WHEN IT CANNOT
 #   Superseded by the base, or a conflict the agent cannot settle: the pull
 #   request gets `agent:blocked`, and an issue labelled `needs-a-human` says
@@ -47,7 +60,9 @@ name: Agent — Rebase The Pull Requests That Conflict
 # agent-answer-labels.yml.
 
 on:
-  # A merge: every squash-merge can leave the other pull requests conflicting.
+  # A merge, the queue's included: every squash-merge can leave the other
+  # pull requests conflicting. The queue's own `gh-readonly-queue/main/...`
+  # branches are not `main`, so they start nothing here.
   push:
     branches: [main]
   schedule:

@@ -1,17 +1,29 @@
 # `npm run check` on every pull request, one job per part, each required by
-# branch protection before a merge into main. A layer on top of the
-# pre-commit hook and the review run, replacing neither. It holds no secret,
-# so a fork's pull request gets the check and reaches nothing.
+# the `main` ruleset. A layer on top of the pre-commit hook and the review
+# run, replacing neither. It holds no secret, so a fork's pull request gets
+# the check and reaches nothing.
+#
+# It runs again in the merge queue (#110), on `merge_group`: on the commit
+# the queue would merge, the pull request on top of `main` and of the pull
+# requests ahead of it. On 26 November #94 and #95 each passed alone and
+# broke `main` together (#109); the queue merges only a commit this check
+# passed on. The jobs keep their names, so the same three required checks
+# answer both events.
 name: Check
 
 on:
   pull_request:
+  merge_group:
+    types: [checks_requested]
 
 permissions:
   contents: read
 
+# A new push to a pull request cancels the check of its old head. A merge
+# group has no pull request number: each group is its own ref, and the queue
+# runs several at once, so they must never cancel each other.
 concurrency:
-  group: check-${{ github.event.pull_request.number }}
+  group: check-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
