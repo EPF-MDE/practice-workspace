@@ -34,7 +34,7 @@ def _attrs(text: str | None) -> dict[str, str]:
 
 
 def _tree(
-    lines: list[str], where: str, blocks: Collection[str], problems: list[str]
+    lines: list[str], where: str, block_ids: Collection[str], problems: list[str]
 ) -> list[_Node]:
     root = _Directive("", {})
     stack = [root]
@@ -44,7 +44,7 @@ def _tree(
             fenced = not fenced
         elif not fenced and (opened := _OPEN.match(line)):
             name = opened.group(1)
-            if name not in DIRECTIVES and name not in blocks:
+            if name not in DIRECTIVES and name not in block_ids:
                 problems.append(
                     f"{where}: unknown block '::: {name}', neither a directive nor "
                     "a Group block the Course's settings name"
@@ -84,13 +84,13 @@ def _no_drawings(src: str) -> dict[str, Any]:
 
 def parse_competency(
     text: str,
-    groups: Mapping[str, str],
+    group_blocks: Mapping[str, str],
     source: str = "content",
     drawings: Drawings = _no_drawings,
     *,
     to_get_there_levels: Collection[str] | None,
 ) -> CompetencyContent:
-    clashing = sorted(set(groups.values()) & DIRECTIVES)
+    clashing = sorted(set(group_blocks.values()) & DIRECTIVES)
     if clashing:
         raise ContentError(
             f"{source}: a Group block is named like a directive: {clashing}"
@@ -124,9 +124,9 @@ def parse_competency(
             (steps[-1][2] if steps else intro).append(line)
 
     competency = meta["competency"]
-    blocks = set(groups.values())
+    block_ids = set(group_blocks.values())
     problems: list[str] = []
-    intro_nodes = _tree(intro, f"{source}, intro", blocks, problems)
+    intro_nodes = _tree(intro, f"{source}, intro", block_ids, problems)
     if any(isinstance(n, _Directive) for n in intro_nodes):
         problems.append(f"{source}, intro: blocks belong in a step, not the intro")
     raw_steps: list[_RawStep] = []
@@ -134,7 +134,7 @@ def parse_competency(
     for title, attrs, lines in steps:
         where = f"{source}, step '{attrs.get('id', title)}'"
         found = len(problems)
-        step = _raw_step(title, attrs, lines, where, blocks, problems)
+        step = _raw_step(title, attrs, lines, where, block_ids, problems)
         if step is None:
             unreadable.add(attrs.get("id", title))
             problems += _served_markers(where, "\n".join(lines), "")
@@ -149,7 +149,7 @@ def parse_competency(
         competency,
         "\n".join(n for n in intro_nodes if isinstance(n, str)),
         tuple(raw_steps),
-        dict(groups),
+        dict(group_blocks),
     )
     problems += _check(result, source, to_get_there_levels, unreadable)
     if problems:
@@ -162,7 +162,7 @@ def _raw_step(
     attrs: dict[str, str],
     lines: list[str],
     where: str,
-    blocks: Collection[str],
+    block_ids: Collection[str],
     problems: list[str],
 ) -> _RawStep | None:
     if "id" not in attrs or not attrs.get("minutes", "").isdigit():
@@ -179,7 +179,7 @@ def _raw_step(
         attrs.get("fills"),
         optional == "yes",
         attrs.get("after"),
-        tuple(_tree(lines, where, blocks, problems)),
+        tuple(_tree(lines, where, block_ids, problems)),
     )
 
 

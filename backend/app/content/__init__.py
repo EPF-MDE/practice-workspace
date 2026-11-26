@@ -54,7 +54,7 @@ class ContentLoading:
 
 def load_content(
     directory: str | Path,
-    groups: Mapping[str, str],
+    group_blocks: Mapping[str, str],
     *,
     to_get_there_levels: Collection[str] | None,
 ) -> ContentLoading:
@@ -74,7 +74,7 @@ def load_content(
         try:
             competency = parse_competency(
                 path.read_text(encoding="utf-8"),
-                groups,
+                group_blocks,
                 path.name,
                 drawings,
                 to_get_there_levels=to_get_there_levels,

@@ -29,7 +29,7 @@ def _check(
 ) -> list[str]:
     problems: list[str] = []
     steps = competency._steps
-    group_blocks = competency.groups
+    group_blocks = competency.group_blocks
     shared_ids = Counter(s.id for s in steps)
     problems += [
         f"{source}, step '{id}': {count} steps share this id"
@@ -189,23 +189,25 @@ GROUP_NAMES_SLOT = "\0"
 def _check_views(
     step: _RawStep, where: str, group_blocks: Mapping[str, str], problems: list[str]
 ) -> None:
-    blocks = {d.name for d in _walk(step.nodes) if d.is_group_block}
-    missing = [name for name, block in group_blocks.items() if block not in blocks]
-    if blocks and missing:
+    block_ids = {d.name for d in _walk(step.nodes) if d.is_group_block}
+    missing = [
+        name for name, block_id in group_blocks.items() if block_id not in block_ids
+    ]
+    if block_ids and missing:
         problems.append(f"{where}: has a Group block but none for {', '.join(missing)}")
     groups_by_problem: dict[str, list[str]] = {}
-    for group, block in group_blocks.items():
-        for problem in _view_problems(step, block, where):
-            groups_by_problem.setdefault(problem, []).append(group)
+    for group_name, block_id in group_blocks.items():
+        for problem in _view_problems(step, block_id, where):
+            groups_by_problem.setdefault(problem, []).append(group_name)
     problems += [
         problem.replace(GROUP_NAMES_SLOT, ", ".join(groups))
         for problem, groups in groups_by_problem.items()
     ]
 
 
-def _view_problems(step: _RawStep, block: str, where: str) -> list[str]:
+def _view_problems(step: _RawStep, block_id: str, where: str) -> list[str]:
     problems: list[str] = []
-    view = _step_for(step, block)
+    view = _step_for(step, block_id)
     ids = [f.id for f in view.fields]
     if step.kind == "transfer" and "project" not in ids:
         problems.append(
@@ -245,15 +247,15 @@ def _text(nodes: Iterable[_Node]) -> str:
     )
 
 
-def _served_markers(where: str, served: str, group: str) -> list[str]:
+def _served_markers(where: str, served: str, to_whom: str) -> list[str]:
     problems = [
-        f"{where}: '{marker}' is Instructor Material, never served{group}"
+        f"{where}: '{marker}' is Instructor Material, never served{to_whom}"
         for marker in INSTRUCTOR_MARKERS
         if marker in served.lower()
     ]
     if UNVALIDATED_MARKER in served:
         problems.append(
-            f"{where}: '{UNVALIDATED_MARKER}' would be served{group}: "
+            f"{where}: '{UNVALIDATED_MARKER}' would be served{to_whom}: "
             "put it in an HTML comment, beside a blank such as '—'"
         )
     return problems
@@ -261,7 +263,7 @@ def _served_markers(where: str, served: str, group: str) -> list[str]:
 
 def _takes_an_answer(step: _RawStep, group_blocks: Mapping[str, str]) -> bool:
     return step.kind == "drawing" or all(
-        _step_for(step, block).fields for block in group_blocks.values()
+        _step_for(step, block_id).fields for block_id in group_blocks.values()
     )
 
 
