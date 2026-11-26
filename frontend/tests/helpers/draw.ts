@@ -69,7 +69,7 @@ export async function drawChain(page: Page, canvas: Locator, labels: string[]) {
   }
 }
 
-type KeptDrawing = { shapes: number; text: string };
+type KeptDrawing = { shapes: number; shapeProps: string };
 type DrawingStep = { competency: string; step: string };
 
 async function keptDrawing(
@@ -83,9 +83,12 @@ async function keptDrawing(
     const records = Object.values(
       (JSON.parse(text) as { document?: { store?: object } }).document?.store ??
         {}
-    ) as { typeName?: string }[];
+    ) as { typeName?: string; props?: unknown }[];
     const shapes = records.filter((record) => record.typeName === "shape");
-    return { shapes: shapes.length, text };
+    return {
+      shapes: shapes.length,
+      shapeProps: JSON.stringify(shapes.map((shape) => shape.props)),
+    };
   }, `:${competency}:drawing:${step}`);
 }
 
@@ -100,7 +103,7 @@ export async function expectChainKept(
       return (
         kept !== null &&
         kept.shapes === shapesOfChain(labels) &&
-        labels.every((label) => kept.text.includes(label))
+        labels.every((label) => kept.shapeProps.includes(label))
       );
     })
     .toBe(true);
