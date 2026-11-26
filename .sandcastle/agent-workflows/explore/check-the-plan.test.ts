@@ -1,22 +1,8 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parse } from "yaml";
+import { stepScript } from "../shared/step-script";
 
-type Step = { name?: string; run?: string };
-type Workflow = { jobs: Record<string, { steps: Step[] }> };
-
-const workflow = parse(
-  readFileSync(
-    join(import.meta.dirname, "../../../.github/workflows/agent-explore.yml"),
-    "utf8"
-  )
-) as Workflow;
-
-const checkThePlan = workflow.jobs.apply.steps.find(
-  (step) => step.name === "Check the plan"
-)?.run;
+const checkThePlan = stepScript("agent-explore.yml", "apply", "Check the plan");
 
 const openIssuesOneToNine = Array.from({ length: 9 }, (_, i) => ({
   number: i + 1,
@@ -24,7 +10,7 @@ const openIssuesOneToNine = Array.from({ length: 9 }, (_, i) => ({
 }));
 
 const check = (batch: number[], plan: unknown) =>
-  spawnSync("bash", ["-c", checkThePlan ?? "exit 99"], {
+  spawnSync("bash", ["-c", checkThePlan], {
     encoding: "utf8",
     env: {
       ...process.env,
