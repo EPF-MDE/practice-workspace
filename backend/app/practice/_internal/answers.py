@@ -40,13 +40,13 @@ from .review import (
 )
 from .router import router
 from .steps import (
+    _after_the_reading_day,
     _calendar,
     _closed,
     _competency,
     _drawing_sent,
     _hints,
     _page,
-    _phase,
     _reference,
     _refuse_if_closed,
     _scale,
@@ -75,7 +75,7 @@ def competency_page(
         closes_at=calendar.closes_at,
         closed=_closed(request),
         reading_day_at=calendar.reading_day_at,
-        reading_day_passed=_phase(request) == "over",
+        reading_day_passed=_after_the_reading_day(request),
         self_assessment=_self_assessment(record, page.competency),
         evidence_plan=_evidence_plan(record, page.competency),
         evidence_plan_draft=_draft(

@@ -61,7 +61,11 @@ def _calendar(request: Request) -> Calendar:
 
 
 def _closed(request: Request) -> bool:
-    return _phase(request) != "open"
+    return _phase(request) is not closing.Phase.BEFORE_THE_CLOSE
+
+
+def _after_the_reading_day(request: Request) -> bool:
+    return _phase(request) is closing.Phase.AFTER_THE_READING_DAY
 
 
 def _phase(request: Request) -> closing.Phase:
@@ -69,7 +73,7 @@ def _phase(request: Request) -> closing.Phase:
 
 
 def _refuse_after_the_reading_day(request: Request, what: str) -> None:
-    if _phase(request) == "over":
+    if _after_the_reading_day(request):
         calendar = _calendar(request)
         when = calendar.in_course_time(calendar.reading_day_at)
         raise HTTPException(

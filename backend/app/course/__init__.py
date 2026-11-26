@@ -51,8 +51,10 @@ class Calendar:
 
     def phase(self, now: datetime) -> Phase:
         if now > self.reading_day_at:
-            return "over"
-        return "closed" if now > self.closes_at else "open"
+            return Phase.AFTER_THE_READING_DAY
+        if now > self.closes_at:
+            return Phase.AFTER_THE_CLOSE
+        return Phase.BEFORE_THE_CLOSE
 
     def in_course_time(self, instant: datetime) -> str:
         when = instant.astimezone(self.time_zone).strftime("%-d %B %Y at %H:%M")

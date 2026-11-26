@@ -3,13 +3,19 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from html.parser import HTMLParser
-from typing import Any, Literal
+from typing import Any
 
 from app.content import Point
 from app.store import PointLevelPayload
 
-Phase = Literal["open", "closed", "over"]
+
+class Phase(Enum):
+    BEFORE_THE_CLOSE = "before-the-close"
+    AFTER_THE_CLOSE = "after-the-close"
+    AFTER_THE_READING_DAY = "after-the-reading-day"
+
 
 _LINK = re.compile(r"https://(github\.com|gitlab\.com)/[\w.-]+/[\w.-]+(/\S*)?")
 
@@ -93,9 +99,9 @@ def check_move(
     now: Phase,
     scale: Scale,
 ) -> None:
-    if now == "open":
+    if now is Phase.BEFORE_THE_CLOSE:
         return
-    if now == "over":
+    if now is Phase.AFTER_THE_READING_DAY:
         raise Refused(
             403,
             "The Reading Day has passed: your Self-assessment can no longer change.",
