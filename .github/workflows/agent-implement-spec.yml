@@ -219,10 +219,8 @@ jobs:
             exit 0
           fi
 
-          # 3. The frontier. The lowest open position whose blockers are all
-          #    closed. A ticket's `Position:` is in its body, written by the
-          #    decompose loop; what it waits on is GitHub's own `blocked by`
-          #    relation, the one a person sees on the issue and edits there.
+          # 3. The frontier: the lowest open position whose blockers are all
+          #    closed. See ADR-0019.
           #
           #    Closed means merged. The cohort closed a ticket when its draft
           #    pull request opened, so its dependants were built without its
@@ -449,9 +447,7 @@ jobs:
           # nullglob: none means no --attach.
           shopt -s nullglob
 
-          # The issue number each position became. A ticket depends only on
-          # lower positions, so writing them in position order means its
-          # blockers exist by the time it is created.
+          # The issue number each position became. See ADR-0019.
           declare -A issue_of
           for i in $(jq -r '.tickets | to_entries | sort_by(.value.position) | .[].key' "$queue"); do
             title=$(jq -r ".tickets[$i].title" "$queue")
@@ -471,9 +467,6 @@ jobs:
               blocked_by=(--blocked-by "$(IFS=,; echo "${blockers[*]}")")
             fi
 
-            # `survey` reads `Position:` out of the body on every run. What a
-            # ticket waits on is not in the body: it is the `blocked by`
-            # relation below, and the ticket is a sub-issue of the spec.
             {
               echo "Part of #${SPEC}"
               echo ""
