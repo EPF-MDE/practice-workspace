@@ -13,7 +13,7 @@ repository() {
   git ls-files -z | xargs -0 node scripts/check-file-tokens.js
   step "Repository: secrets (POSTHOG_API_KEY on the agent's step only)"
   node scripts/check-agent-secrets.js .github/workflows/*.yml
-  step "Repository: triggers (no pull_request_target, no workflow_run)"
+  step "Repository: triggers (no workflow_run, pull_request_target runs no code)"
   node scripts/check-workflow-triggers.js .github/workflows/*.yml
   step "Repository: Markdown (no hard-wrapped paragraph or list item)"
   git ls-files -z '*.md' | xargs -0 node scripts/check-markdown-wraps.js

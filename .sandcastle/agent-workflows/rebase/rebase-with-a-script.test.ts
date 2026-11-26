@@ -45,11 +45,12 @@ const inRepository = (dir: string) => ({
 });
 
 type Story = {
+  atTheStart?: [file: string, text: string][];
   onTheBranch: [file: string, text: string][];
   onMainSince: [file: string, text: string][];
 };
 
-const rebase = ({ onTheBranch, onMainSince }: Story) => {
+const rebase = ({ atTheStart = [], onTheBranch, onMainSince }: Story) => {
   const dir = mkdtempSync(join(tmpdir(), "rebase-"));
   const origin = join(dir, "origin.git");
   const checkout = join(dir, "checkout");
@@ -58,6 +59,7 @@ const rebase = ({ onTheBranch, onMainSince }: Story) => {
   const { git, commit } = inRepository(checkout);
   git("checkout", "-qb", "main");
   commit("README.md", "the start");
+  for (const [file, text] of atTheStart) commit(file, text, "main");
   git("push", "-q", "origin", "main");
 
   git("checkout", "-qb", "feature");
@@ -85,13 +87,15 @@ const rebase = ({ onTheBranch, onMainSince }: Story) => {
       BASE_REF: "main",
     },
   });
-  const outcome = readFileSync(output, "utf8")
-    .split("\n")
-    .find((line) => line.startsWith("outcome="))
-    ?.slice("outcome=".length);
+  const written = readFileSync(output, "utf8").split("\n");
+  const valueOf = (name: string) =>
+    written
+      .find((line) => line.startsWith(`${name}=`))
+      ?.slice(`${name}=`.length);
   return {
     ...result,
-    outcome,
+    outcome: valueOf("outcome"),
+    diff: valueOf("diff"),
     git,
     midRebase: existsSync(join(checkout, ".git", "rebase-merge")),
   };
@@ -142,6 +146,62 @@ describe("the rebase with a script", { timeout: 20_000 }, () => {
   });
 });
 
+const TWENTY_LINES = Array.from(
+  { length: 20 },
+  (_, index) => `line ${index + 1}`
+);
+
+const withLine = (line: number, text: string) =>
+  TWENTY_LINES.map((each, index) => (index === line - 1 ? text : each)).join(
+    "\n"
+  );
+
+describe("the rebase with a script, on the diff the review read", {
+  timeout: 20_000,
+}, () => {
+  it("calls the diff unchanged when main changed other files", () => {
+    const { outcome, diff } = rebase({
+      onTheBranch: [["feature.txt", "the feature"]],
+      onMainSince: [["other.txt", "someone else's work"]],
+    });
+
+    expect(outcome).toBe("rebased");
+    expect(diff).toBe("unchanged");
+  });
+
+  it("calls the diff unchanged when main changed the same file far from it", () => {
+    const { outcome, diff } = rebase({
+      atTheStart: [["lines.txt", withLine(1, "line 1")]],
+      onTheBranch: [["lines.txt", withLine(18, "the branch's line 18")]],
+      onMainSince: [["lines.txt", withLine(2, "main's line 2")]],
+    });
+
+    expect(outcome).toBe("rebased");
+    expect(diff).toBe("unchanged");
+  });
+
+  it("calls the diff changed when main changed a line beside it", () => {
+    const { outcome, diff } = rebase({
+      atTheStart: [["lines.txt", withLine(1, "line 1")]],
+      onTheBranch: [["lines.txt", withLine(6, "the branch's line 6")]],
+      onMainSince: [["lines.txt", withLine(4, "main's line 4")]],
+    });
+
+    expect(outcome).toBe("rebased");
+    expect(diff).toBe("changed");
+  });
+
+  it("says nothing of the diff when nothing was rebased", () => {
+    const { outcome, diff } = rebase({
+      onTheBranch: [["feature.txt", "the feature"]],
+      onMainSince: [],
+    });
+
+    expect(outcome).toBe("up-to-date");
+    expect(diff).toBeUndefined();
+  });
+});
+
 describe("the outcomes of the rebase with a script", () => {
   const written = wordsIn(rebaseWithAScript, /outcome=([a-z-]+)/g);
 
@@ -155,6 +215,34 @@ describe("the outcomes of the rebase with a script", () => {
       new Set(["up-to-date", "superseded", "rebased", "conflicts"])
     );
     expect(handled).toEqual(written);
+  });
+
+  it("say whether the diff changed in the words the review's decision reads", () => {
+    expect(wordsIn(rebaseWithAScript, /diff=([a-z]+)/g)).toEqual(
+      new Set(["unchanged", "changed"])
+    );
+    expect(wordsIn(WORKFLOW, /"\$DIFF" != "([a-z]+)"/g)).toEqual(
+      new Set(["unchanged"])
+    );
+  });
+
+  it("lead to a review decision spelt as the steps after it read it", () => {
+    expect(wordsIn(WORKFLOW, /review=([a-z]+) because=/g)).toEqual(
+      new Set(["keep", "request"])
+    );
+    expect(wordsIn(WORKFLOW, /"\$REVIEW" [!=]+ "([a-z]+)"/g)).toEqual(
+      new Set(["keep"])
+    );
+  });
+
+  it("give the report a reason spelt as the decision wrote it", () => {
+    const reasons = wordsIn(WORKFLOW, /because=([a-z]+)$/gm);
+    expect(reasons).toEqual(
+      new Set(["agent", "waiting", "changed", "unchanged"])
+    );
+    for (const read of wordsIn(WORKFLOW, /"\$BECAUSE" = "([a-z]+)"/g)) {
+      expect(reasons).toContain(read);
+    }
   });
 
   it("give the agent only situations it knows", () => {

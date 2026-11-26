@@ -6,7 +6,8 @@ name: Agent — Implement A Spec
 # Everything before this ran once, on one ticket, because a person put a label
 # on it. This one takes a *spec*, turns it into a queue of tickets, and then
 # works the queue on its own until there is nothing left in it — and once a
-# spec is labelled, a clock picks its queue up again whenever the chain stops.
+# spec is labelled, each merge onto `main` picks its queue up again whenever
+# the chain stops, and a clock does if no merge did.
 #
 # There are two loops here, and they are different loops. Keep them apart in
 # your head while you read:
@@ -23,12 +24,12 @@ name: Agent — Implement A Spec
 #
 #     A ticket closes when its pull request merges, not when it opens, so a
 #     ticket is built on its dependencies' merged code. When every ticket left
-#     waits on an unmerged pull request, the chain stops; the first cron tick
-#     after the merge starts it again.
+#     waits on an unmerged pull request, the chain stops; the merge starts it
+#     again, through the `push` it makes to `main`.
 #
 # THE SHAPE, AS A PICTURE
 #
-#   label / cron / self-dispatch
+#   label / merge / cron / self-dispatch
 #             │
 #             ▼
 #        ┌─────────┐   no queue yet    ┌───────────┐
@@ -97,12 +98,22 @@ on:
   issues:
     types: [labeled]
 
-  # 2. The clock. Every fifteen minutes it looks at the queue and moves it on
-  #    one ticket, whether or not anyone asked. This is the trigger that makes
-  #    the factory a thing that runs rather than a thing you run: the queue
-  #    drains overnight and you read pull requests in the morning.
+  # 2. A merge. Each push to `main` is a merge, and may close the ticket the
+  #    chain waits on: the run surveys the labelled spec, as a cron tick
+  #    does, so the chain moves on at once instead of at the next tick. A
+  #    merge that unblocks nothing ends in `survey`, like an idle tick.
+  push:
+    branches: [main]
+
+  # 3. The clock, now the fallback. Every fifteen minutes it looks at the
+  #    queue and moves it on one ticket, whether or not anyone asked. This is
+  #    the trigger that makes the factory a thing that runs rather than a
+  #    thing you run: the queue drains overnight and you read pull requests
+  #    in the morning.
   #
-  #    Two honest caveats, because they will bite you on the day:
+  #    Two honest caveats, because they will bite you on the day. The first
+  #    is why a merge starts the survey too: on 23 and 24 November this
+  #    cron really ran every four to eight hours.
   #      • GitHub schedules are best-effort. A `*/15` cron on a busy hour can
   #        land several minutes late, and the top of the hour is the worst slot
   #        there is. Do not stand in front of a camera waiting for :00.
@@ -114,7 +125,7 @@ on:
   schedule:
     - cron: "*/15 * * * *"
 
-  # 3. The button, and the chain. `workflow_dispatch` is how a human starts it
+  # 4. The button, and the chain. `workflow_dispatch` is how a human starts it
   #    without labelling anything — and it is how the `chain` job at the bottom
   #    starts the next ticket. One trigger, two callers.
   workflow_dispatch:
@@ -151,8 +162,8 @@ jobs:
   # consequence — just `gh` and `jq`, so it is cheap enough to run every
   # fifteen minutes forever.
   survey:
-    # Label runs are filtered here; cron and dispatch runs carry no label and
-    # fall through.
+    # Label runs are filtered here; merge, cron and dispatch runs carry no
+    # label and fall through.
     if: >-
       github.event_name != 'issues' ||
       github.event.label.name == 'agent:implement-spec'
@@ -268,9 +279,9 @@ jobs:
               echo "mode=drained" >> "$GITHUB_OUTPUT"
             elif [ "$waiting" != "[]" ]; then
               # Every buildable ticket waits on a pull request the Instructor
-              # has not merged yet. The chain stops here; the first cron tick
-              # after the merge picks the queue up again.
-              echo "::notice::Spec #$spec waits for the pull requests of ticket(s) $waiting to merge. The next cron tick after the merge picks it up again."
+              # has not merged yet. The chain stops here; the merge picks
+              # the queue up again.
+              echo "::notice::Spec #$spec waits for the pull requests of ticket(s) $waiting to merge. The merge picks it up again."
               echo "mode=waiting" >> "$GITHUB_OUTPUT"
             else
               # Open tickets exist but every one is blocked. That is a cycle
@@ -737,7 +748,7 @@ jobs:
   #
   # It stops when `survey` reports `waiting`, `drained` or `no-spec` — that is,
   # when a run looks at the queue and finds nothing to do. After `waiting`, the
-  # first cron tick after the merge starts it again. The chain has no
+  # merge starts it again, or the first cron tick after it. The chain has no
   # counter and no limit, so an empty queue is genuinely the only brake on it.
   # That is worth sitting with before you point this at your own repository.
   #

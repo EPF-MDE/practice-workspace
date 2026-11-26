@@ -1,0 +1,82 @@
+name: Agent — Answer The Labels GitHub Would Drop
+
+# GitHub runs no `pull_request` workflow on a pull request that conflicts
+# with its base, so a label on one starts nothing, and nothing says so. On
+# 23 and 24 November `agent:review` on #72, and on #81 for a day, did
+# nothing. This workflow answers those labels.
+#
+# WHAT TRIGGERS IT
+#   `agent:rebase` on any pull request: it starts agent-rebase.yml on it, at
+#   once, conflicting or not.
+#   `agent:review` on a pull request that conflicts: a comment says so, and
+#   agent-rebase.yml rebases it first. Once GitHub calls it mergeable, the
+#   rebase puts `agent:review` back on, and agent-review.yml starts. On a
+#   pull request that does not conflict, agent-review.yml answers the label
+#   itself, and this workflow does nothing.
+#
+# WHY `pull_request_target`, AND WHAT KEEPS IT SAFE (ADR-0017)
+#   It is the trigger GitHub runs on a conflicting pull request. It runs in
+#   the base repository, with its secrets, whoever wrote the pull request.
+#   So this workflow checks out nothing, uses no action, and runs nothing but
+#   `gh` and `jq`: no code of the pull request is on the runner. It reads
+#   only the pull request's number, never its title, body or branch name,
+#   and skips a fork's pull request. `npm run check` refuses a
+#   `pull_request_target` workflow that breaks any of these
+#   (`scripts/check-workflow-triggers.js`).
+#
+# WHAT IT NEEDS
+#   secrets.FACTORY_PAT — Pull requests: write, and Actions: write to start
+#     agent-rebase.yml.
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+permissions: {}
+
+jobs:
+  answer:
+    if: >-
+      (github.event.label.name == 'agent:review' || github.event.label.name == 'agent:rebase') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+      GH_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      LABEL: ${{ github.event.label.name }}
+
+    steps:
+      - name: Answer the label
+        run: |
+          set -euo pipefail
+          rebase() {
+            gh workflow run agent-rebase.yml -f "pr=$PR_NUMBER"
+            echo "Asked agent-rebase.yml to rebase #$PR_NUMBER."
+          }
+          if [ "$LABEL" = "agent:rebase" ]; then
+            rebase
+            exit 0
+          fi
+          # GitHub computes `mergeable` lazily: right after a push it reads
+          # UNKNOWN for a while.
+          mergeable=UNKNOWN
+          for _ in $(seq "${SETTLE_TRIES:-6}"); do
+            mergeable=$(gh pr view "$PR_NUMBER" --json mergeable | jq -r '.mergeable')
+            [ "$mergeable" = "UNKNOWN" ] || break
+            sleep "${SETTLE_SECONDS:-10}"
+          done
+          if [ "$mergeable" = "MERGEABLE" ]; then
+            echo "#$PR_NUMBER does not conflict: agent-review.yml answers $LABEL."
+            exit 0
+          fi
+          if [ "$mergeable" = "CONFLICTING" ]; then
+            why="This pull request conflicts with its base, and GitHub starts no workflow on a label of a pull request that conflicts."
+          else
+            why="GitHub has not said yet whether this pull request conflicts with its base, and on one that does it starts no workflow on a label."
+          fi
+          gh pr comment "$PR_NUMBER" --body \
+            "$why So \`$LABEL\` waits: the rebase workflow rebases it first. Once GitHub calls it mergeable, the rebase puts \`$LABEL\` back on and the review starts. If the rebase cannot, it says so here."
+          rebase
