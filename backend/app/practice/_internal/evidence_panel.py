@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app import evidence_panel
 from app.auth import current_student
@@ -18,12 +18,13 @@ from .models import (
     DeclarationIn,
     ProjectIn,
 )
-from .router import router
 from .steps import (
     _refuse_after_the_reading_day,
     _store,
     _upstream,
 )
+
+router = APIRouter()
 
 
 @router.get("/api/competencies/{competency}/evidence-panel", tags=["practice"])

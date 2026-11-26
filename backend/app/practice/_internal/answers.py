@@ -4,7 +4,7 @@ import base64
 import binascii
 import json
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.auth import current_student
 from app.content import (
@@ -38,7 +38,6 @@ from .review import (
     _levels_now,
     _self_assessment,
 )
-from .router import router
 from .steps import (
     _calendar,
     _closed,
@@ -55,6 +54,8 @@ from .steps import (
     _store,
     _waits_for,
 )
+
+router = APIRouter()
 
 
 @router.get("/api/competencies/{competency}", tags=["practice"])
