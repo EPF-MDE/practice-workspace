@@ -94,7 +94,7 @@ class PanelFact(BaseModel):
     text: str
     credited_to: Credit
     link: str | None
-    received_from: str | None = None
+    received_from: str | None
     files: list[ChangedFile] = []
 
 

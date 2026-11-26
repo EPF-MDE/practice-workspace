@@ -717,7 +717,7 @@ export type PanelFact = {
     /**
      * Received From
      */
-    received_from?: string | null;
+    received_from: string | null;
     /**
      * Files
      */
