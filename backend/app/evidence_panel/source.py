@@ -18,6 +18,7 @@ from app.roster import Repository, Student
 
 from .panel import (
     READABLE_ACCESS,
+    CoursePoints,
     Declaration,
     EvidencePanel,
     build_panel,
@@ -37,6 +38,7 @@ class RepositoryReadingSource(Protocol):
 
 def read_panel(
     competency: str,
+    points: CoursePoints,
     source: RepositoryReadingSource,
     on_the_roster: Student,
     upstream: Repository | None,
@@ -61,7 +63,7 @@ def read_panel(
     except Exception:
         logger.exception("The Evidence Project of %s could not be read", student.login)
         return unavailable_panel(competency, student.evidence_project, declaration)
-    return build_panel(competency, reading, declaration)
+    return build_panel(competency, points, reading, declaration)
 
 
 class OfflineRepositoryReading:

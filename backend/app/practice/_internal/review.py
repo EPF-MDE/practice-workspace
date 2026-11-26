@@ -4,7 +4,7 @@ from datetime import datetime
 
 from fastapi import HTTPException
 
-from app import closing
+from app import closing, evidence_panel
 from app.content import (
     Page,
     Point,
@@ -31,6 +31,10 @@ from .models import (
 
 def _points(page: Page) -> list[Point]:
     return [b for step in page.steps for b in step.blocks if isinstance(b, Point)]
+
+
+def _course_points(page: Page, scale: closing.Scale) -> evidence_panel.CoursePoints:
+    return evidence_panel.CoursePoints(_points(page), scale)
 
 
 def _since(

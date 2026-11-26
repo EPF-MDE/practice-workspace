@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel
 
+from app.closing import Scale, plain
+from app.content import Point
 from app.repository_reading import (
     ChangedFile,
     Credit,
@@ -90,14 +93,22 @@ def not_read_text(declaration: Declaration) -> str:
 
 class PanelFact(BaseModel):
     point: PointId
+    statement: str | None
     text: str
     credited_to: Credit
     link: str | None
     files: list[ChangedFile] = []
 
 
+class NothingFound(BaseModel):
+    point: PointId
+    statement: str | None
+    to_get_there: str | None
+
+
 class NotVisible(BaseModel):
     point: PointId
+    statement: str | None
     text: str
 
 
@@ -141,7 +152,7 @@ class EvidencePanel(BaseModel):
     empty: bool
     empty_text: str | None
     facts: list[PanelFact]
-    nothing_found: list[PointId]
+    nothing_found: list[NothingFound]
     nothing_found_text: str | None
     not_visible: list[NotVisible]
     not_judged: str | None
@@ -149,10 +160,31 @@ class EvidencePanel(BaseModel):
     help: DeclarationHelp
 
 
-def _fact(fact: Fact) -> PanelFact:
+class CoursePoints:
+    def __init__(self, points: Sequence[Point], scale: Scale):
+        self._points = {point.id: point for point in points}
+        self._scale = scale
+
+    def statement(self, point: PointId) -> str | None:
+        found = self._points.get(point)
+        return plain(found.statement_html) if found else None
+
+    def to_get_there(self, point: PointId) -> str | None:
+        found = self._points.get(point)
+        if found is None:
+            return None
+        written = found.to_get_there_html
+        level = next(
+            (lv for lv in reversed(self._scale.below_top) if written.get(lv)), None
+        )
+        return plain(written[level]) if level else None
+
+
+def _fact(fact: Fact, points: CoursePoints) -> PanelFact:
     files = fact.detail.get("files") if fact.point == PointId.CHANGED_FILES else None
     return PanelFact(
         point=fact.point,
+        statement=points.statement(fact.point),
         text=fact.text,
         credited_to=fact.credited_to,
         link=fact.link,
@@ -163,7 +195,10 @@ def _fact(fact: Fact) -> PanelFact:
 
 
 def build_panel(
-    competency: str, reading: RepositoryReading, declaration: Declaration | None
+    competency: str,
+    points: CoursePoints,
+    reading: RepositoryReading,
+    declaration: Declaration | None,
 ) -> EvidencePanel:
     found = reading[competency]
     nothing = [p for p in found.nothing_found if p != PointId.CHANGED_FILES]
@@ -181,18 +216,25 @@ def build_panel(
         empty_text=empty_text(reading.branches_read, reading.pull_requests_read)
         if reading.empty
         else None,
-        facts=[_fact(f) for f in found.facts],
-        nothing_found=list(found.nothing_found),
+        facts=[_fact(f, points) for f in found.facts],
+        nothing_found=[
+            NothingFound(
+                point=p,
+                statement=points.statement(p),
+                to_get_there=points.to_get_there(p),
+            )
+            for p in nothing
+        ],
         nothing_found_text=(
-            f"Looked for on your Evidence Project ({looked} read), "
-            "nothing found yet: "
-            f"{', '.join(nothing)}."
+            f"Looked for on your Evidence Project ({looked} read), nothing found yet:"
             if nothing
             else None
         ),
         not_visible=[
             NotVisible(
-                point=p, text=NOT_VISIBLE_C3 if competency == "C3" else NOT_VISIBLE
+                point=p,
+                statement=points.statement(p),
+                text=NOT_VISIBLE_C3 if competency == "C3" else NOT_VISIBLE,
             )
             for p in found.not_visible
         ],

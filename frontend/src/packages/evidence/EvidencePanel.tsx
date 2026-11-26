@@ -1,59 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
-import { type EvidencePanel, type PanelFact, PracticeService } from "@/client";
+import { type EvidencePanel, PracticeService } from "@/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "@/packages/shared/errorMessage";
 import { evidencePanelKey, useEvidencePanel } from "./lib/panel";
+import { FactLine, NothingFoundLine, NotVisibleLine } from "./lib/PointLines";
 import { Sentence } from "./lib/Sentence";
 
 export { evidencePanelsKey } from "./lib/panel";
 
 function when(iso: string | null | undefined) {
   return iso ? new Date(iso).toLocaleString() : "never";
-}
-
-function Fact({ fact }: { fact: PanelFact }) {
-  const credited =
-    fact.credited_to !== "student"
-      ? ` (the code of \`${fact.credited_to}\`, credited to it)`
-      : "";
-  return (
-    <li data-testid={`fact-${fact.point}`} className="flex flex-col gap-1">
-      <span>
-        <Sentence text={fact.text + credited} />{" "}
-        <span className="whitespace-nowrap font-semibold">→ {fact.point}</span>
-        {fact.link && (
-          <>
-            {" "}
-            <a
-              className="underline"
-              href={fact.link}
-              target="_blank"
-              rel="noreferrer"
-            >
-              see it
-            </a>
-          </>
-        )}
-      </span>
-      {(fact.files ?? []).length > 0 && (
-        <details className="text-xs text-muted-foreground">
-          <summary className="cursor-pointer">
-            The {fact.files?.length} files
-          </summary>
-          <ul className="pl-4">
-            {fact.files?.map((file) => (
-              <li key={file.path}>
-                <code>{file.path}</code>
-                {typeof file.additions === "number" && ` +${file.additions}`}
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-    </li>
-  );
 }
 
 export function EvidencePanelView({
@@ -122,21 +80,26 @@ function PanelFindings({ panel }: { panel: EvidencePanel }) {
         </p>
       )}
       {panel.facts.length > 0 && (
-        <ul className="flex list-disc flex-col gap-2 pl-5">
+        <ul className="flex flex-col gap-2">
           {panel.facts.map((fact) => (
-            <Fact key={`${fact.point}-${fact.text}`} fact={fact} />
+            <FactLine key={`${fact.point}-${fact.text}`} fact={fact} />
           ))}
         </ul>
       )}
       {panel.nothing_found_text && (
         <p className="text-muted-foreground">{panel.nothing_found_text}</p>
       )}
+      {panel.nothing_found.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {panel.nothing_found.map((point) => (
+            <NothingFoundLine key={point.point} point={point} />
+          ))}
+        </ul>
+      )}
       {panel.not_visible.length > 0 && (
-        <ul className="flex flex-col gap-1">
-          {panel.not_visible.map((n) => (
-            <li key={n.point} data-testid={`not-visible-${n.point}`}>
-              <span className="font-semibold">{n.point}</span>: {n.text}
-            </li>
+        <ul className="flex flex-col gap-2">
+          {panel.not_visible.map((point) => (
+            <NotVisibleLine key={point.point} point={point} />
           ))}
         </ul>
       )}

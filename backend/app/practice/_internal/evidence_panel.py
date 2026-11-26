@@ -18,9 +18,12 @@ from .models import (
     DeclarationIn,
     ProjectIn,
 )
+from .review import _course_points
 from .router import router
 from .steps import (
+    _page,
     _refuse_after_the_reading_day,
+    _scale,
     _store,
     _upstream,
 )
@@ -47,6 +50,7 @@ def _read_panel(
     declared = _store(request).record(student).declaration()
     return evidence_panel.read_panel(
         c,
+        _course_points(_page(request, c, student), _scale(request)),
         request.app.state.repository_reading,
         student,
         _upstream(request, student),

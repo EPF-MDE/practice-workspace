@@ -26,6 +26,7 @@ from .models import (
     Stored,
 )
 from .review import (
+    _course_points,
     _draft,
     _drafted,
     _levels,
@@ -142,6 +143,7 @@ def close_competency(
         current = StoredDeclaration.from_payload(changed, _now(request))
     panel = evidence_panel.read_panel(
         competency,
+        _course_points(page, _scale(request)),
         request.app.state.repository_reading,
         student,
         _upstream(request, student),
