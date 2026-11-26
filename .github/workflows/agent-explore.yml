@@ -51,7 +51,8 @@ name: Agent — Explore The Tickets
 #                        issue blocked by the issues the entry names, with
 #                        GitHub's own "blocked by" relation. When the last of
 #                        them closes, the unblock job puts `agent:explore`
-#                        back on it. Nobody has to come and look.
+#                        back on it. Nobody has to come and look. Why:
+#                        docs/adr/0019-an-issue-waiting-on-another-ticket-*.
 #     needs-a-human   →  swap it for `needs-a-human` and stop. The comment
 #                        ends with the one decision a person has to make, as
 #                        a question with its options.
