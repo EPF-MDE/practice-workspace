@@ -34,6 +34,8 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Upstream repository**: The repository a Group's Students start their Evidence Project from, if the Course folder's settings name one. The Repository reading credits the code of its course branches to those branches, not to the Student. _Avoid_: template
 
+**Fallback Branch**: One of an Upstream repository's course branches that a Student who fell behind can start from, each built on the one before. The Evidence panel names the one a fact is credited to. _Avoid_: rescue branch
+
 ### What a Student follows
 
 **Competency**: One capability a Course assesses independently. Every Course has the same three, C1, C2 and C3, in that order: the Engine's fixed set, not a setting. The Course folder gives each its title and the minutes its Path is given, in its settings, and its content in one Markdown file. _Avoid_: skill, criterion, learning outcome
