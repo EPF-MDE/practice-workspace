@@ -15,25 +15,35 @@ type Ticket = {
   number: number;
   state: "OPEN" | "CLOSED";
   position: number;
-  depends?: number[];
+  blockedBy?: number[];
   labels?: string[];
+  body?: string;
 };
 
 const SPEC = 40;
 
-const issue = ({
-  number,
-  state,
-  position,
-  depends = [],
-  labels = [],
-}: Ticket) => ({
-  number,
-  title: `Ticket ${number}`,
-  state,
-  labels: [`spec:${SPEC}`, ...labels].map((name) => ({ name })),
-  body: `Part of #${SPEC}\n\nPosition: ${position}\nDepends on: ${depends.join(", ")}\nShape: service-module\n\n---\n\nThe ticket.`,
-});
+const issue =
+  (queue: Ticket[]) =>
+  ({
+    number,
+    state,
+    position,
+    blockedBy = [],
+    labels = [],
+    body = "",
+  }: Ticket) => ({
+    number,
+    state,
+    labels: [`spec:${SPEC}`, ...labels].map((name) => ({ name })),
+    body: `Part of #${SPEC}\n\nPosition: ${position}\n${body}Shape: service-module\n\n---\n\nThe ticket.`,
+    blockedBy: {
+      nodes: blockedBy.map((blocker) => ({
+        number: blocker,
+        state: queue.find((ticket) => ticket.number === blocker)?.state,
+      })),
+      totalCount: blockedBy.length,
+    },
+  });
 
 const pullRequest = (ticket: number) => ({
   number: 100 + ticket,
@@ -42,7 +52,10 @@ const pullRequest = (ticket: number) => ({
 
 const survey = (queue: Ticket[], openPullRequests: number[] = []) => {
   const dir = mkdtempSync(join(tmpdir(), "survey-"));
-  writeFileSync(join(dir, "issues.json"), JSON.stringify(queue.map(issue)));
+  writeFileSync(
+    join(dir, "issues.json"),
+    JSON.stringify(queue.map(issue(queue)))
+  );
   writeFileSync(
     join(dir, "pulls.json"),
     JSON.stringify(openPullRequests.map(pullRequest))
@@ -75,21 +88,21 @@ const survey = (queue: Ticket[], openPullRequests: number[] = []) => {
 
 const open = (
   number: number,
-  depends: number[] = [],
+  blockedBy: number[] = [],
   labels = ["agent:queued"]
 ): Ticket => ({
   number,
   state: "OPEN",
   position: number,
-  depends,
+  blockedBy,
   labels,
 });
 
-const closed = (number: number, depends: number[] = []): Ticket => ({
+const closed = (number: number, blockedBy: number[] = []): Ticket => ({
   number,
   state: "CLOSED",
   position: number,
-  depends,
+  blockedBy,
 });
 
 describe("the implement-spec survey's merge gate", () => {
@@ -133,5 +146,34 @@ describe("the implement-spec survey's queue", () => {
     const { outputs } = survey([closed(1), closed(2, [1])]);
 
     expect(outputs.mode).toBe("drained");
+  });
+});
+
+describe("the implement-spec survey's blockers", () => {
+  it("reads no `Depends on:` line, only the ticket's blocked-by relations", () => {
+    const { outputs } = survey([
+      open(1, [], ["agent:blocked"]),
+      { ...open(2), body: "Depends on: 1\n" },
+    ]);
+
+    expect(outputs).toMatchObject({ mode: "implement", ticket: "2" });
+  });
+
+  it("builds nothing whose blocker is open, even out of position order", () => {
+    const { outputs } = survey([open(1, [3]), open(2, [3], []), open(3)]);
+
+    expect(outputs).toMatchObject({ mode: "implement", ticket: "3" });
+  });
+
+  it("names, when the chain stops, each waiting ticket and its open blockers", () => {
+    const { stdout, outputs } = survey(
+      [closed(1), open(2, [1], []), open(3, [1, 2]), open(4, [3])],
+      [2]
+    );
+
+    expect(outputs.mode).toBe("waiting");
+    expect(stdout).toContain("#2 waits on its pull request #102");
+    expect(stdout).toContain("#3 waits on #2 (pull request #102)");
+    expect(stdout).toContain("#4 waits on #3");
   });
 });

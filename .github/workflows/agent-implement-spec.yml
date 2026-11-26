@@ -211,7 +211,7 @@ jobs:
           #    writes is labelled `spec:<number>`. No such issues, open or
           #    closed, means the spec has never been decomposed.
           gh issue list --state all --label "spec:${spec}" --limit 100 \
-            --json number,title,state,labels,body > /tmp/queue.json
+            --json number,state,labels,body,blockedBy > /tmp/queue.json
           total=$(jq 'length' /tmp/queue.json)
           if [ "$total" -eq 0 ]; then
             echo "No queue for spec #$spec yet. This run decomposes it."
@@ -219,9 +219,10 @@ jobs:
             exit 0
           fi
 
-          # 3. The frontier. The lowest open position whose `Depends on:`
-          #    positions are all closed. Ticket bodies carry both lines,
-          #    written by the decompose loop.
+          # 3. The frontier. The lowest open position whose blockers are all
+          #    closed. A ticket's `Position:` is in its body, written by the
+          #    decompose loop; what it waits on is GitHub's own `blocked by`
+          #    relation, the one a person sees on the issue and edits there.
           #
           #    Closed means merged. The cohort closed a ticket when its draft
           #    pull request opened, so its dependants were built without its
@@ -240,54 +241,70 @@ jobs:
                   state,
                   labels: [ .labels[].name ],
                   position: ((.body | capture("Position:\\s*(?<p>[0-9]+)").p // "999") | tonumber),
-                  depends: ((.body | capture("Depends on:\\s*(?<d>[0-9, ]*)").d // "")
-                             | split(",") | map(gsub("\\s";"")) | map(select(length>0) | tonumber)) }
+                  blockers: [ .blockedBy.nodes[] | { number, state } ] }
             ] | sort_by(.position)
           ' /tmp/queue.json > /tmp/queue-sorted.json
 
-          closed_positions=$(jq -c '[ .[] | select(.state=="CLOSED") | .position ]' /tmp/queue-sorted.json)
-          awaiting_merge=$(gh pr list --state open --limit 100 --json headRefName \
+          # Each open pull request of this spec, by the ticket it builds.
+          awaiting_merge=$(gh pr list --state open --limit 100 --json number,headRefName \
             | jq -c --arg prefix "agent/spec-${spec}-ticket-" '
-                [ .[].headRefName | select(startswith($prefix))
-                  | ltrimstr($prefix) | split("-")[0] | tonumber ]')
+                [ .[] | select(.headRefName | startswith($prefix))
+                  | { key: (.headRefName | ltrimstr($prefix) | split("-")[0]),
+                      value: .number } ] | from_entries')
 
           # `agent:blocked` is the label the implement job puts on a ticket it
           # could not finish. Such a ticket stays OPEN on purpose — a failure
           # must not drain silently out of the queue — so without this filter
           # every cron tick picks the same broken ticket, forever. Parked means
           # out of the frontier until a person takes the label off.
-          ticket=$(jq -r --argjson closed "$closed_positions" --argjson awaiting "$awaiting_merge" '
+          ticket=$(jq -r --argjson awaiting "$awaiting_merge" '
             [ .[]
               | select(.state=="OPEN")
               | select(.labels | index("agent:blocked") | not)
-              | select(.number as $n | $awaiting | index($n) | not)
-              | select(all(.depends[]; . as $d | $closed | index($d) != null))
+              | select($awaiting[.number | tostring] == null)
+              | select(all(.blockers[]; .state=="CLOSED"))
             ] | .[0].number // empty
           ' /tmp/queue-sorted.json)
 
           parked_count=$(jq '[ .[] | select(.state=="OPEN") | select(.labels | index("agent:blocked")) ] | length' /tmp/queue-sorted.json)
           open_count=$(jq '[ .[] | select(.state=="OPEN") | select(.labels | index("agent:blocked") | not) ] | length' /tmp/queue-sorted.json)
-          waiting=$(jq -c --argjson awaiting "$awaiting_merge" '[ .[] | select(.state=="OPEN") | .number | select(. as $n | $awaiting | index($n)) ]' /tmp/queue-sorted.json)
+          waiting_count=$(jq 'length' <<< "$awaiting_merge")
           echo "remaining=$open_count" >> "$GITHUB_OUTPUT"
           if [ "$parked_count" -gt 0 ]; then
             echo "::notice::Spec #$spec has $parked_count ticket(s) parked for a person. Take \`agent:blocked\` off one to put it back in the queue."
           fi
 
           if [ -z "$ticket" ]; then
+            # What each open ticket waits on: its own pull request, or its
+            # open blockers and theirs, e.g. `#31 waits on #30 (pull request #95)`.
+            waits=$(jq -r --argjson awaiting "$awaiting_merge" '
+              def pull_request: $awaiting[.number | tostring];
+              [ .[]
+                | select(.state=="OPEN")
+                | select(.labels | index("agent:blocked") | not)
+                | if pull_request then
+                    "#\(.number) waits on its pull request #\(pull_request)"
+                  else
+                    "#\(.number) waits on " + ([ .blockers[] | select(.state=="OPEN")
+                      | "#\(.number)" + (if pull_request then " (pull request #\(pull_request))" else "" end)
+                    ] | join(", "))
+                  end
+              ] | join("; ")
+            ' /tmp/queue-sorted.json)
             if [ "$open_count" -eq 0 ]; then
               echo "Queue for spec #$spec is drained."
               echo "mode=drained" >> "$GITHUB_OUTPUT"
-            elif [ "$waiting" != "[]" ]; then
+            elif [ "$waiting_count" -gt 0 ]; then
               # Every buildable ticket waits on a pull request the Instructor
               # has not merged yet. The chain stops here; the merge picks
               # the queue up again.
-              echo "::notice::Spec #$spec waits for the pull requests of ticket(s) $waiting to merge. The merge picks it up again."
+              echo "::notice::Spec #$spec waits: $waits. The merge picks it up again."
               echo "mode=waiting" >> "$GITHUB_OUTPUT"
             else
               # Open tickets exist but every one is blocked. That is a cycle
               # or a ticket waiting on a human, and either way building it
               # would burn an agent run every fifteen minutes forever.
-              echo "::warning::Spec #$spec has $open_count open tickets and none are unblocked."
+              echo "::warning::Spec #$spec has $open_count open tickets and none are unblocked: $waits."
               echo "mode=drained" >> "$GITHUB_OUTPUT"
             fi
             exit 0
@@ -409,17 +426,19 @@ jobs:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: |
           set -euo pipefail
-          cp "$RUNNER_TEMP/queue.json" /tmp/queue.json
-          jq '.' /tmp/queue.json
+          queue="$RUNNER_TEMP/queue.json"
+          body="$RUNNER_TEMP/ticket-body.md"
+          jq '.' "$queue"
 
           # Labels this queue uses. Creating them is idempotent enough with
           # `|| true`, and it means a fresh clone of the repo works first time.
           gh label create "spec:${SPEC}" --color BFD4F2 \
             --description "A ticket in the queue for spec #${SPEC}" || true
-          gh label create "agent:queued" --color FEF2C0 \
-            --description "Waiting for the implement-spec chain" || true
+          # `--force` updates the description of a label an older run made.
+          gh label create "agent:queued" --color FEF2C0 --force \
+            --description "Built by the implement-spec chain once its blockers have merged"
 
-          total=$(jq '.tickets | length' /tmp/queue.json)
+          total=$(jq '.tickets | length' "$queue")
           echo "Writing $total tickets for spec #${SPEC}."
 
           # A ticket's screenshots are /tmp/evidence/<position>-*.png. --attach
@@ -427,36 +446,55 @@ jobs:
           # nullglob: none means no --attach.
           shopt -s nullglob
 
-          for i in $(seq 0 $((total - 1))); do
-            title=$(jq -r ".tickets[$i].title" /tmp/queue.json)
-            position=$(jq -r ".tickets[$i].position" /tmp/queue.json)
-            shape=$(jq -r ".tickets[$i].shape" /tmp/queue.json)
-            depends=$(jq -r ".tickets[$i].depends_on | join(\", \")" /tmp/queue.json)
+          # The issue number each position became. A ticket depends only on
+          # lower positions, so writing them in position order means its
+          # blockers exist by the time it is created.
+          declare -A issue_of
+          for i in $(jq -r '.tickets | to_entries | sort_by(.value.position) | .[].key' "$queue"); do
+            title=$(jq -r ".tickets[$i].title" "$queue")
+            position=$(jq -r ".tickets[$i].position" "$queue")
+            shape=$(jq -r ".tickets[$i].shape" "$queue")
 
-            # The two machine-read lines. `survey` parses these out of the
-            # body on every single run — they are the queue's real state, and
-            # they live where a human can read them too.
+            blockers=()
+            for dependency in $(jq -r ".tickets[$i].depends_on[]" "$queue"); do
+              if [ -z "${issue_of[$dependency]:-}" ]; then
+                echo "::error::Position ${position} depends on position ${dependency}, which is not written before it."
+                exit 1
+              fi
+              blockers+=("${issue_of[$dependency]}")
+            done
+            blocked_by=()
+            if [ "${#blockers[@]}" -gt 0 ]; then
+              blocked_by=(--blocked-by "$(IFS=,; echo "${blockers[*]}")")
+            fi
+
+            # `survey` reads `Position:` out of the body on every run. What a
+            # ticket waits on is not in the body: it is the `blocked by`
+            # relation below, and the ticket is a sub-issue of the spec.
             {
               echo "Part of #${SPEC}"
               echo ""
               echo "Position: ${position}"
-              echo "Depends on: ${depends}"
               echo "Shape: ${shape}"
               echo ""
               echo "---"
               echo ""
-              jq -r ".tickets[$i].body" /tmp/queue.json
-            } > /tmp/ticket-body.md
+              jq -r ".tickets[$i].body" "$queue"
+            } > "$body"
 
             attach=()
             for png in /tmp/evidence/"${position}"-*.png; do attach+=(--attach "$png"); done
 
-            gh issue create \
+            url=$(gh issue create \
               --title "$title" \
-              --body-file /tmp/ticket-body.md \
+              --body-file "$body" \
               --label "spec:${SPEC}" \
               --label "agent:queued" \
-              "${attach[@]}"
+              --parent "$SPEC" \
+              "${blocked_by[@]}" \
+              "${attach[@]}" | tail -n 1)
+            issue_of[$position]="${url##*/}"
+            echo "Position ${position} is #${issue_of[$position]}."
           done
 
           gh issue comment "$SPEC" --body \
@@ -721,7 +759,7 @@ jobs:
           if [ "${{ steps.ship.outputs.shipped }}" = "true" ]; then
             # Left open: the pull request's `Closes #<ticket>` closes it when
             # it merges, and only then does the next run's survey see this
-            # position as satisfied and build what depends on it. Until then
+            # blocker as closed and build what it blocks. Until then
             # its open pull request keeps it out of the frontier.
             gh issue comment "$TICKET" \
               --body "Built and opened as a draft PR, ${PR_URL}, from \`${BRANCH}\` — [logs](${RUN_URL}). The pull request is where the review happens. This ticket closes when it merges, and only then are the tickets that depend on it built. <!-- factory:status -->"
