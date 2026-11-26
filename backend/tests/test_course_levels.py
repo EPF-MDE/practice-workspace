@@ -19,7 +19,7 @@ PAGE = "/api/competencies/C1"
 SELF = f"{PAGE}/self-assessment"
 DRAFT = f"{PAGE}/evidence-plan/draft"
 LINK = "https://github.com/ada/notes/pull/4"
-NAME = 'name = "A course"\n'
+NAME = 'name = "A course"\nread_when_none_declared = "roster"\n'
 TITLES = "".join(
     f'\n[competencies.{c}]\ntitle = "{c}"\nminutes = 40\n' for c in COMPETENCIES
 )

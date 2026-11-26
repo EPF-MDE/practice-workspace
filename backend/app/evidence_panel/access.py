@@ -103,12 +103,23 @@ def parse_project(url: str) -> Project:
     return Project(host, Repository("/".join(parts)))  # type: ignore[arg-type]
 
 
+def is_roster_evidence_project(
+    repository: Repository, evidence_project: Repository | None
+) -> bool:
+    return (
+        evidence_project is not None and repository.lower() == evidence_project.lower()
+    )
+
+
 class AccessCheck(Protocol):
     def can_read(self, repository: Repository) -> Readability: ...
 
 
 def access(
-    project: Project, evidence_project: Repository, check: AccessCheck, app_slug: str
+    project: Project,
+    evidence_project: Repository | None,
+    check: AccessCheck,
+    app_slug: str,
 ) -> Access:
     if project.host == GITLAB:
         return Access(
@@ -116,7 +127,7 @@ def access(
             message=GITLAB_MESSAGE,
             how_to_make_readable=GITLAB_HOW_TO_MAKE_READABLE,
         )
-    if project.repository.lower() == evidence_project.lower():
+    if is_roster_evidence_project(project.repository, evidence_project):
         return Access(
             status=READABLE_ACCESS,
             message=YOUR_EVIDENCE_PROJECT,

@@ -194,7 +194,10 @@ def test_verify_names_each_competency_when_the_settings_hold_none(
 ) -> None:
     folder = write_course_folder(tmp_path, with_every_competency())
     (folder / "course.toml").write_text(
-        'name = "Fixture course"\n' + TWO_GROUPS + A_SCALE + CALENDAR,
+        'name = "Fixture course"\nread_when_none_declared = "roster"\n'
+        + TWO_GROUPS
+        + A_SCALE
+        + CALENDAR,
         encoding="utf-8",
     )
 

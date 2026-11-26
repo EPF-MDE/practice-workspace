@@ -1,4 +1,5 @@
 name = "One-Group course"
+read_when_none_declared = "roster"
 
 [[groups]]
 name = "Lighthouse"

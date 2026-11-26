@@ -19,7 +19,7 @@ class OnTheRoster:
     github_login: str
     name: str
     group: str
-    evidence_project: str
+    evidence_project: str | None
     block: str
     upstream: str | None
 
@@ -30,11 +30,10 @@ class OnTheRoster:
         return f"{self.block}-{n}"
 
     def to_read(self, evidence_project: str | None = None) -> StudentToRead:
-        return StudentToRead(
-            self.github_login,
-            self.group,
-            Repository(evidence_project or self.evidence_project),
-        )
+        to_read = evidence_project or self.evidence_project
+        if to_read is None:
+            raise ValueError(f"{self.github_login} has no Evidence Project to read")
+        return StudentToRead(self.github_login, self.group, Repository(to_read))
 
 
 @dataclass(frozen=True)
@@ -61,7 +60,9 @@ class CourseFolder:
         return self.roster_file.read_text(encoding="utf-8")
 
     def roster(self, csv_text: str) -> Roster:
-        return parse_roster(csv_text, self.course.groups)
+        return parse_roster(
+            csv_text, self.course.groups, self.course.roster_names_evidence_projects
+        )
 
     @cached_property
     def students(self) -> list[OnTheRoster]:
@@ -71,7 +72,7 @@ class CourseFolder:
                 row["github_login"],
                 row["name"],
                 row["group"],
-                row["evidence_project"],
+                row.get("evidence_project"),
                 self.course.groups[row["group"]].block,
                 self.course.groups[row["group"]].upstream,
             )
@@ -101,6 +102,10 @@ ONE_GROUP_FIXTURE = CourseFolder(
 )
 DEMO_COURSE = CourseFolder(
     "Demo course", Path(__file__).resolve().parents[2] / "demo-course"
+)
+READS_NOTHING_FIXTURE = CourseFolder(
+    "fixture reading nothing when none is declared",
+    FIXTURES / "courses" / "reads-nothing",
 )
 EVERY_FIXTURE = [TWO_GROUP_FIXTURE, ONE_GROUP_FIXTURE]
 

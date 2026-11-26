@@ -19,8 +19,10 @@ with `gh auth token` given `--gh-token`. The roster is read from, and the readin
 written to, `workspace-data` with the Store App's token (`WORKSPACE_STORE_APP_*`),
 unless `--roster` and `--out` are given. Each Student's Evidence Project is the GitHub
 repository they declared, read from the Store with the Store App's token, else the
-roster's; a GitLab project is named, not read. About 3,700 requests for 37
-repositories; a repository that fails is named and the others are still written.
+roster's when the Course folder reads it (`read_when_none_declared = "roster"`); a
+GitLab project is named, not read, and a Student with none is listed as not declared.
+About 3,700 requests for 37 repositories; a repository that fails is named and the
+others are still written.
 """
 
 from __future__ import annotations
@@ -29,7 +31,7 @@ import argparse
 import subprocess
 import sys
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from app.course import load_course
@@ -56,23 +58,44 @@ from .storage import (
 )
 
 Upstreams = Mapping[str, Repository | None]
+NOT_DECLARED = "not declared: no Evidence Project to read"
+
+
+@dataclass
+class EvidenceProjects:
+    to_read: list[StudentToRead] = field(default_factory=list)
+    gitlab: dict[str, Repository] = field(default_factory=dict)
+    not_declared: list[str] = field(default_factory=list)
+
+    def add(
+        self,
+        student: Student,
+        evidence_project: Repository | None,
+        upstream: Repository | None,
+    ) -> None:
+        if evidence_project is None:
+            self.not_declared.append(student.github_login)
+        else:
+            self.to_read.append(
+                StudentToRead.for_student(student, evidence_project, upstream)
+            )
 
 
 def evidence_projects(
-    students: list[Student], store: Store, upstreams: Upstreams
-) -> tuple[list[StudentToRead], dict[str, Repository]]:
-    to_read: list[StudentToRead] = []
-    gitlab: dict[str, Repository] = {}
-    for student, record in zip(students, store.records(students), strict=True):
-        declared = record.declaration()
-        roster = StudentToRead.from_roster(student, upstreams[student.group])
+    students: list[Student], store: Store | None, upstreams: Upstreams
+) -> EvidenceProjects:
+    found = EvidenceProjects()
+    records = [None] * len(students) if store is None else store.records(students)
+    for student, record in zip(students, records, strict=True):
+        declared = None if record is None else record.declaration()
+        upstream = upstreams[student.group]
         if declared is None:
-            to_read.append(roster)
+            found.add(student, student.evidence_project, upstream)
         elif declared.host == GITLAB:
-            gitlab[student.github_login] = declared.repository_path
+            found.gitlab[student.github_login] = declared.repository_path
         else:
-            to_read.append(replace(roster, evidence_project=declared.repository_path))
-    return to_read, gitlab
+            found.add(student, declared.repository_path, upstream)
+    return found
 
 
 @dataclass
@@ -120,6 +143,15 @@ def run_batch(
             f"data: batch reading of {len(result.readings)} repositories",
         )
     return result
+
+
+def summary(result: BatchResult, found: EvidenceProjects) -> str:
+    return (
+        f"{len(result.readings)} repositories read, {len(result.failures)} failed"
+        + "".join(f"\n  {k}: {v}" for k, v in result.failures.items())
+        + "".join(f"\n  {k}: {not_read_on_gitlab(v)}" for k, v in found.gitlab.items())
+        + "".join(f"\n  {k}: {NOT_DECLARED}" for k in found.not_declared)
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -187,19 +219,20 @@ def main(argv: list[str] | None = None) -> int:
         raw = store.read("roster.csv")
         assert raw is not None
         roster = raw.decode("utf-8")
-    roster_rows = list(parse_roster(roster, upstreams.keys()))
+    roster_rows = list(
+        parse_roster(
+            roster, upstreams.keys(), loading.course.roster_names_evidence_projects
+        )
+    )
     if args.only:
         wanted = set(args.only.split(","))
         roster_rows = [s for s in roster_rows if s.github_login in wanted]
-    gitlab: dict[str, Repository] = {}
-    if args.roster_only:
-        students = [
-            StudentToRead.from_roster(s, upstreams[s.group]) for s in roster_rows
-        ]
-    else:
-        students, gitlab = evidence_projects(
-            roster_rows, GitHubStore.from_settings(settings), upstreams
-        )
+    found = evidence_projects(
+        roster_rows,
+        None if args.roster_only else GitHubStore.from_settings(settings),
+        upstreams,
+    )
+    students = found.to_read
 
     github = HttpGitHub(token)
     reader = RepositoryReader(github, InMemoryReadings())
@@ -215,11 +248,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         assert store is not None
         result = run_batch(students, reader, store, log)
-    print(
-        f"{len(result.readings)} repositories read, {len(result.failures)} failed"
-        + "".join(f"\n  {k}: {v}" for k, v in result.failures.items())
-        + "".join(f"\n  {k}: {not_read_on_gitlab(v)}" for k, v in gitlab.items())
-    )
+    print(summary(result, found))
     return 1 if result.failures else 0
 
 

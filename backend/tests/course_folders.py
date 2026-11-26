@@ -30,10 +30,12 @@ def write_course_folder(
     content: dict[str, str],
     settings: dict[str, tuple[str, int]] | None = None,
     groups: str = TWO_GROUPS,
+    read_when_none_declared: str = "roster",
 ) -> Path:
     titled = settings or {c: (f"The title of {c}", 40) for c in COMPETENCIES}
     (folder / "course.toml").write_text(
         'name = "Fixture course"\n'
+        + f'read_when_none_declared = "{read_when_none_declared}"\n'
         + groups
         + "".join(
             f'\n[competencies.{c}]\ntitle = "{title}"\nminutes = {minutes}\n'

@@ -158,7 +158,9 @@ def test_a_data_branch_roster_naming_a_group_the_course_does_not_hold_refuses_st
 ) -> None:
     unknown_group = with_an_unknown_group(course, student)
     read_from_the_data_branch = RefreshingRoster(
-        lambda: unknown_group, course.course.groups
+        lambda: unknown_group,
+        course.course.groups,
+        course.course.roster_names_evidence_projects,
     )
 
     with pytest.raises(ConfigurationError, match="line 2: the Group 'Not-a-Group'"):

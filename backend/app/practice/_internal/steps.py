@@ -21,8 +21,7 @@ from app.content import (
 )
 from app.content import Field as ContentField
 from app.course import Calendar, Competency, Course
-from app.repository_reading import StudentToRead
-from app.roster import Student
+from app.roster import Repository, Student
 from app.store import (
     AnswerPayload,
     DrawingPayload,
@@ -240,9 +239,9 @@ def _store(request: Request) -> Store:
     return cast(Store, request.app.state.store)
 
 
-def _student_to_read(request: Request, student: Student) -> StudentToRead:
+def _upstream(request: Request, student: Student) -> Repository | None:
     course: Course = request.app.state.course
-    return StudentToRead.from_roster(student, course.groups[student.group].upstream)
+    return course.groups[student.group].upstream
 
 
 def _page(request: Request, competency: str, student: Student) -> Page:

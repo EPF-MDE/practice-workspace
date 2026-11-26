@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from typing import Any, NoReturn
 
 import httpx
@@ -35,6 +36,18 @@ def test_first_sign_in_opens_one_labelled_issue_with_a_short_header(
         and "ada-oceens/OceENS" in issue["body"]
     )
     assert "@" not in issue["body"]
+
+
+def test_the_header_of_a_student_the_roster_names_no_evidence_project_for_says_so(
+    github: FakeGitHub,
+) -> None:
+    store = github_store(github)
+
+    store.open_record(replace(ADA_OF_OCEENS, evidence_project=None))
+
+    (issue,) = github.issues.values()
+    assert "**Evidence Project:** none named by the Roster\n" in issue["body"]
+    assert "github.com/" not in issue["body"]
 
 
 def test_after_a_restart_the_issue_is_found_again_not_opened_twice(

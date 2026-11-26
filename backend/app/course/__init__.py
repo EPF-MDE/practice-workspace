@@ -13,7 +13,7 @@ from app.content import CompetencyContent, ContentError, load_content
 from app.roster import Repository
 
 from ._internal.competencies import COMPETENCIES, competency_problems
-from ._internal.settings_file import read_settings
+from ._internal.settings_file import WhenNoneDeclared, read_settings
 
 __all__ = [
     "COMPETENCIES",
@@ -22,6 +22,7 @@ __all__ = [
     "Course",
     "Group",
     "Loading",
+    "WhenNoneDeclared",
     "load_course",
     "router",
 ]
@@ -65,6 +66,11 @@ class Course:
     competencies: dict[str, Competency]
     scale: Scale
     calendar: Calendar
+    read_when_none_declared: WhenNoneDeclared
+
+    @property
+    def roster_names_evidence_projects(self) -> bool:
+        return self.read_when_none_declared == WhenNoneDeclared.ROSTER
 
 
 @dataclass(frozen=True)
@@ -121,7 +127,17 @@ def load_course(folder: str | Path) -> Loading:
         settings.calendar.reading_day_at,
         settings.calendar.zone,
     )
-    return Loading(Course(settings.name, groups, competencies, scale, calendar), [])
+    return Loading(
+        Course(
+            settings.name,
+            groups,
+            competencies,
+            scale,
+            calendar,
+            settings.read_when_none_declared,
+        ),
+        [],
+    )
 
 
 class LevelOut(BaseModel):
@@ -139,6 +155,7 @@ class CourseOut(BaseModel):
     name: str
     competencies: list[CompetencyOut]
     scale: list[LevelOut]
+    read_when_none_declared: WhenNoneDeclared
 
 
 router = APIRouter()
@@ -156,4 +173,5 @@ def course(request: Request) -> CourseOut:
         scale=[
             LevelOut(id=level.id, label=level.label) for level in loaded.scale.levels
         ],
+        read_when_none_declared=loaded.read_when_none_declared,
     )

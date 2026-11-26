@@ -164,7 +164,7 @@ class Me(BaseModel):
     github_login: str
     name: str
     group: str
-    evidence_project: str
+    evidence_project: str | None
 
 
 router = APIRouter()

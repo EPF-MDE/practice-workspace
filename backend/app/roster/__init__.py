@@ -22,7 +22,7 @@ class Student:
     github_login: str
     name: str
     group: str
-    evidence_project: Repository
+    evidence_project: Repository | None
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -46,18 +46,16 @@ class RosterError(ValueError):
     pass
 
 
-COLUMNS = (
-    "github_login",
-    "github_id",
-    "name",
-    "group",
-    "evidence_project",
-)
+COLUMNS = ("github_login", "github_id", "name", "group")
+EVIDENCE_PROJECT = "evidence_project"
 
 
-def parse_roster(text: str, groups: Collection[str]) -> Roster:
-    reader = csv.DictReader(io.StringIO(text.lstrip("﻿")))
-    missing = set(COLUMNS) - set(reader.fieldnames or ())
+def parse_roster(
+    text: str, groups: Collection[str], names_evidence_projects: bool
+) -> Roster:
+    reader = csv.DictReader(io.StringIO(text.lstrip("\ufeff")))
+    columns = COLUMNS + ((EVIDENCE_PROJECT,) if names_evidence_projects else ())
+    missing = set(columns) - set(reader.fieldnames or ())
     if missing:
         raise RosterError(f"roster.csv lacks the columns {sorted(missing)}")
     students = []
@@ -74,13 +72,21 @@ def parse_roster(text: str, groups: Collection[str]) -> Roster:
                 f"roster.csv line {line}: the Group {group!r} is not one of the "
                 f"Course's {sorted(groups)}"
             )
+        evidence_project = None
+        if names_evidence_projects:
+            evidence_project = Repository((row[EVIDENCE_PROJECT] or "").strip())
+            if not evidence_project:
+                raise RosterError(
+                    f"roster.csv line {line}: no Evidence Project, and the Course "
+                    "reads the one the Roster names when a Student declares none"
+                )
         students.append(
             Student(
                 github_id=github_id,
                 github_login=row["github_login"].strip(),
                 name=row["name"].strip(),
                 group=group,
-                evidence_project=Repository(row["evidence_project"].strip()),
+                evidence_project=evidence_project,
             )
         )
     return Roster(students)
@@ -101,8 +107,19 @@ class StaticRoster:
         self._roster = roster
 
     @classmethod
-    def from_file(cls, path: str | Path, groups: Collection[str]) -> StaticRoster:
-        return cls(parse_roster(Path(path).read_text(encoding="utf-8"), groups))
+    def from_file(
+        cls,
+        path: str | Path,
+        groups: Collection[str],
+        names_evidence_projects: bool,
+    ) -> StaticRoster:
+        return cls(
+            parse_roster(
+                Path(path).read_text(encoding="utf-8"),
+                groups,
+                names_evidence_projects,
+            )
+        )
 
 
 class RefreshingRoster:
@@ -110,11 +127,13 @@ class RefreshingRoster:
         self,
         read: Callable[[], str],
         groups: Collection[str],
+        names_evidence_projects: bool,
         max_age: float = 300,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._read = read
         self._groups = groups
+        self._names_evidence_projects = names_evidence_projects
         self._max_age = max_age
         self._clock = clock
         self._lock = threading.Lock()
@@ -126,7 +145,9 @@ class RefreshingRoster:
             now = self._clock()
             if self._roster is None or now - self._read_at >= self._max_age:
                 try:
-                    self._roster = parse_roster(self._read(), self._groups)
+                    self._roster = parse_roster(
+                        self._read(), self._groups, self._names_evidence_projects
+                    )
                     self._read_at = now
                 except Exception:
                     if self._roster is None:

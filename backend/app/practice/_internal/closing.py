@@ -41,7 +41,7 @@ from .steps import (
     _refuse_after_the_reading_day,
     _scale,
     _store,
-    _student_to_read,
+    _upstream,
 )
 
 
@@ -143,7 +143,8 @@ def close_competency(
     panel = evidence_panel.read_panel(
         competency,
         request.app.state.repository_reading,
-        _student_to_read(request, student),
+        student,
+        _upstream(request, student),
         None if current is None else _declared(current, request, student),
     )
     plan = EvidencePlanPayload(

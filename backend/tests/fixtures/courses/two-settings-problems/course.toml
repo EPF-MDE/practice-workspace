@@ -1,4 +1,5 @@
 title = "Fixture course"
+read_when_none_declared = "roster"
 
 [calendar]
 time_zone = "Europe/Paris"

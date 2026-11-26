@@ -62,12 +62,10 @@ class StudentToRead:
     upstream: Repository | None = field(default=None, compare=False)
 
     @classmethod
-    def from_roster(
-        cls, student: Student, upstream: Repository | None
+    def for_student(
+        cls, student: Student, evidence_project: Repository, upstream: Repository | None
     ) -> StudentToRead:
-        return cls(
-            student.github_login, student.group, student.evidence_project, upstream
-        )
+        return cls(student.github_login, student.group, evidence_project, upstream)
 
     @property
     def key(self) -> tuple[str, str]:

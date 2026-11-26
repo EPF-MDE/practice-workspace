@@ -6,6 +6,7 @@ from .access import (
     Project,
     Readability,
     access,
+    is_roster_evidence_project,
     parse_project,
 )
 from .panel import (
@@ -47,6 +48,7 @@ __all__ = [
     "Project",
     "Readability",
     "access",
+    "is_roster_evidence_project",
     "parse_project",
     "read_panel",
     "snapshot",

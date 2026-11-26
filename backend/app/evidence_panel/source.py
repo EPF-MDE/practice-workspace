@@ -14,6 +14,7 @@ from app.repository_reading import (
     StudentToRead,
 )
 from app.repository_reading.reading import LOOKED_FOR, NOT_VISIBLE
+from app.roster import Repository, Student
 
 from .panel import (
     READABLE_ACCESS,
@@ -22,6 +23,7 @@ from .panel import (
     build_panel,
     not_read_text,
     unavailable_panel,
+    undeclared_panel,
 )
 
 logger = logging.getLogger("app.evidence_panel")
@@ -36,10 +38,12 @@ class RepositoryReadingSource(Protocol):
 def read_panel(
     competency: str,
     source: RepositoryReadingSource,
-    student: StudentToRead,
+    on_the_roster: Student,
+    upstream: Repository | None,
     declaration: Declaration | None,
     refresh: bool = False,
 ) -> EvidencePanel:
+    evidence_project = on_the_roster.evidence_project
     if declaration is not None and not declaration.declares_roster_evidence_project:
         if declaration.access.status != READABLE_ACCESS:
             return unavailable_panel(
@@ -48,7 +52,10 @@ def read_panel(
                 declaration,
                 not_read_text(declaration),
             )
-        student = replace(student, evidence_project=declaration.repository)
+        evidence_project = declaration.repository
+    if evidence_project is None:
+        return undeclared_panel(competency)
+    student = StudentToRead.for_student(on_the_roster, evidence_project, upstream)
     try:
         reading = source.refresh(student) if refresh else source.read(student)
     except Exception:

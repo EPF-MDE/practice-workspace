@@ -178,20 +178,22 @@ function PanelBody({ panel, ...actions }: PanelBodyProps) {
   return (
     <>
       <div className="flex flex-col gap-2">
-        <p className="text-muted-foreground">
-          <code data-testid="evidence-panel-project">
-            {panel.evidence_project}
-          </code>
-          , read{" "}
-          <span data-testid="evidence-panel-facts-computed-at">
-            {when(panel.facts_computed_at)}
-          </span>
-          ; last checked for a push{" "}
-          <span data-testid="evidence-panel-last-checked-at">
-            {when(panel.last_checked_at)}
-          </span>
-          .
-        </p>
+        {panel.evidence_project && (
+          <p className="text-muted-foreground">
+            <code data-testid="evidence-panel-project">
+              {panel.evidence_project}
+            </code>
+            , read{" "}
+            <span data-testid="evidence-panel-facts-computed-at">
+              {when(panel.facts_computed_at)}
+            </span>
+            ; last checked for a push{" "}
+            <span data-testid="evidence-panel-last-checked-at">
+              {when(panel.last_checked_at)}
+            </span>
+            .
+          </p>
+        )}
         {panel.unavailable && (
           <output data-testid="evidence-panel-unavailable" className="block">
             <Sentence text={panel.unavailable} />

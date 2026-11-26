@@ -1,4 +1,5 @@
 name = "Three-level course"
+read_when_none_declared = "roster"
 
 [[groups]]
 name = "OcéENS"

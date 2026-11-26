@@ -29,6 +29,11 @@ UNAVAILABLE = (
     "This says nothing about your work: the Reading Day will read it. "
     "Press Refresh later."
 )
+UNDECLARED = (
+    "You have not declared your Evidence Project yet, and this Course reads nothing "
+    "until you do: nothing of your work shows here, which is not a zero. "
+    "Declare the repository you put your evidence in, in a closing step."
+)
 NOTICE = (
     "The Instructor and an AI tool (Mistral, which may train on what it reads) will "
     "read the project you declare. "
@@ -126,7 +131,7 @@ class DeclarationHelp(BaseModel):
 
 class EvidencePanel(BaseModel):
     competency: str
-    evidence_project: Repository
+    evidence_project: Repository | None
     unavailable: str | None
     facts_computed_at: datetime | None
     last_checked_at: datetime | None
@@ -197,9 +202,13 @@ def build_panel(
     )
 
 
+def undeclared_panel(competency: str) -> EvidencePanel:
+    return unavailable_panel(competency, None, None, UNDECLARED)
+
+
 def unavailable_panel(
     competency: str,
-    evidence_project: Repository,
+    evidence_project: Repository | None,
     declaration: Declaration | None,
     unavailable: str = UNAVAILABLE,
 ) -> EvidencePanel:

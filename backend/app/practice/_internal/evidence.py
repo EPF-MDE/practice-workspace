@@ -56,8 +56,9 @@ def _declared(
         what_to_read=declared.what_to_read,
         repository=project.repository,
         host=project.host,
-        declares_roster_evidence_project=project.repository.lower()
-        == student.evidence_project.lower(),
+        declares_roster_evidence_project=evidence_panel.is_roster_evidence_project(
+            project.repository, student.evidence_project
+        ),
         declared_at=declared.at,
         access=evidence_panel.access(
             project,
