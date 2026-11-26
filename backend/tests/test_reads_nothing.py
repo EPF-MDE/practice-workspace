@@ -4,8 +4,8 @@ import pytest
 from conftest import MakeClient, c1_levels, sign_in
 from course_folders import with_every_competency, write_course_folder
 from courses_under_test import (
-    NOTHING_BY_DEFAULT_FIXTURE,
     ONE_GROUP_FIXTURE,
+    READS_NOTHING_FIXTURE,
     CourseFolder,
 )
 from fastapi.testclient import TestClient
@@ -24,7 +24,7 @@ ORCHARD = {
 
 @pytest.fixture
 def course() -> CourseFolder:
-    return NOTHING_BY_DEFAULT_FIXTURE
+    return READS_NOTHING_FIXTURE
 
 
 @pytest.fixture
@@ -35,11 +35,13 @@ def readings() -> CountedReading:
 @pytest.fixture
 def signed_in(make_client: MakeClient, readings: CountedReading) -> TestClient:
     client = make_client(repository_reading=readings, access_check=FakeAccessCheck())
-    sign_in(client, NOTHING_BY_DEFAULT_FIXTURE.student.github_id)
+    sign_in(client, READS_NOTHING_FIXTURE.student.github_id)
     return client
 
 
-def test_the_course_says_it_reads_nothing_by_default(signed_in: TestClient) -> None:
+def test_the_course_says_it_reads_nothing_when_none_is_declared(
+    signed_in: TestClient,
+) -> None:
     assert signed_in.get("/api/course").json()["read_when_none_declared"] == "nothing"
 
 
@@ -101,8 +103,8 @@ def test_closing_without_a_declaration_reads_nothing_and_closing_with_one_reads_
     assert readings.asked == ["iris/orchard"]
 
 
-def test_verify_passes_a_course_folder_reading_nothing_by_default() -> None:
-    result = verify(NOTHING_BY_DEFAULT_FIXTURE.folder)
+def test_verify_passes_a_course_folder_reading_nothing_when_none_is_declared() -> None:
+    result = verify(READS_NOTHING_FIXTURE.folder)
 
     assert result.returncode == 0, result.stdout + result.stderr
 

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import httpx
 import pytest
-from courses_under_test import NOTHING_BY_DEFAULT_FIXTURE
+from courses_under_test import READS_NOTHING_FIXTURE
 
 from app.repository_reading import (
     GitHubWorkspaceData,
@@ -128,7 +128,7 @@ def test_without_the_store_only_the_roster_is_read() -> None:
 def test_reading_nothing_a_student_who_declared_nothing_is_listed_not_declared() -> (
     None
 ):
-    course = NOTHING_BY_DEFAULT_FIXTURE
+    course = READS_NOTHING_FIXTURE
     iris, olive = course.roster(course.roster_csv)
     store = InMemoryStore()
     store.send_declaration(

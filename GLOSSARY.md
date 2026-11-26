@@ -26,7 +26,7 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Instructor**: The person who writes a Course's material and reads what its Students send. _Avoid_: teacher, admin
 
-**Roster**: The list of a Course's Students, keyed by their numeric GitHub id, naming each Student's Group and, unless the Course folder's settings read nothing by default, their Evidence Project. Sign-in is checked against it. _Avoid_: class list, whitelist
+**Roster**: The list of a Course's Students, keyed by their numeric GitHub id, naming each Student's Group and, unless the Course folder's settings read nothing when a Student declares none, their Evidence Project. Sign-in is checked against it. _Avoid_: class list, whitelist
 
 **Group**: The Students of a Course who receive the same Group-specific content, named once in the Course folder's settings. _Avoid_: class, cohort, team
 

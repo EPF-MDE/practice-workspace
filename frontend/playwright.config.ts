@@ -19,10 +19,7 @@ const portFor = (variable: string) => {
 
 const backend = resolve(import.meta.dirname, "../backend");
 const demoCourse = resolve(import.meta.dirname, "../demo-course");
-const readingNothing = resolve(
-  backend,
-  "tests/fixtures/courses/nothing-by-default"
-);
+const readingNothing = resolve(backend, "tests/fixtures/courses/reads-nothing");
 const READS_NOTHING = /reads-nothing\.spec\.ts/;
 
 const instance = (courseFolder: string, portVariable: string) => {

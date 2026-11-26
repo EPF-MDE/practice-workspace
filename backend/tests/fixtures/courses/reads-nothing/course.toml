@@ -1,4 +1,4 @@
-name = "A Course without default Evidence Projects"
+name = "A Course reading nothing until a Student declares an Evidence Project"
 read_when_none_declared = "nothing"
 
 [[groups]]

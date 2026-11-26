@@ -103,8 +103,9 @@ ONE_GROUP_FIXTURE = CourseFolder(
 DEMO_COURSE = CourseFolder(
     "Demo course", Path(__file__).resolve().parents[2] / "demo-course"
 )
-NOTHING_BY_DEFAULT_FIXTURE = CourseFolder(
-    "fixture reading nothing by default", FIXTURES / "courses" / "nothing-by-default"
+READS_NOTHING_FIXTURE = CourseFolder(
+    "fixture reading nothing when none is declared",
+    FIXTURES / "courses" / "reads-nothing",
 )
 EVERY_FIXTURE = [TWO_GROUP_FIXTURE, ONE_GROUP_FIXTURE]
 
