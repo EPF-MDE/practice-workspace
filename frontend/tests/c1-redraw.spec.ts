@@ -9,42 +9,43 @@ const STUDENTS = [
 const CHAIN = ["Start", "Front door", "Queue", "Worker", "Store", "Reply"];
 
 for (const student of STUDENTS) {
-  test(`${student.group}: the redraw is kept while drawing, sent, then compared with the Reference Drawing`, async ({
-    page,
-    browser,
-  }, testInfo) => {
-    await signIn(page, student.id);
-    await page.goto("/competencies/C1");
-    await drawAndReload(page);
+  test(
+    `${student.group}: the redraw is kept while drawing, sent, then compared with the Reference Drawing`,
+    { tag: "@drawing-with-the-mouse" },
+    async ({ page, browser }, testInfo) => {
+      await signIn(page, student.id);
+      await page.goto("/competencies/C1");
+      await drawAndReload(page);
 
-    const redraw = step(page, "redraw");
-    const [response] = await Promise.all([
-      page.waitForResponse(
-        (answer) =>
-          answer.url().endsWith("/steps/redraw/drawing") &&
-          answer.request().method() === "POST"
-      ),
-      redraw.getByRole("button", { name: "Send my drawing" }).click(),
-    ]);
-    const sent = await response.json();
-    expect(sent.reference.check_points).toHaveLength(student.checkPoints);
-    testInfo.annotations.push({
-      type: "drawing sizes",
-      description: `${CHAIN.length} boxes, ${CHAIN.length - 1} arrows: PNG ${sent.png_bytes} bytes, snapshot ${sent.snapshot_bytes} bytes`,
-    });
-    await compare(page, student.checkPoints);
+      const redraw = step(page, "redraw");
+      const [response] = await Promise.all([
+        page.waitForResponse(
+          (answer) =>
+            answer.url().endsWith("/steps/redraw/drawing") &&
+            answer.request().method() === "POST"
+        ),
+        redraw.getByRole("button", { name: "Send my drawing" }).click(),
+      ]);
+      const sent = await response.json();
+      expect(sent.reference.check_points).toHaveLength(student.checkPoints);
+      testInfo.annotations.push({
+        type: "drawing sizes",
+        description: `${CHAIN.length} boxes, ${CHAIN.length - 1} arrows: PNG ${sent.png_bytes} bytes, snapshot ${sent.snapshot_bytes} bytes`,
+      });
+      await compare(page, student.checkPoints);
 
-    const other = await browser.newContext();
-    const elsewhere = await other.newPage();
-    await signIn(elsewhere, student.id);
-    await elsewhere.goto("/competencies/C1");
-    await expect(
-      step(elsewhere, "redraw")
-        .getByRole("figure", { name: "Your drawing" })
-        .locator(".tl-shape")
-    ).toHaveCount(shapesOfChain(CHAIN));
-    await other.close();
-  });
+      const other = await browser.newContext();
+      const elsewhere = await other.newPage();
+      await signIn(elsewhere, student.id);
+      await elsewhere.goto("/competencies/C1");
+      await expect(
+        step(elsewhere, "redraw")
+          .getByRole("figure", { name: "Your drawing" })
+          .locator(".tl-shape")
+      ).toHaveCount(shapesOfChain(CHAIN));
+      await other.close();
+    }
+  );
 }
 
 async function drawAndReload(page: Page) {

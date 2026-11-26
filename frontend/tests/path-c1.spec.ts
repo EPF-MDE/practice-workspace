@@ -52,9 +52,9 @@ const STEPS = [
 ];
 
 for (const student of STUDENTS) {
-  test(`${student.group}: C1's Path, each reference only after the Student's own`, async ({
-    page,
-  }) => {
+  test(`${student.group}: C1's Path, each reference only after the Student's own`, {
+    tag: "@drawing-with-the-mouse",
+  }, async ({ page }) => {
     await signIn(page, student.id);
     await openCompetency(page, "C1");
     await expect(page.getByTestId("time-spent")).toContainText("out of 40");

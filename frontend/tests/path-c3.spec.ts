@@ -57,9 +57,9 @@ const STEPS = [
 ];
 
 for (const student of STUDENTS) {
-  test(`${student.group}: C3's Path, a step waiting for the ranking, a GitHub Evidence Project`, async ({
-    page,
-  }) => {
+  test(`${student.group}: C3's Path, a step waiting for the ranking, a GitHub Evidence Project`, {
+    tag: "@drawing-with-the-mouse",
+  }, async ({ page }) => {
     await signIn(page, student.id);
     await openCompetency(page, "C3");
     await expect(step(page, "read-the-errors")).toContainText("Pantry");

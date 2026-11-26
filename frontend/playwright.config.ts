@@ -21,7 +21,7 @@ const backend = resolve(import.meta.dirname, "../backend");
 const demoCourse = resolve(import.meta.dirname, "../demo-course");
 const readingNothing = resolve(backend, "tests/fixtures/courses/reads-nothing");
 const READS_NOTHING = /reads-nothing\.spec\.ts/;
-const DRAWING_WITH_THE_MOUSE = /(c1-redraw|path-c1|path-c3)\.spec\.ts/;
+const DRAWING_WITH_THE_MOUSE = /@drawing-with-the-mouse/;
 const DRAWING_TEST_TIMEOUT = 120_000;
 
 const instance = (courseFolder: string, portVariable: string) => {
@@ -68,12 +68,13 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: [READS_NOTHING, DRAWING_WITH_THE_MOUSE],
+      testIgnore: READS_NOTHING,
+      grepInvert: DRAWING_WITH_THE_MOUSE,
       use: { ...devices["Desktop Chrome"], baseURL: demo.baseURL },
     },
     {
       name: "chromium, drawing with the mouse",
-      testMatch: DRAWING_WITH_THE_MOUSE,
+      grep: DRAWING_WITH_THE_MOUSE,
       timeout: DRAWING_TEST_TIMEOUT,
       use: { ...devices["Desktop Chrome"], baseURL: demo.baseURL },
     },
