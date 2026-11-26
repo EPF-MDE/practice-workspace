@@ -3,13 +3,15 @@ from __future__ import annotations
 import logging
 import secrets
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Protocol, cast
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.roster import RosterSource, Student
 from app.store import StoreUnavailable
@@ -19,7 +21,7 @@ logger = logging.getLogger(__name__)
 SESSION_ID = "github_id"
 SESSION_STATE = "oauth_state"
 SESSION_REFUSED = "refused_login"
-SESSION_IDLE_LIMIT = 60 * 60 * 24 * 60
+SESSION_IDLE_LIMIT = timedelta(days=60)
 
 NOTICE = (
     "What you send here (your answers, drawings, Self-assessment, Evidence Plan "
@@ -137,6 +139,17 @@ def _open_record(request: Request, student: Student) -> None:
         logger.warning(
             "Record of %s not opened at sign-in: %s", student.github_login, error
         )
+
+
+def add_session(app: FastAPI, secret: str, https_only: bool) -> None:
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=secret or secrets.token_urlsafe(32),
+        session_cookie="cws_session",
+        max_age=int(SESSION_IDLE_LIMIT.total_seconds()),
+        same_site="lax",
+        https_only=https_only,
+    )
 
 
 def current_student(request: Request) -> Student:

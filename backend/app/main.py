@@ -13,7 +13,6 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.sessions import SessionMiddleware
 
 from app import auth, course, observability, practice
 from app.auth import FakeIdentity, GitHubIdentity, Identity
@@ -264,12 +263,9 @@ def create_app(
 
     app.exception_handler(RequestValidationError)(practice.validation_error)
 
-    app.add_middleware(
-        SessionMiddleware,
-        secret_key=settings.session_secret or secrets.token_urlsafe(32),
-        session_cookie="cws_session",
-        max_age=auth.SESSION_IDLE_LIMIT,
-        same_site="lax",
+    auth.add_session(
+        app,
+        settings.session_secret,
         https_only=settings.public_url.startswith("https://"),
     )
 
