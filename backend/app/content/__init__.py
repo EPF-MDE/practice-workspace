@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from ._internal.images import Image, read_images
 from ._internal.model import (
     Answer,
     Block,
@@ -35,6 +36,7 @@ __all__ = [
     "ExampleDrawing",
     "Field",
     "Html",
+    "Image",
     "Page",
     "Point",
     "ReferenceDrawing",
@@ -49,6 +51,7 @@ __all__ = [
 class ContentLoading:
     competencies: dict[str, CompetencyContent]
     with_a_file: set[str]
+    images: dict[str, Image]
     problems: list[str]
 
 
@@ -69,7 +72,7 @@ def load_content(
         snapshot: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
         return snapshot
 
-    loading = ContentLoading({}, set(), [])
+    loading = ContentLoading({}, set(), read_images(directory), [])
     for path in sorted(directory.glob("c[0-9].md")):
         try:
             competency = parse_competency(
@@ -78,6 +81,7 @@ def load_content(
                 path.name,
                 drawings,
                 to_get_there_levels=to_get_there_levels,
+                images=loading.images,
             )
         except ContentError as error:
             loading.with_a_file.add(path.stem.upper())

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Collection, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping
 from typing import Any
 
 from .check import _check, _served_markers
+from .images import image_problems
 from .model import (
     DIRECTIVES,
     ContentError,
@@ -75,6 +76,13 @@ def _without_instructor(nodes: list[_Node]) -> list[_Node]:
     return kept
 
 
+def _text(nodes: Iterable[_Node]) -> str:
+    return "\n".join(
+        node if isinstance(node, str) else f"\n{_text(node.children)}\n"
+        for node in nodes
+    )
+
+
 Drawings = Callable[[str], dict[str, Any]]
 
 
@@ -89,6 +97,7 @@ def parse_competency(
     drawings: Drawings = _no_drawings,
     *,
     to_get_there_levels: Collection[str] | None,
+    images: Collection[str] = (),
 ) -> CompetencyContent:
     clashing = sorted(set(group_block_ids.values()) & DIRECTIVES)
     if clashing:
@@ -129,6 +138,7 @@ def parse_competency(
     intro_nodes = _tree(intro, f"{source}, intro", block_ids, problems)
     if any(isinstance(n, _Directive) for n in intro_nodes):
         problems.append(f"{source}, intro: blocks belong in a step, not the intro")
+    problems += image_problems(_text(intro_nodes), images, f"{source}, intro")
     raw_steps: list[_RawStep] = []
     unreadable: set[str] = set()
     for title, attrs, lines in steps:
@@ -142,6 +152,7 @@ def parse_competency(
         for d in _walk(step.nodes):
             if d.name in ("example-drawing", "reference-drawing"):
                 d.snapshot = _snapshot(d, drawings, where, problems)
+        problems += image_problems(_text(step.nodes), images, where)
         if len(problems) > found:
             unreadable.add(step.id)
         raw_steps.append(step)

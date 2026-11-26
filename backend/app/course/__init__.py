@@ -5,12 +5,13 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from app.auth import current_student
 from app.closing import Level, Phase, Scale
-from app.content import CompetencyContent, load_content
-from app.roster import Repository
+from app.content import CompetencyContent, Image, load_content
+from app.roster import Repository, Student
 
 from ._internal.competencies import COMPETENCIES, competency_problems
 from ._internal.settings_file import WhenNoneDeclared, read_settings
@@ -67,6 +68,7 @@ class Course:
     scale: Scale
     calendar: Calendar
     read_when_none_declared: WhenNoneDeclared
+    images: dict[str, Image]
 
     @property
     def roster_names_evidence_projects(self) -> bool:
@@ -131,6 +133,7 @@ def load_course(folder: str | Path) -> Loading:
             scale,
             calendar,
             settings.read_when_none_declared,
+            content.images,
         ),
         [],
     )
@@ -156,6 +159,8 @@ class CourseOut(BaseModel):
 
 router = APIRouter()
 
+AN_IMAGE_RUNS_NOTHING = "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+
 
 @router.get("/api/course", tags=["course"])
 def course(request: Request) -> CourseOut:
@@ -170,4 +175,26 @@ def course(request: Request) -> CourseOut:
             LevelOut(id=level.id, label=level.label) for level in loaded.scale.levels
         ],
         read_when_none_declared=loaded.read_when_none_declared,
+    )
+
+
+@router.get(
+    "/api/course/images/{name:path}",
+    tags=["course"],
+    response_class=Response,
+    responses={200: {"content": {"image/*": {}}}},
+)
+def image(
+    name: str, request: Request, _: Student = Depends(current_student)
+) -> Response:
+    held = request.app.state.course.images.get(name)
+    if held is None:
+        raise HTTPException(404, "The Course folder holds no such image")
+    return Response(
+        held.data,
+        media_type=held.media_type,
+        headers={
+            "Content-Security-Policy": AN_IMAGE_RUNS_NOTHING,
+            "X-Content-Type-Options": "nosniff",
+        },
     )

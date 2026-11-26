@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { SoftwareFactory } from "@/components/SoftwareFactory";
 import { Button } from "@/components/ui/button";
 import { courseQuery } from "@/course";
 import { requireStudent } from "@/session";
@@ -33,8 +32,6 @@ function Opening() {
           </Button>
         </form>
       </header>
-
-      <SoftwareFactory />
 
       <section aria-labelledby="path" className="flex flex-col gap-3">
         <h2 id="path" className="text-xl font-semibold">
