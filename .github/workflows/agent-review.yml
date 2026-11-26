@@ -55,9 +55,23 @@ name: Agent — Review A Pull Request
 # AND IT SETS THE `agent-review` STATUS (#89)
 #   On the head it leaves: pending while it runs, success when both axes
 #   pass, no finding is left, the fixes reached the branch and check passes
-#   after them, failure otherwise. With `agent-review` a required check,
-#   `gh pr merge --auto --squash` merges once a review passes, and never a
-#   head no review has read: a new push has no `agent-review` status yet.
+#   after them, failure otherwise. With `agent-review` a required check, a
+#   head no review has read never merges: a new push has no `agent-review`
+#   status yet.
+#
+# HOW A PULL REQUEST MERGES: THROUGH THE MERGE QUEUE (#110)
+#   `gh pr merge <n> --auto` once the Instructor has read it. GitHub puts it
+#   in the queue once `check` and `agent-review` pass on its head, and the
+#   queue squashes it (the method is the queue's, so no `--squash`). The
+#   queue tests the pull request on top of `main` and of those ahead of it,
+#   on a merge group commit of its own, and merges that commit only if every
+#   required check passes on it there too.
+#   The review does not run again on that commit: it read the pull request's
+#   diff, which the queue does not change. So on `merge_group` the job
+#   `queue-only-agent-review` below only answers the queue, setting
+#   `agent-review` to success on the merge group's commit. Without it the
+#   queue waits for a status nobody sends, and drops the pull request at
+#   its timeout.
 #
 # WHAT IT NEEDS
 #   secrets.CLAUDE_CODE_OAUTH_TOKEN — the agent's auth token.
@@ -88,6 +102,9 @@ name: Agent — Review A Pull Request
 on:
   pull_request:
     types: [labeled]
+  # Only for `queue-only-agent-review`: no review runs in the queue.
+  merge_group:
+    types: [checks_requested]
 
 # A ceiling on the GITHUB_TOKEN, which only checks the code out. Reading the
 # PR and the ticket, pushing the fixes, posting the verdict and the inline
@@ -99,6 +116,7 @@ permissions:
 # commits it made. A fresh `agent:review` waits for the one running. Only
 # that label joins the group: every other label gets a throwaway group of its
 # own, so labelling a PR under review `bug` queues nothing.
+# A merge group has no label, so it gets a throwaway group too.
 concurrency:
   group: ${{ github.event.label.name == 'agent:review' && format('agent-review-{0}', github.event.pull_request.number) || format('ignore-{0}', github.run_id) }}
   cancel-in-progress: false
@@ -505,3 +523,27 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: gh pr edit "$PR_NUMBER" --remove-label "agent:in-progress" || true
+
+  queue-only-agent-review:
+    # Answers the merge queue, nothing else: the review ran on the pull
+    # request, and the queue only takes one whose head has a passing
+    # `agent-review`. On a pull request's label this job is skipped.
+    name: queue only, agent-review passed on the pull request
+    if: github.event_name == 'merge_group'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # The GITHUB_TOKEN sets the status, so FACTORY_PAT is not needed here.
+    permissions:
+      statuses: write
+    steps:
+      - name: Set agent-review to success on the merge group's commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.event.merge_group.head_sha }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh api --method POST "repos/$GH_REPO/statuses/$SHA" \
+            -f state=success -f context=agent-review \
+            -f description="Merge queue: the review passed on the pull request." \
+            -f target_url="$RUN_URL" --silent
