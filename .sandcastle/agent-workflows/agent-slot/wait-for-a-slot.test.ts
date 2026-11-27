@@ -162,6 +162,30 @@ describe("waiting for an agent slot: counting them", () => {
   });
 });
 
+describe("waiting for an agent slot: in line", () => {
+  it("checks less often the further back in line it waits", async () => {
+    const queue = (ahead: number) => [
+      page(2, [{ id: 20, runner: "a", gate: "passed" }]),
+      page(3, [{ id: 30, runner: "b", gate: "passed" }]),
+      ...Array.from({ length: ahead }, (_, n) =>
+        page(4 + n, [
+          {
+            id: 40 + n,
+            runner: `ahead-${n}`,
+            gate: "waiting" as const,
+            since: "2026-11-26T17:08:00Z",
+          },
+        ])
+      ),
+      me(),
+    ];
+    const { outcome, clock } = waits([queue(2), queue(1), queue(0), []]);
+    await outcome;
+
+    expect(clock.slept.slice(0, 3)).toEqual([180_000, 120_000, 60_000]);
+  });
+});
+
 describe("waiting for an agent slot: when GitHub is slow", () => {
   it("keeps waiting when GitHub does not answer", async () => {
     const clock = fakeClock();

@@ -57,7 +57,7 @@ export const waitForASlot = async ({
     log(
       `${turn.taken} of ${AGENT_SLOTS} agent slots taken, ${turn.ahead} run(s) waiting ahead of this one.`
     );
-    await clock.sleep(CHECK_EVERY_MS);
+    await clock.sleep(CHECK_EVERY_MS * (turn.ahead + 1));
   }
   log(
     `::error::No agent slot came free in ${WAIT_AT_MOST_MINUTES} minutes: ${AGENT_SLOTS} agent runs kept them all. The agent did not start. Put the label back to try again.`
