@@ -3,9 +3,9 @@ import { mkdirSync } from "node:fs";
 import { createServer } from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { localInstance } from "../frontend/instance.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const backend = resolve(root, "backend");
 const demoCourse = resolve(root, "demo-course");
 const out = resolve(root, process.argv[2] ?? "docs/screenshots");
 const session = `screenshots-${process.pid}`;
@@ -27,38 +27,20 @@ const browser = (...args) =>
     stdio: ["ignore", "pipe", "inherit"],
   });
 
-const startDemoCourse = (port, baseURL) =>
-  spawn(
-    "uv",
-    [
-      "run",
-      "--frozen",
-      "uvicorn",
-      "app.main:app",
-      "--host",
-      "127.0.0.1",
-      "--port",
-      String(port),
-    ],
-    {
-      cwd: backend,
-      stdio: ["ignore", "ignore", "inherit"],
-      env: {
-        ...process.env,
-        WORKSPACE_COURSE_FOLDER: demoCourse,
-        WORKSPACE_ROSTER_FILE: resolve(demoCourse, "roster.csv"),
-        WORKSPACE_SIGN_IN: "fake",
-        WORKSPACE_STORE: "memory",
-        WORKSPACE_REPOSITORY_READING: "fake",
-        WORKSPACE_REPOSITORY_READINGS_DIR: resolve(backend, "tests/fixtures"),
-        WORKSPACE_PUBLIC_URL: baseURL,
-        WORKSPACE_SESSION_SECRET: "screenshots",
-        WORKSPACE_POSTHOG_PROJECT_TOKEN: "",
-        WORKSPACE_POSTHOG_HOST: "",
-        WORKSPACE_POSTHOG_ENVIRONMENT: "",
-      },
-    }
+const startDemoCourse = (port) => {
+  const { baseURL, cwd, command, env } = localInstance(
+    demoCourse,
+    String(port),
+    "screenshots"
   );
+  const [program, ...args] = command;
+  const server = spawn(program, args, {
+    cwd,
+    stdio: ["ignore", "ignore", "inherit"],
+    env: { ...process.env, ...env },
+  });
+  return { baseURL, server };
+};
 
 const healthy = async (baseURL) => {
   for (let attempt = 0; attempt < 120; attempt++) {
@@ -191,9 +173,7 @@ execFileSync("npm", ["--prefix", "frontend", "run", "--silent", "build"], {
   cwd: root,
   stdio: "inherit",
 });
-const port = await freePort();
-const baseURL = `http://127.0.0.1:${port}`;
-const server = startDemoCourse(port, baseURL);
+const { baseURL, server } = startDemoCourse(await freePort());
 try {
   await healthy(baseURL);
   walkThePath(baseURL);

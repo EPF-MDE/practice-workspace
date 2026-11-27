@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+import { localInstance } from "./instance.ts";
 import { DRAWING_WITH_THE_MOUSE } from "./tests/helpers/draw";
 
 const isWorker = process.env.TEST_WORKER_INDEX !== undefined;
@@ -18,34 +19,27 @@ const portFor = (variable: string) => {
   return process.env[variable];
 };
 
-const backend = resolve(import.meta.dirname, "../backend");
 const demoCourse = resolve(import.meta.dirname, "../demo-course");
-const readingNothing = resolve(backend, "tests/fixtures/courses/reads-nothing");
+const readingNothing = resolve(
+  import.meta.dirname,
+  "../backend/tests/fixtures/courses/reads-nothing"
+);
 const READS_NOTHING = /reads-nothing\.spec\.ts/;
 const DRAWS_WITH_THE_MOUSE = new RegExp(DRAWING_WITH_THE_MOUSE);
 const DRAWING_TEST_TIMEOUT = 120_000;
 
 const instance = (courseFolder: string, portVariable: string) => {
-  const port = portFor(portVariable);
-  const baseURL = `http://127.0.0.1:${port}`;
+  const { baseURL, cwd, command, env } = localInstance(
+    courseFolder,
+    portFor(portVariable),
+    "playwright"
+  );
   return {
     baseURL,
     webServer: {
-      cwd: backend,
-      command: `uv run --frozen uvicorn app.main:app --host 127.0.0.1 --port ${port}`,
-      env: {
-        WORKSPACE_COURSE_FOLDER: courseFolder,
-        WORKSPACE_ROSTER_FILE: resolve(courseFolder, "roster.csv"),
-        WORKSPACE_SIGN_IN: "fake",
-        WORKSPACE_STORE: "memory",
-        WORKSPACE_REPOSITORY_READING: "fake",
-        WORKSPACE_REPOSITORY_READINGS_DIR: resolve(backend, "tests/fixtures"),
-        WORKSPACE_PUBLIC_URL: baseURL,
-        WORKSPACE_SESSION_SECRET: "playwright",
-        WORKSPACE_POSTHOG_PROJECT_TOKEN: "",
-        WORKSPACE_POSTHOG_HOST: "",
-        WORKSPACE_POSTHOG_ENVIRONMENT: "",
-      },
+      cwd,
+      command: command.join(" "),
+      env,
       url: `${baseURL}/api/health`,
       reuseExistingServer: false,
     },
