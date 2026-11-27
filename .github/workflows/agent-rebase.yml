@@ -227,6 +227,9 @@ jobs:
         with:
           node-version: "24"
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v10.3.3
@@ -249,6 +252,12 @@ jobs:
             echo "::error::The pre-commit hook is not installed (core.hooksPath is '$(git config core.hooksPath)')."
             exit 1
           fi
+
+      - name: Cache Playwright's Chromium
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
 
       - name: Rebase with a script
         id: script
@@ -290,7 +299,9 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          { npm ci && npm --prefix frontend ci && (cd backend && uv sync) && npm run check; } \
+          { npm ci && npm --prefix frontend ci && (cd backend && uv sync) &&
+            (cd frontend && npx playwright install --with-deps --only-shell chromium) &&
+            npm run check; } \
             2>&1 | tee /tmp/check.log
 
       - name: Install Claude Code and the PostHog plugin
@@ -352,7 +363,9 @@ jobs:
           git merge-base --is-ancestor "origin/$BASE_REF" HEAD \
             || blocked "The agent's branch is not on top of \`$BASE_REF\`."
           [ -z "$(git status --porcelain)" ] || blocked "The agent left uncommitted changes."
-          { npm ci && npm --prefix frontend ci && (cd backend && uv sync) && npm run check; } \
+          { npm ci && npm --prefix frontend ci && (cd backend && uv sync) &&
+            (cd frontend && npx playwright install --with-deps --only-shell chromium) &&
+            npm run check; } \
             || blocked "\`npm run check\` fails on the agent's resolution."
           echo "resolved=true" >> "$GITHUB_OUTPUT"
 

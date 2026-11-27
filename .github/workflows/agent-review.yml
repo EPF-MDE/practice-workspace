@@ -220,6 +220,9 @@ jobs:
         with:
           node-version: "24"
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
 
       - name: Install dependencies
         run: |
@@ -271,6 +274,15 @@ jobs:
         run: |
           npm install -g agent-browser@0.27.0
           agent-browser install
+
+      - name: Cache Playwright's Chromium
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install Playwright's Chromium
+        run: (cd frontend && npx playwright install --with-deps --only-shell chromium)
 
       - name: Open the branch
         run: |

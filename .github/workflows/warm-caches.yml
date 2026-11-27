@@ -1,0 +1,77 @@
+# Writes, on `main`, the caches the agent workflows only read (ADR-0019).
+# scripts/check-cache-keys.js refuses an agent workflow that looks one up
+# under a key this workflow does not write.
+name: Warm the caches
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - package-lock.json
+      - frontend/package-lock.json
+      - backend/uv.lock
+      - .github/workflows/warm-caches.yml
+  schedule:
+    - cron: "30 4 * * 1,4"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: warm-caches
+  cancel-in-progress: true
+
+env:
+  HUSKY: "0"
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install the dependencies into the caches
+        run: |
+          npm ci --no-audit --no-fund
+          npm --prefix frontend ci --no-audit --no-fund
+          npm install -g agent-browser@0.27.0 @anthropic-ai/claude-code
+          (cd backend && uv sync)
+
+      - name: Cache agent-browser's Chrome
+        id: chrome
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.agent-browser/browsers
+          key: agent-browser-0.27.0-${{ runner.os }}
+
+      - name: Install agent-browser's Chrome
+        if: steps.chrome.outputs.cache-hit != 'true'
+        run: agent-browser install
+
+      - name: Cache Playwright's Chromium
+        id: playwright
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install Playwright's Chromium
+        if: steps.playwright.outputs.cache-hit != 'true'
+        run: (cd frontend && npx playwright install --only-shell chromium)

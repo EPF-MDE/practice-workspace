@@ -15,6 +15,8 @@ repository() {
   node scripts/check-agent-secrets.js .github/workflows/*.yml
   step "Repository: triggers (no workflow_run, pull_request_target runs no code)"
   node scripts/check-workflow-triggers.js .github/workflows/*.yml
+  step "Repository: caches (every agent workflow reads a key warm-caches.yml writes)"
+  node scripts/check-cache-keys.js .github/workflows/*.yml
   step "Repository: Markdown (no hard-wrapped paragraph or list item)"
   git ls-files -z '*.md' | xargs -0 node scripts/check-markdown-wraps.js
   step "Repository: names (none the glossary retired)"
