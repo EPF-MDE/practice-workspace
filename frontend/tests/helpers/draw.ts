@@ -3,6 +3,16 @@ import { expect, type Locator, type Page } from "@playwright/test";
 export const DRAWING_WITH_THE_MOUSE = "@drawing-with-the-mouse";
 
 type Point = { x: number; y: number };
+type Rect = Point & { width: number; height: number };
+
+export type Hand = {
+  canvas(): Promise<Rect>;
+  move(to: Point, steps: number): Promise<void>;
+  down(): Promise<void>;
+  up(): Promise<void>;
+  press(key: string): Promise<void>;
+  insertText(text: string): Promise<void>;
+};
 
 const WIDTH = 150;
 const HEIGHT = 80;
@@ -10,65 +20,72 @@ const GAP_X = 50;
 const GAP_Y = 70;
 const PER_ROW = 3;
 
-async function onPage(canvas: Locator, at: Point): Promise<Point> {
-  const box = await canvas.boundingBox();
-  if (!box) throw new Error("no canvas on the page");
+async function onPage(hand: Hand, at: Point): Promise<Point> {
+  const box = await hand.canvas();
   return { x: box.x + at.x, y: box.y + at.y };
 }
 
-async function drag(page: Page, canvas: Locator, line: [Point, Point]) {
-  const start = await onPage(canvas, line[0]);
-  const end = await onPage(canvas, line[1]);
-  await page.mouse.move(start.x, start.y);
-  await page.mouse.down();
-  await page.mouse.move((start.x + end.x) / 2, (start.y + end.y) / 2, {
-    steps: 4,
-  });
-  await page.mouse.move(end.x, end.y, { steps: 4 });
-  await page.mouse.up();
+async function drag(hand: Hand, line: [Point, Point]) {
+  const start = await onPage(hand, line[0]);
+  const end = await onPage(hand, line[1]);
+  await hand.move(start, 1);
+  await hand.down();
+  await hand.move({ x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 }, 4);
+  await hand.move(end, 4);
+  await hand.up();
 }
 
-async function drawBox(
-  page: Page,
-  canvas: Locator,
-  box: Point & { label: string }
-) {
-  const size = await canvas.boundingBox();
-  if (!size) throw new Error("no canvas on the page");
-  const empty = await onPage(canvas, {
-    x: size.width / 2,
-    y: size.height - 110,
-  });
-  await page.mouse.click(empty.x, empty.y);
-  await page.keyboard.press("Escape");
-  await page.keyboard.press("r");
-  await drag(page, canvas, [box, { x: box.x + WIDTH, y: box.y + HEIGHT }]);
-  await page.keyboard.press("Enter");
-  await page.keyboard.insertText(box.label);
-  await page.keyboard.press("Escape");
-  await page.keyboard.press("Escape");
+async function drawBox(hand: Hand, box: Point & { label: string }) {
+  const size = await hand.canvas();
+  const empty = { x: size.width / 2, y: size.height - 110 };
+  await drag(hand, [empty, empty]);
+  await hand.press("Escape");
+  await hand.press("r");
+  await drag(hand, [box, { x: box.x + WIDTH, y: box.y + HEIGHT }]);
+  await hand.press("Enter");
+  await hand.insertText(box.label);
+  await hand.press("Escape");
+  await hand.press("Escape");
 }
 
 export function shapesOfChain(labels: string[]): number {
   return labels.length * 2 - 1;
 }
 
-export async function drawChain(page: Page, canvas: Locator, labels: string[]) {
-  await canvas.scrollIntoViewIfNeeded();
+export async function drawChainWith(hand: Hand, labels: string[]) {
   const centres: Point[] = [];
   for (const [index, label] of labels.entries()) {
     const x = 30 + (index % PER_ROW) * (WIDTH + GAP_X);
     const y = 70 + Math.floor(index / PER_ROW) * (HEIGHT + GAP_Y);
-    await drawBox(page, canvas, { x, y, label });
+    await drawBox(hand, { x, y, label });
     centres.push({ x: x + WIDTH / 2, y: y + HEIGHT / 2 });
   }
   for (const [index, centre] of centres.entries()) {
     const previous = centres[index - 1];
     if (!previous) continue;
-    await page.keyboard.press("a");
-    await drag(page, canvas, [previous, centre]);
-    await page.keyboard.press("Escape");
+    await hand.press("a");
+    await drag(hand, [previous, centre]);
+    await hand.press("Escape");
   }
+}
+
+export async function drawChain(page: Page, canvas: Locator, labels: string[]) {
+  await canvas.scrollIntoViewIfNeeded();
+  await drawChainWith(
+    {
+      canvas: async () => {
+        const box = await canvas.boundingBox();
+        if (!box) throw new Error("no canvas on the page");
+        return box;
+      },
+      move: (to, steps) => page.mouse.move(to.x, to.y, { steps }),
+      down: () => page.mouse.down(),
+      up: () => page.mouse.up(),
+      press: (key) => page.keyboard.press(key),
+      insertText: (text) => page.keyboard.insertText(text),
+    },
+    labels
+  );
 }
 
 type KeptDrawing = { shapes: number; labels: string[] };

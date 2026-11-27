@@ -4,6 +4,7 @@ import { createServer } from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { localInstance } from "../frontend/instance.ts";
+import { drawChainWith } from "../frontend/tests/helpers/draw.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const demoCourse = resolve(root, "demo-course");
@@ -76,35 +77,38 @@ const box = (selector) =>
     )
   );
 
-const drag = (from, to) => {
-  browser("mouse", "move", String(from.x), String(from.y));
-  browser("mouse", "down");
-  browser("mouse", "move", String(to.x), String(to.y), "--steps", "8");
-  browser("mouse", "up");
-};
-
-const drawChain = (canvasSelector, labels) => {
+const drawChain = async (canvasSelector, labels) => {
   browser("eval", "document.activeElement?.blur()");
   browser("scrollintoview", canvasSelector);
   const canvas = box(canvasSelector);
-  const empty = { x: canvas.x + canvas.width / 2, y: canvas.bottom - 60 };
-  drag(empty, empty);
-  const centres = labels.map((label, index) => {
-    const at = { x: canvas.x + 40 + index * 185, y: canvas.y + 120 };
-    browser("press", "Escape");
-    browser("press", "r");
-    drag(at, { x: at.x + 140, y: at.y + 80 });
-    browser("press", "Enter");
-    browser("keyboard", "inserttext", label);
-    browser("press", "Escape");
-    browser("press", "Escape");
-    return { x: at.x + 70, y: at.y + 40 };
-  });
-  centres.slice(1).forEach((centre, index) => {
-    browser("press", "a");
-    drag(centres[index], centre);
-    browser("press", "Escape");
-  });
+  await drawChainWith(
+    {
+      canvas: async () => canvas,
+      move: async (to, steps) => {
+        browser(
+          "mouse",
+          "move",
+          String(to.x),
+          String(to.y),
+          "--steps",
+          String(steps)
+        );
+      },
+      down: async () => {
+        browser("mouse", "down");
+      },
+      up: async () => {
+        browser("mouse", "up");
+      },
+      press: async (key) => {
+        browser("press", key);
+      },
+      insertText: async (text) => {
+        browser("keyboard", "inserttext", text);
+      },
+    },
+    labels
+  );
 };
 
 const shoot = (name) => {
@@ -113,7 +117,7 @@ const shoot = (name) => {
   console.log(`saved ${resolve(out, `${name}.png`)}`);
 };
 
-const walkThePath = (baseURL) => {
+const walkThePath = async (baseURL) => {
   browser("set", "viewport", "1280", "860");
   browser("open", `${baseURL}/auth/login?github_id=${ADA}`);
   browser("wait", "--text", "Your path");
@@ -146,7 +150,7 @@ const walkThePath = (baseURL) => {
   shoot("4-drawing");
 
   const redraw = "section#redraw";
-  drawChain(`${redraw} figure[aria-label="Your drawing"] .tl-canvas`, [
+  await drawChain(`${redraw} figure[aria-label="Your drawing"] .tl-canvas`, [
     "Borrow",
     "Loan API",
     "Queue",
@@ -176,7 +180,7 @@ execFileSync("npm", ["--prefix", "frontend", "run", "--silent", "build"], {
 const { baseURL, server } = startDemoCourse(await freePort());
 try {
   await healthy(baseURL);
-  walkThePath(baseURL);
+  await walkThePath(baseURL);
 } finally {
   try {
     browser("close");
