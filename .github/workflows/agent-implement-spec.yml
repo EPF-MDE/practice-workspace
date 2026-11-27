@@ -237,7 +237,7 @@ jobs:
             [ .[]
               | { number,
                   state,
-                  labels: [ .labels[].name ],
+                  parked: (.labels | any(.name == "agent:blocked")),
                   position: ((.body | capture("Position:\\s*(?<p>[0-9]+)").p // "999") | tonumber),
                   blockers: [ .blockedBy.nodes[] | { number, state } ] }
             ] | sort_by(.position)
@@ -257,15 +257,14 @@ jobs:
           # out of the frontier until a person takes the label off.
           ticket=$(jq -r --argjson awaiting "$awaiting_merge" '
             [ .[]
-              | select(.state=="OPEN")
-              | select(.labels | index("agent:blocked") | not)
+              | select(.state=="OPEN" and (.parked | not))
               | select($awaiting[.number | tostring] == null)
               | select(all(.blockers[]; .state=="CLOSED"))
             ] | .[0].number // empty
           ' /tmp/queue-sorted.json)
 
-          parked_count=$(jq '[ .[] | select(.state=="OPEN") | select(.labels | index("agent:blocked")) ] | length' /tmp/queue-sorted.json)
-          open_count=$(jq '[ .[] | select(.state=="OPEN") | select(.labels | index("agent:blocked") | not) ] | length' /tmp/queue-sorted.json)
+          parked_count=$(jq '[ .[] | select(.state=="OPEN" and .parked) ] | length' /tmp/queue-sorted.json)
+          open_count=$(jq '[ .[] | select(.state=="OPEN" and (.parked | not)) ] | length' /tmp/queue-sorted.json)
           waiting_count=$(jq --argjson awaiting "$awaiting_merge" '[ .[] | select(.state=="OPEN") | select($awaiting[.number | tostring] != null) ] | length' /tmp/queue-sorted.json)
           echo "remaining=$open_count" >> "$GITHUB_OUTPUT"
           if [ "$parked_count" -gt 0 ]; then
@@ -278,10 +277,9 @@ jobs:
             # or `#32 waits on #31 (parked)` when only a person can unblock it.
             waits=$(jq -r --argjson awaiting "$awaiting_merge" '
               def pull_request: $awaiting[.number | tostring];
-              [ .[] | select(.state=="OPEN") | select(.labels | index("agent:blocked")) | .number ] as $parked
+              [ .[] | select(.state=="OPEN" and .parked) | .number ] as $parked
               | [ .[]
-                | select(.state=="OPEN")
-                | select(.labels | index("agent:blocked") | not)
+                | select(.state=="OPEN" and (.parked | not))
                 | if pull_request then
                     "#\(.number) waits on its pull request #\(pull_request)"
                   else
