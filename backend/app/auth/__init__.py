@@ -5,7 +5,7 @@ import secrets
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Protocol, cast
+from typing import Literal, Protocol, cast
 from urllib.parse import urlencode
 
 import httpx
@@ -160,9 +160,19 @@ class _ClockSessionMiddleware(SessionMiddleware):
         /,
         secret_key: str,
         clock: Callable[[], datetime],
-        **options: Any,
+        session_cookie: str,
+        max_age: int,
+        same_site: Literal["lax", "strict", "none"],
+        https_only: bool,
     ) -> None:
-        super().__init__(app, secret_key=secret_key, **options)
+        super().__init__(
+            app,
+            secret_key=secret_key,
+            session_cookie=session_cookie,
+            max_age=max_age,
+            same_site=same_site,
+            https_only=https_only,
+        )
         self.signer = _ClockSigner(secret_key, clock)
 
 
