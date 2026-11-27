@@ -134,7 +134,11 @@ function Received({ received }: { received: EvidencePanel["received"] }) {
           <Sentence text={r.text} />
           <ul className="list-disc pl-5 text-muted-foreground">
             {r.facts.map((fact) => (
-              <Fact key={fact.text} fact={fact} underItsPoint />
+              <Fact
+                key={`${fact.credited_to}-${fact.text}`}
+                fact={fact}
+                underItsPoint
+              />
             ))}
           </ul>
         </li>
