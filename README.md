@@ -64,7 +64,7 @@ Then open <http://localhost:8000/auth/login?github_id=1001> to sign in as a fict
 
 ## Screenshots
 
-`npm run screenshots` starts the Demo course on a free port with fake sign-in, walks a Path with [agent-browser](https://github.com/vercel-labs/agent-browser), and saves the screenshots below to [`docs/screenshots/`](./docs/screenshots/). If agent-browser finds no Chrome, `npx agent-browser install` downloads one.
+After `npm run setup`, `npm run screenshots` builds the front end, starts the Demo course on a free port with fake sign-in, walks a Path with [agent-browser](https://github.com/vercel-labs/agent-browser), and saves the screenshots below to [`docs/screenshots/`](./docs/screenshots/). If agent-browser finds no Chrome, `npx agent-browser install` downloads one.
 
 The workspace, with the Student's three Competencies:
 
