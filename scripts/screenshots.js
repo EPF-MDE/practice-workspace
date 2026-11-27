@@ -76,7 +76,7 @@ const box = (selector) =>
     )
   );
 
-const drawChain = async (canvasSelector, labels) => {
+const drawChainInAgentBrowser = async (canvasSelector, labels) => {
   browser("eval", "document.activeElement?.blur()");
   browser("scrollintoview", canvasSelector);
   const canvas = box(canvasSelector);
@@ -111,9 +111,10 @@ const drawChain = async (canvasSelector, labels) => {
 };
 
 const shoot = (name) => {
+  const file = resolve(out, `${name}.png`);
   browser("wait", "500");
-  browser("screenshot", resolve(out, `${name}.png`));
-  console.log(`saved ${resolve(out, `${name}.png`)}`);
+  browser("screenshot", file);
+  console.log(`saved ${file}`);
 };
 
 const walkThePath = async (baseURL) => {
@@ -149,12 +150,10 @@ const walkThePath = async (baseURL) => {
   shoot("4-drawing");
 
   const redraw = "section#redraw";
-  await drawChain(`${redraw} figure[aria-label="Your drawing"] .tl-canvas`, [
-    "Borrow",
-    "Loan API",
-    "Queue",
-    "Catalogue",
-  ]);
+  await drawChainInAgentBrowser(
+    `${redraw} figure[aria-label="Your drawing"] .tl-canvas`,
+    ["Borrow", "Loan API", "Queue", "Catalogue"]
+  );
   press(redraw, "Send my drawing");
   browser("wait", `${redraw} [data-testid="reference-drawing"]`);
 
