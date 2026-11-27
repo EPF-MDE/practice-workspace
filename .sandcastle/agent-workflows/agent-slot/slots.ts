@@ -56,23 +56,24 @@ export const slotsOf = (pages: z.infer<typeof JobsPage>[]): Slots => {
   return { taken, waiting };
 };
 
-const ahead = (a: Waiting, b: Waiting): boolean =>
+const waitedLonger = (a: Waiting, b: Waiting): boolean =>
   a.since < b.since || (a.since === b.since && a.job < b.job);
+
+export type ThisJob = { run: number; runner: string };
 
 export type Turn =
   | { kind: "start" }
   | { kind: "wait"; taken: number; ahead: number }
   | { kind: "unseen" };
 
-export const turnOf = (
-  slots: Slots,
-  me: { run: number; runner: string }
-): Turn => {
+export const turnOf = (slots: Slots, me: ThisJob): Turn => {
   const mine = slots.waiting.find(
     ({ run, runner }) => run === me.run && runner === me.runner
   );
   if (mine === undefined) return { kind: "unseen" };
-  const before = slots.waiting.filter((other) => ahead(other, mine)).length;
+  const before = slots.waiting.filter((other) =>
+    waitedLonger(other, mine)
+  ).length;
   return slots.taken + before < AGENT_SLOTS
     ? { kind: "start" }
     : { kind: "wait", taken: slots.taken, ahead: before };

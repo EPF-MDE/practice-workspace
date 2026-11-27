@@ -3,6 +3,7 @@ import {
   CHECK_EVERY_MS,
   CONFIRM_AFTER_MS,
   type Slots,
+  type ThisJob,
   turnOf,
   WAIT_AT_MOST_MINUTES,
 } from "./slots";
@@ -23,7 +24,7 @@ export const waitForASlot = async ({
   log,
 }: {
   read: Read;
-  me: { run: number; runner: string };
+  me: ThisJob;
   clock: Clock;
   log: (line: string) => void;
 }): Promise<Outcome> => {
