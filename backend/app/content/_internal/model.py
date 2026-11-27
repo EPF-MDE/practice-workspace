@@ -16,7 +16,7 @@ DIRECTIVES = {
     "waiting",
     *DRAWING_DIRECTIVES,
 }
-CHECK_POINTS = range(3, 6)
+CHECK_POINTS_PER_REFERENCE_DRAWING = range(3, 6)
 STEP_KINDS = (
     "read",
     "answer",
