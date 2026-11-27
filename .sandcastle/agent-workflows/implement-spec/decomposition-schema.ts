@@ -37,7 +37,7 @@ export const specDecompositionSchema = z
           depends_on: z
             .array(z.number().int().min(1))
             .describe(
-              "Positions that must be finished first. Empty means it can be built the moment the queue opens — those are the ones that could run in parallel."
+              "Positions that must be finished first, each lower than this one: they become the ticket's `blocked by` relations on GitHub. Empty means it can be built the moment the queue opens — those are the ones that could run in parallel."
             ),
         })
       )
