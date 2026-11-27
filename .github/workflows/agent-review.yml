@@ -289,6 +289,7 @@ jobs:
           fi
 
       - name: Wait for an agent slot
+        id: slot
         # At most AGENT_SLOTS agent runs talk to Claude at once, across the
         # agent workflows (.sandcastle/agent-workflows/agent-slot/slots.ts).
         # This job waits its turn here, for up to three hours (ADR-0020).
@@ -401,8 +402,13 @@ jobs:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
           FALLBACK: ${{ steps.push.outputs.fallback }}
           FALLBACK_URL: ${{ steps.fallback.outputs.url }}
+          SLOT: ${{ steps.slot.outcome }}
         run: |
           set -euo pipefail
+          if [ "$SLOT" = "failure" ]; then
+            echo "The review never started: no agent slot came free in three hours (ADR-0020). Re-add \`agent:review\` to retry." \
+              > /tmp/review-verdict.md
+          fi
           [ -s /tmp/review-verdict.md ] || \
             echo "The review run produced no verdict. See the logs. Re-add \`agent:review\` to retry." \
               > /tmp/review-verdict.md
