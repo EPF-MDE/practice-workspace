@@ -84,6 +84,47 @@ const press = (section, button) =>
       .click()`
   );
 
+const box = (selector) =>
+  JSON.parse(
+    JSON.parse(
+      browser(
+        "eval",
+        `JSON.stringify(document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect())`
+      )
+    )
+  );
+
+const drag = (from, to) => {
+  browser("mouse", "move", String(from.x), String(from.y));
+  browser("mouse", "down");
+  browser("mouse", "move", String(to.x), String(to.y), "--steps", "8");
+  browser("mouse", "up");
+};
+
+const drawChain = (canvasSelector, labels) => {
+  browser("eval", "document.activeElement?.blur()");
+  browser("scrollintoview", canvasSelector);
+  const canvas = box(canvasSelector);
+  const empty = { x: canvas.x + canvas.width / 2, y: canvas.bottom - 60 };
+  drag(empty, empty);
+  const centres = labels.map((label, index) => {
+    const at = { x: canvas.x + 40 + index * 185, y: canvas.y + 120 };
+    browser("press", "Escape");
+    browser("press", "r");
+    drag(at, { x: at.x + 140, y: at.y + 80 });
+    browser("press", "Enter");
+    browser("keyboard", "inserttext", label);
+    browser("press", "Escape");
+    browser("press", "Escape");
+    return { x: at.x + 70, y: at.y + 40 };
+  });
+  centres.slice(1).forEach((centre, index) => {
+    browser("press", "a");
+    drag(centres[index], centre);
+    browser("press", "Escape");
+  });
+};
+
 const shoot = (name) => {
   browser("wait", "500");
   browser("screenshot", resolve(out, `${name}.png`));
@@ -121,6 +162,25 @@ const walkThePath = (baseURL) => {
   scrollTo("section#redraw");
   browser("wait", "section#redraw .tl-shape");
   shoot("4-drawing");
+
+  const redraw = "section#redraw";
+  drawChain(`${redraw} figure[aria-label="Your drawing"] .tl-canvas`, [
+    "Borrow",
+    "Loan API",
+    "Queue",
+    "Catalogue",
+  ]);
+  press(redraw, "Send my drawing");
+  browser("wait", `${redraw} [data-testid="reference-drawing"]`);
+
+  const change = "section#the-number-changes";
+  browser(
+    "fill",
+    `${change} [name="what-moves"]`,
+    "The queue's load doubles; a second catalogue worker joins it."
+  );
+  press(change, "Send my answer");
+  browser("wait", `${change} [data-testid="answer"]`);
 
   scrollTo("section#closing");
   shoot("5-self-assessment");
