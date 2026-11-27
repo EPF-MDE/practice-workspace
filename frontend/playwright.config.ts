@@ -75,6 +75,7 @@ export default defineConfig({
     },
     {
       name: "chromium, drawing with the mouse",
+      testIgnore: READS_NOTHING,
       grep: DRAWS_WITH_THE_MOUSE,
       timeout: DRAWING_TEST_TIMEOUT,
       use: { ...devices["Desktop Chrome"], baseURL: demo.baseURL },
