@@ -232,7 +232,7 @@ def test_a_declaration_changes_until_the_reading_day_and_no_later(
 ) -> None:
     def client(now: datetime) -> TestClient:
         c = make_client(
-            now=now,
+            clock=lambda: now,
             repository_reading=OfflineRepositoryReading(),
             access_check=FakeAccessCheck(),
         )

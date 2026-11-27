@@ -62,7 +62,7 @@ def on_three_levels(
 ) -> TestClient:
     client = make_client(
         settings=test_settings.model_copy(update={"course_folder": str(THREE_LEVELS)}),
-        now=now,
+        clock=lambda: now,
     )
     sign_in(client, TWO_GROUP_FIXTURE.student.github_id)
     return client

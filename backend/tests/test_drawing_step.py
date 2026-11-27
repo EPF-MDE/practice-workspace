@@ -200,7 +200,7 @@ def test_after_the_close_no_drawing_and_no_tick_is_sent(
     make_client: MakeClient,
     student: OnTheRoster,
 ) -> None:
-    client = make_client(now=AFTER_THE_CLOSE)
+    client = make_client(clock=lambda: AFTER_THE_CLOSE)
     sign_in(client, student.github_id)
 
     drawing = client.post(DRAWING, json=SEND)

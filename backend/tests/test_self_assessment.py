@@ -40,7 +40,7 @@ def redraw(page: dict[str, Any]) -> dict[str, Any]:
 @pytest.fixture
 def at(make_client: MakeClient, student: OnTheRoster) -> At:
     def signed_in_at(now: datetime) -> TestClient:
-        client = make_client(now=now)
+        client = make_client(clock=lambda: now)
         sign_in(client, student.github_id)
         return client
 

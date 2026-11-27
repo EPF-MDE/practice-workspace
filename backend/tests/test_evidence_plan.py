@@ -205,12 +205,12 @@ def test_the_plan_stays_editable_after_the_close_until_the_reading_day(
     make_client: MakeClient,
     student: OnTheRoster,
 ) -> None:
-    before = make_client(now=BEFORE_THE_CLOSE)
+    before = make_client(clock=lambda: BEFORE_THE_CLOSE)
     sign_in(before, student.github_id)
     before.post(SELF, json=c1_levels(a="understand"))
-    closed = make_client(now=AFTER_THE_CLOSE)
+    closed = make_client(clock=lambda: AFTER_THE_CLOSE)
     sign_in(closed, student.github_id)
-    over = make_client(now=AFTER_THE_READING_DAY)
+    over = make_client(clock=lambda: AFTER_THE_READING_DAY)
     sign_in(over, student.github_id)
 
     assert (
