@@ -226,6 +226,12 @@ jobs:
           npm ci
           npm --prefix frontend ci
 
+      - name: Install Playwright's browser
+        # `npm run check` runs the browser tests, both in the agent's session
+        # and in `Run check` below. The version is the one the front end's
+        # lockfile pins, as in check.yml.
+        run: (cd frontend && npx playwright install --with-deps chromium)
+
       - name: Setup uv
         uses: astral-sh/setup-uv@v10.3.3
         with:
