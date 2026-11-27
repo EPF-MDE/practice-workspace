@@ -5,6 +5,7 @@
 - **Tickets are created in position order**, and a ticket depends only on lower positions, so each blocker exists when the ticket that waits on it is created. A ticket that depends on a later position stops the loop with an error before it is created.
 - **A person edits the relation on GitHub**, and the next survey reads it. Nothing else records it, so there is no second copy to disagree with.
 - **The frontier is the lowest open position, neither parked nor awaiting its own pull request's merge, whose blockers are all closed.** A blocker outside the queue counts by its own state.
+- **A ticket closes when its pull request merges, so a closed blocker means a merged one.** The implement job leaves a built ticket open, and the `Closes #<ticket>` in its pull request closes it on merge: the cohort closed a ticket when its draft pull request opened, and its dependants were built without its code. Until the merge, the ticket's open pull request, found by the branch `agent/spec-<spec>-ticket-<ticket>-<run id>`, keeps it out of the frontier. A pull request closed without merging leaves its ticket open with none, so a later run builds it again; `agent:blocked` stops that, where closing the ticket would count it as merged.
 - **When the chain stops, the notice names each open ticket and what it waits on**: its own pull request, or its open blockers, each with its pull request, or `(parked)` when it carries `agent:blocked`.
 
 ## Considered options

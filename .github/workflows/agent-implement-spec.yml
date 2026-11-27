@@ -220,19 +220,7 @@ jobs:
           fi
 
           # 3. The frontier: the lowest open position whose blockers are all
-          #    closed. See ADR-0019.
-          #
-          #    Closed means merged. The cohort closed a ticket when its draft
-          #    pull request opened, so its dependants were built without its
-          #    code. Here a ticket stays open until its pull request merges,
-          #    and the `Closes #<ticket>` in that pull request closes it. An
-          #    open ticket whose pull request is still open is built already:
-          #    it waits for the Instructor to merge, out of the frontier. Its
-          #    pull request is found by the branch the implement job pushes,
-          #    `agent/spec-<spec>-ticket-<ticket>-<run id>`. A pull request
-          #    closed without merging leaves its ticket open with none, so a
-          #    later run builds it again: label the ticket `agent:blocked` to
-          #    stop that. Closing it instead would count it as merged.
+          #    closed, where closed means merged. See ADR-0019.
           jq -r '
             [ .[]
               | { number,
@@ -751,10 +739,6 @@ jobs:
           gh issue edit "$TICKET" --remove-label "agent:in-progress" || true
 
           if [ "${{ steps.ship.outputs.shipped }}" = "true" ]; then
-            # Left open: the pull request's `Closes #<ticket>` closes it when
-            # it merges, and only then does the next run's survey see this
-            # blocker as closed and build what it blocks. Until then
-            # its open pull request keeps it out of the frontier.
             gh issue comment "$TICKET" \
               --body "Built and opened as a draft PR, ${PR_URL}, from \`${BRANCH}\` — [logs](${RUN_URL}). The pull request is where the review happens. This ticket closes when it merges, and only then are the tickets that depend on it built. <!-- factory:status -->"
           else
