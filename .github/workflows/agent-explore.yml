@@ -252,6 +252,8 @@ jobs:
         # At most AGENT_SLOTS agent runs talk to Claude at once, across the
         # agent workflows (.sandcastle/agent-workflows/agent-slot/slots.ts).
         # This job waits its turn here, for up to three hours (ADR-0020).
+        # An empty batch has no agent to start, and no Node set up to wait.
+        if: steps.batch.outputs.numbers != '[]'
         timeout-minutes: 185
         env:
           GITHUB_TOKEN: ${{ github.token }}
