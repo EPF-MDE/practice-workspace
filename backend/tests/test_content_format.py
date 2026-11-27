@@ -6,7 +6,7 @@ from app.content import CompetencyContent, ContentError, Html, Waiting, parse_co
 
 HEAD = "---\ncompetency: C1\n---\n\n"
 BELOW_THE_TOP = ("not-yet", "understand", "redo")
-GROUP_BLOCK_IDS = {"OcéENS": "oceens", "MATHutrice": "mathutrice"}
+GROUP_BLOCK_IDS = {"Willow": "willow", "Cedar": "cedar"}
 
 
 def parse(body: str) -> CompetencyContent:
@@ -35,7 +35,7 @@ def parse(body: str) -> CompetencyContent:
             id="an answer with no field to unlock it",
         ),
         pytest.param(
-            "## S {#s minutes=5}\n\n::: oceens\nx\n:::\n",
+            "## S {#s minutes=5}\n\n::: willow\nx\n:::\n",
             id="one Group's block only",
         ),
         pytest.param(
@@ -81,7 +81,7 @@ def test_a_figure_waiting_on_validation_stays_in_an_html_comment_beside_a_blank(
 ):
     page = parse(
         "## S {#s minutes=5}\n\nRequests a day: — <!-- TO VALIDATE: the requests -->\n"
-    ).for_group("OcéENS")
+    ).for_group("Willow")
 
     assert "TO VALIDATE" not in repr(page)
     block = page.steps[0].blocks[0]
@@ -90,7 +90,7 @@ def test_a_figure_waiting_on_validation_stays_in_an_html_comment_beside_a_blank(
 
 
 def test_a_code_fence_may_show_a_directive() -> None:
-    page = parse("## S {#s minutes=5}\n\n```\n::: answer\n```\n").for_group("OcéENS")
+    page = parse("## S {#s minutes=5}\n\n```\n::: answer\n```\n").for_group("Willow")
 
     block = page.steps[0].blocks[0]
     assert isinstance(block, Html)
@@ -100,7 +100,7 @@ def test_a_code_fence_may_show_a_directive() -> None:
 def test_authoring_notes_are_stripped() -> None:
     page = parse(
         "<!-- NOTE-1 -->\n## S {#s minutes=5}\n\n::: instructor\nNOTE-2\n:::\n\nText.\n"
-    ).for_group("MATHutrice")
+    ).for_group("Cedar")
 
     assert "NOTE" not in repr(page)
 
@@ -109,7 +109,7 @@ SNAPSHOTS = {
     "example.json": {
         "document": {"store": {"shape:a": {"id": "shape:a"}}, "schema": {}}
     },
-    "oceens.json": {
+    "willow.json": {
         "document": {"store": {"shape:o": {"id": "shape:o"}}, "schema": {}}
     },
     "math.json": {"document": {"store": {"shape:m": {"id": "shape:m"}}, "schema": {}}},
@@ -124,18 +124,18 @@ def check_points(n: int, point: str = "C1.a") -> str:
 
 
 def drawing_step(
-    oceens_points: int = 3,
+    willow_points: int = 3,
     head: str = "{#redraw minutes=10 kind=drawing}",
     point: str = "C1.a",
 ) -> str:
     return (
         f"## Redraw {head}\n\n"
         "::: example-drawing {src=example.json}\nA simpler system, drawn.\n:::\n\n"
-        "::: oceens\n::: canvas\nFrom the click to the summary.\n:::\n\n"
-        "::: reference-drawing {src=oceens.json}\nThe OcéENS chain.\n\n"
-        f"{check_points(oceens_points, point)}:::\n:::\n\n"
-        "::: mathutrice\n::: canvas\nFrom the button to the test.\n:::\n\n"
-        "::: reference-drawing {src=math.json}\nThe MATHutrice chain.\n\n"
+        "::: willow\n::: canvas\nFrom the click to the summary.\n:::\n\n"
+        "::: reference-drawing {src=willow.json}\nThe Willow chain.\n\n"
+        f"{check_points(willow_points, point)}:::\n:::\n\n"
+        "::: cedar\n::: canvas\nFrom the button to the test.\n:::\n\n"
+        "::: reference-drawing {src=math.json}\nThe Cedar chain.\n\n"
         f"{check_points(3, point)}:::\n:::\n"
     )
 
@@ -160,7 +160,7 @@ def test_a_drawing_step_has_an_example_a_canvas_and_a_reference_with_its_check_p
 ):
     from app.content import Canvas, ExampleDrawing, ReferenceDrawing
 
-    step = parse_drawing(drawing_step() + CLOSING).for_group("OcéENS").steps[0]
+    step = parse_drawing(drawing_step() + CLOSING).for_group("Willow").steps[0]
 
     assert step.kind == "drawing" and not step.optional
     example, canvas, reference = (b for b in step.blocks if not hasattr(b, "html"))
@@ -172,9 +172,9 @@ def test_a_drawing_step_has_an_example_a_canvas_and_a_reference_with_its_check_p
     assert isinstance(canvas, Canvas) and "From the click" in canvas.prompt_html
     assert (
         isinstance(reference, ReferenceDrawing)
-        and reference.snapshot == SNAPSHOTS["oceens.json"]
+        and reference.snapshot == SNAPSHOTS["willow.json"]
     )
-    assert "OcéENS chain" in reference.caption_html
+    assert "Willow chain" in reference.caption_html
     assert [(c.id, c.point) for c in reference.check_points] == [
         ("cp-0", "C1.a"),
         ("cp-1", "C1.a"),
@@ -184,11 +184,11 @@ def test_a_drawing_step_has_an_example_a_canvas_and_a_reference_with_its_check_p
 
 
 def test_a_group_receives_its_own_reference_drawing() -> None:
-    step = parse_drawing(drawing_step() + CLOSING).for_group("MATHutrice").steps[0]
+    step = parse_drawing(drawing_step() + CLOSING).for_group("Cedar").steps[0]
 
     assert step.reference is not None
     assert step.reference.snapshot == SNAPSHOTS["math.json"]
-    assert "MATHutrice chain" in step.reference.caption_html
+    assert "Cedar chain" in step.reference.caption_html
 
 
 def test_one_redraw_per_competency_may_be_optional() -> None:
@@ -196,18 +196,18 @@ def test_one_redraw_per_competency_may_be_optional() -> None:
         drawing_step(head="{#more minutes=0 kind=drawing optional=yes}") + CLOSING
     )
 
-    assert step.for_group("OcéENS").steps[0].optional
+    assert step.for_group("Willow").steps[0].optional
 
 
 @pytest.mark.parametrize(
     "body",
     [
         pytest.param(
-            drawing_step(oceens_points=2) + CLOSING,
+            drawing_step(willow_points=2) + CLOSING,
             id="fewer than 3 check points",
         ),
         pytest.param(
-            drawing_step(oceens_points=6) + CLOSING,
+            drawing_step(willow_points=6) + CLOSING,
             id="more than 5",
         ),
         pytest.param(
@@ -262,12 +262,12 @@ def test_a_drawing_is_read_from_the_course_folder_and_never_outside_it(
     reference = (
         load_content(tmp_path, GROUP_BLOCK_IDS, to_get_there_levels=BELOW_THE_TOP)
         .competencies["C1"]
-        .for_group("OcéENS")
+        .for_group("Willow")
         .steps[0]
         .reference
     )
     assert reference is not None
-    assert reference.snapshot == SNAPSHOTS["oceens.json"]
+    assert reference.snapshot == SNAPSHOTS["willow.json"]
 
     (tmp_path / "c1.md").write_text(
         text.replace("src=drawings/example.json", "src=../c1.md")
@@ -284,7 +284,7 @@ TRANSFER = (
 
 
 def test_a_transfer_names_the_point_whose_to_get_there_it_fills() -> None:
-    step = parse(TRANSFER + CLOSING).for_group("OcéENS").steps[0]
+    step = parse(TRANSFER + CLOSING).for_group("Willow").steps[0]
 
     assert (step.kind, step.fills) == ("transfer", "C1.a")
 
@@ -328,7 +328,7 @@ def test_a_choice_field_offers_its_options_in_order() -> None:
         "## S {#s minutes=5}\n\n"
         '::: field {#red kind=choice options="none|architecture|test"}\n'
         "Which job goes red?\n:::\n"
-    ).for_group("OcéENS")
+    ).for_group("Willow")
 
     (field,) = page.steps[0].fields
     assert (field.kind, field.options) == ("choice", ("none", "architecture", "test"))
@@ -359,8 +359,8 @@ def test_the_loader_refuses_a_choice_field_without_two_options(attrs: str) -> No
 
 RANK = "## Rank {#rank minutes=5}\n\n::: field {#ranking}\nYour ranking.\n:::\n\n"
 GROUP_FIELDS = (
-    "::: oceens\n::: field {#f}\nO.\n:::\n:::\n\n"
-    "::: mathutrice\n::: field {#f}\nM.\n:::\n:::\n"
+    "::: willow\n::: field {#f}\nO.\n:::\n:::\n\n"
+    "::: cedar\n::: field {#f}\nM.\n:::\n:::\n"
 )
 
 
@@ -368,7 +368,7 @@ def test_a_step_that_waits_serves_its_shared_part_and_the_marker_until_then() ->
     page = parse(
         RANK + "## Fix {#fix minutes=5 after=rank}\n\nThe Worked Example.\n\n"
         "::: waiting\nSend your ranking first.\n:::\n\n" + GROUP_FIELDS
-    ).for_group("OcéENS")
+    ).for_group("Willow")
 
     fix = page.step("fix")
     assert fix is not None

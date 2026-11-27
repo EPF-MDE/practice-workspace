@@ -9,7 +9,7 @@ from app.repository_reading import (
 )
 from app.roster import Repository
 
-from .conftest import NOW, OCEENS, Recorded
+from .conftest import NOW, WILLOW, Recorded
 
 
 def test_reading_a_repository_again_compares_nothing_already_compared(
@@ -75,7 +75,7 @@ def test_a_refresh_recomputes_only_the_ref_that_moved(recorded: type[Recorded]) 
 class LargestShape:
     def __init__(self) -> None:
         self.requests: list[str] = []
-        self.repository = "student/OceENS"
+        self.repository = "student/lendly"
         self.branches = [
             {"name": f"b{i}", "commit": {"sha": f"{i:040x}"}, "protected": False}
             for i in range(19)
@@ -106,13 +106,17 @@ class LargestShape:
         route = path.split("?")[0]
         if route == f"repos/{self.repository}":
             return Response(
-                200, {"default_branch": "b0", "source": {"full_name": "EPF-MDE/OceENS"}}
+                200,
+                {
+                    "default_branch": "b0",
+                    "source": {"full_name": "example-course/lendly"},
+                },
             )
         if route == f"repos/{self.repository}/branches":
             return Response(200, self.branches)
         if route == f"repos/{self.repository}/pulls":
             return Response(200, self.pulls)
-        if route == "repos/EPF-MDE/OceENS/branches":
+        if route == "repos/example-course/lendly/branches":
             return Response(200, self.upstream)
         if "/compare/" in route:
             return Response(
@@ -155,9 +159,9 @@ def test_a_full_reading_of_the_largest_shape_stays_within_its_estimate() -> None
     reading = reader.read(
         StudentToRead(
             "student",
-            "OcéENS",
+            "Willow",
             Repository(github.repository),
-            OCEENS,
+            WILLOW,
         )
     )
 

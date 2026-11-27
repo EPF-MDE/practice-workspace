@@ -2,17 +2,17 @@ name = "Fixture course"
 read_when_none_declared = "roster"
 
 [[groups]]
-name = "OcéENS"
-block = "oceens"
-upstream = "EPF-MDE/OceENS"
+name = "Willow"
+block = "willow"
+upstream = "example-course/lendly"
 
 [[groups]]
-name = "MATHutrice"
-block = "mathutrice"
-upstream = "EPF-MDE/MATHutrice"
+name = "Cedar"
+block = "cedar"
+upstream = "example-course/skywatch"
 
 [competencies.C1]
-title = "Design a resilient web architecture under non-functional constraints"
+title = "A fixture Competency with several Steps"
 minutes = 40
 
 [competencies.C2]

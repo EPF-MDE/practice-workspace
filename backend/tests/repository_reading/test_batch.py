@@ -25,15 +25,15 @@ from app.roster import parse_roster
 from app.settings import ConfigurationError
 from app.store import DeclarationPayload, InMemoryStore
 
-from .conftest import FIXTURES, MATHUTRICE, NOW, OCEENS, REPOSITORIES
+from .conftest import CEDAR, FIXTURES, NOW, REPOSITORIES, WILLOW
 
 ROSTER = (
     "github_login,github_id,name,group,evidence_project\r\n"
-    "dorothy-math,1,A,MATHutrice,dorothy-math/MATHutrice\r\n"
-    "radia-oceens,2,B,OcéENS,radia-oceens/OceENS\r\n"
-    "barbara-oceens,3,C,OcéENS,barbara-oceens/OceENS\r\n"
+    "dorothy-cedar,1,A,Cedar,dorothy-cedar/skywatch\r\n"
+    "radia-willow,2,B,Willow,radia-willow/lendly\r\n"
+    "barbara-willow,3,C,Willow,barbara-willow/lendly\r\n"
 )
-UPSTREAMS = {"OcéENS": OCEENS, "MATHutrice": MATHUTRICE}
+UPSTREAMS = {"Willow": WILLOW, "Cedar": CEDAR}
 
 
 class WorkspaceDataInMemory:
@@ -64,11 +64,11 @@ def roster_students(csv_text: str) -> list[StudentToRead]:
 def test_the_roster_gives_each_students_evidence_project() -> None:
     students = roster_students(ROSTER)
     assert [s.evidence_project for s in students] == [
-        "dorothy-math/MATHutrice",
-        "radia-oceens/OceENS",
-        "barbara-oceens/OceENS",
+        "dorothy-cedar/skywatch",
+        "radia-willow/lendly",
+        "barbara-willow/lendly",
     ]
-    assert students[1].upstream == "EPF-MDE/OceENS"
+    assert students[1].upstream == "example-course/lendly"
 
 
 def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named() -> (
@@ -102,14 +102,14 @@ def test_a_declared_evidence_project_is_read_instead_and_a_gitlab_one_is_named()
     found = evidence_projects([dorothy, radia, barbara], store, UPSTREAMS)
 
     assert [(s.login, s.evidence_project) for s in found.to_read] == [
-        ("dorothy-math", "dorothy-math/MATHutrice"),
-        ("radia-oceens", "radia/notes"),
+        ("dorothy-cedar", "dorothy-cedar/skywatch"),
+        ("radia-willow", "radia/notes"),
     ]
-    assert found.gitlab == {"barbara-oceens": "b/api"}
+    assert found.gitlab == {"barbara-willow": "b/api"}
 
     store.withdraw_declaration(radia)
     found = evidence_projects([radia], store, UPSTREAMS)
-    assert found.to_read[0].evidence_project == "radia-oceens/OceENS"
+    assert found.to_read[0].evidence_project == "radia-willow/lendly"
 
 
 def test_without_the_store_only_the_roster_is_read() -> None:
@@ -120,8 +120,8 @@ def test_without_the_store_only_the_roster_is_read() -> None:
     found = evidence_projects([dorothy, radia], None, UPSTREAMS)
 
     assert [(s.login, s.evidence_project) for s in found.to_read] == [
-        ("dorothy-math", "dorothy-math/MATHutrice"),
-        ("radia-oceens", "radia-oceens/OceENS"),
+        ("dorothy-cedar", "dorothy-cedar/skywatch"),
+        ("radia-willow", "radia-willow/lendly"),
     ]
 
 
@@ -169,13 +169,15 @@ def test_the_batch_stores_one_file_per_student_in_one_commit() -> None:
 
     assert result.failures == {}
     assert sorted(data.files) == [
-        "repository-readings/barbara-oceens.json",
-        "repository-readings/dorothy-math.json",
-        "repository-readings/radia-oceens.json",
+        "repository-readings/barbara-willow.json",
+        "repository-readings/dorothy-cedar.json",
+        "repository-readings/radia-willow.json",
     ]
     assert len(data.commits) == 1
     assert (
-        json.loads(data.files["repository-readings/dorothy-math.json"])["branches_read"]
+        json.loads(data.files["repository-readings/dorothy-cedar.json"])[
+            "branches_read"
+        ]
         == 1
     )
 
@@ -185,13 +187,13 @@ def test_a_repository_that_cannot_be_read_is_named_and_the_others_are_stored() -
     github = recorded_github(
         "empty-repository", "fallback-default", "deleted-pr-branch"
     )
-    github.set("repos/radia-oceens/OceENS", 404, {"message": "Not Found"})
+    github.set("repos/radia-willow/lendly", 404, {"message": "Not Found"})
     reader = RepositoryReader(github, InMemoryReadings(), now=lambda: NOW)
 
     result = run_batch(roster_students(ROSTER), reader, data)
 
-    assert list(result.failures) == ["radia-oceens"]
-    assert "repository-readings/barbara-oceens.json" in data.files
+    assert list(result.failures) == ["radia-willow"]
+    assert "repository-readings/barbara-willow.json" in data.files
 
 
 def test_the_app_reads_the_batch_file_without_asking_github() -> None:
@@ -224,7 +226,7 @@ def test_a_repository_missing_from_the_batch_is_read_on_first_view_and_stored() 
     reading = app_reader.read(REPOSITORIES["work-off-default"])
 
     assert github.requests
-    assert "repository-readings/rosalind-oceens.json" in data.files
+    assert "repository-readings/rosalind-willow.json" in data.files
     assert not reading.empty
 
 

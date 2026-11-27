@@ -41,6 +41,7 @@ from app.store import GitHubStore, InMemoryStore, SendTooLarge, Store, StoreUnav
 
 logger = logging.getLogger("app")
 
+ENGINE = "practice-workspace"
 BACKEND = Path(__file__).resolve().parents[1]
 STATIC_CANDIDATES = (BACKEND / "static", BACKEND.parent / "frontend" / "dist")
 REVISION_FILE = BACKEND / "REVISION"
@@ -196,13 +197,13 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.signals = observability.start(
-            "cws-workspace",
+            ENGINE,
             settings.posthog_project_token,
             settings.posthog_host,
             settings.posthog_environment,
         )
         logging.getLogger("app").setLevel(logging.INFO)
-        logger.info("cws-workspace %s started", revision)
+        logger.info("%s %s started", ENGINE, revision)
         yield
         app.state.signals.shutdown()
 
@@ -284,9 +285,7 @@ def create_app(
             key, settings.error_check_key
         ):
             raise HTTPException(404)
-        raise RuntimeError(
-            f"Error check on cws-workspace {revision}: raised on purpose"
-        )
+        raise RuntimeError(f"Error check on {ENGINE} {revision}: raised on purpose")
 
     _serve_frontend(app)
     return app

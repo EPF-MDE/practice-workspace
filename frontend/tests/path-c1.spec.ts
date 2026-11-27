@@ -28,7 +28,7 @@ type Student = {
 const STUDENTS: Student[] = [
   {
     id: 1011,
-    group: "OcéENS",
+    group: "Willow",
     load: /one loan every 6 seconds/,
     change: /1,200 loans an hour is one every 3 seconds/,
     chain: ["Borrow", "Loan API", "Queue", "Catalogue"],
@@ -36,7 +36,7 @@ const STUDENTS: Student[] = [
   },
   {
     id: 1012,
-    group: "MATHutrice",
+    group: "Cedar",
     load: /12,000 messages at 100 a second take 120 seconds/,
     change: /Four connections send them in 75 seconds/,
     chain: ["Issue warning", "Alert API", "Send queue", "Senders", "Gateway"],

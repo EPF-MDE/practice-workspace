@@ -51,8 +51,7 @@ def test_the_api_serves_the_courses_name_and_each_competencys_title_and_minutes(
     assert body["competencies"] == [
         {
             "id": "C1",
-            "title": "Design a resilient web architecture under "
-            "non-functional constraints",
+            "title": "A fixture Competency with several Steps",
             "minutes": 40,
         },
         {"id": "C2", "title": "A fixture Competency with one Step", "minutes": 25},

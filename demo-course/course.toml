@@ -2,25 +2,25 @@ name = "Demo course"
 read_when_none_declared = "roster"
 
 [[groups]]
-name = "OcéENS"
-block = "oceens"
-upstream = "EPF-MDE/OceENS"
+name = "Willow"
+block = "willow"
+upstream = "example-course/lendly"
 
 [[groups]]
-name = "MATHutrice"
-block = "mathutrice"
-upstream = "EPF-MDE/MATHutrice"
+name = "Cedar"
+block = "cedar"
+upstream = "example-course/skywatch"
 
 [competencies.C1]
-title = "Design a resilient web architecture under non-functional constraints"
+title = "Size a service from the one number it must keep"
 minutes = 40
 
 [competencies.C2]
-title = "Industrialize a service through a CI/CD pipeline"
+title = "Build a pipeline whose gates each stop one mistake"
 minutes = 40
 
 [competencies.C3]
-title = "Observe, prioritize, and resolve errors in production"
+title = "Rank errors by the harm they do"
 minutes = 40
 
 [[levels]]
@@ -41,5 +41,5 @@ label = "I have done it"
 
 [calendar]
 time_zone = "Europe/Paris"
-close = 2099-06-14T23:59:00
-reading_day = 2099-07-04T23:59:00
+close = 2099-03-20T18:00:00
+reading_day = 2099-04-10T18:00:00

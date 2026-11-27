@@ -2,12 +2,12 @@ name = "Three-level course"
 read_when_none_declared = "roster"
 
 [[groups]]
-name = "OcéENS"
-block = "oceens"
+name = "Willow"
+block = "willow"
 
 [[groups]]
-name = "MATHutrice"
-block = "mathutrice"
+name = "Cedar"
+block = "cedar"
 
 [competencies.C1]
 title = "A Competency on a three-level scale"
