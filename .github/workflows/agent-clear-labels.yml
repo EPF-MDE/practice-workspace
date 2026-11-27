@@ -1,0 +1,39 @@
+name: Agent — Clear Labels On A Closed Pull Request
+
+# A closed pull request is out of the factory's hands, but its `agent:*`
+# labels stay on it. On 27 November #103 merged through auto-merge still
+# labelled `agent:blocked`, left by a review the quota cut short the day
+# before. Such a label says the factory is busy with, or stuck on, a pull
+# request it will never touch again. This workflow removes every `agent:*`
+# label from a pull request once it is closed, merged or not.
+#
+# WHAT IT NEEDS
+#   GITHUB_TOKEN with Pull requests and Issues: write, to remove labels. No
+#   secret, no checkout, nothing of the pull request's code: it runs `gh`
+#   only, on the pull request's number.
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  clear:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Remove the agent labels
+        run: |
+          gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name | select(startswith("agent:"))' |
+            while read -r label; do
+              gh pr edit "$PR_NUMBER" --remove-label "$label"
+              echo "Removed $label"
+            done
