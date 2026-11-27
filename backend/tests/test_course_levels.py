@@ -1,19 +1,16 @@
-import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import pytest
 from conftest import AFTER_THE_CLOSE, BEFORE_THE_CLOSE, MakeClient, sign_in
-from course_folders import CALENDAR, ONE_STEP, TWO_GROUPS, front_matter
+from course_folders import CALENDAR, ONE_STEP, TWO_GROUPS, front_matter, verify
 from courses_under_test import FIXTURES, TWO_GROUP_FIXTURE, CourseFolder
 from fastapi.testclient import TestClient
 
 from app.course import COMPETENCIES
 from app.settings import ConfigurationError, Settings
 
-BACKEND = Path(__file__).resolve().parents[1]
 THREE_LEVELS = FIXTURES / "courses" / "three-levels"
 PAGE = "/api/competencies/C1"
 SELF = f"{PAGE}/self-assessment"
@@ -71,16 +68,6 @@ def on_three_levels(
 @pytest.fixture
 def signed_in(make_client: MakeClient, test_settings: Settings) -> TestClient:
     return on_three_levels(make_client, test_settings, BEFORE_THE_CLOSE)
-
-
-def verify(folder: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [sys.executable, "-m", "app", "verify", str(folder)],
-        cwd=BACKEND,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
 
 
 def a_course(folder: Path, settings: str, to_get_there: str) -> Path:
