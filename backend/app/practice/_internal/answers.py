@@ -40,15 +40,15 @@ from .review import (
 )
 from .router import router
 from .steps import (
+    _after_the_close,
+    _after_the_reading_day,
     _calendar,
-    _closed,
     _competency,
     _drawing_sent,
     _hints,
     _page,
-    _phase,
     _reference,
-    _refuse_if_closed,
+    _refuse_after_the_close,
     _scale,
     _step,
     _step_out,
@@ -73,9 +73,9 @@ def competency_page(
         intro_html=page.intro_html,
         steps=[_step_out(step, page, record, hints) for step in page.steps],
         closes_at=calendar.closes_at,
-        closed=_closed(request),
+        closed=_after_the_close(request),
         reading_day_at=calendar.reading_day_at,
-        reading_day_passed=_phase(request) == "over",
+        reading_day_passed=_after_the_reading_day(request),
         self_assessment=_self_assessment(record, page.competency),
         evidence_plan=_evidence_plan(record, page.competency),
         evidence_plan_draft=_draft(
@@ -118,7 +118,7 @@ def send_answer(
         raise HTTPException(
             422, f"Pick one of the options offered: {', '.join(not_an_option)}"
         )
-    _refuse_if_closed(request, "answers")
+    _refuse_after_the_close(request, "answers")
     waits_for = _waits_for(step, page, _store(request).record(student))
     if waits_for:
         raise HTTPException(
@@ -146,7 +146,7 @@ def ask_question(
     _step(_page(request, competency, student), step_id)
     if not question.text.strip():
         raise HTTPException(422, "Write your question before sending it")
-    _refuse_if_closed(request, "questions")
+    _refuse_after_the_close(request, "questions")
     entry = _store(request).send_question(
         student, competency, step_id, question.text.strip()
     )
@@ -196,7 +196,7 @@ def send_drawing(
             "This drawing is too large to send: remove an image pasted into it, then "
             "try again",
         )
-    _refuse_if_closed(request, "drawings")
+    _refuse_after_the_close(request, "drawings")
     entry = _store(request).send_drawing(
         student, competency, step_id, png, drawing.snapshot
     )
@@ -242,7 +242,7 @@ def tick_missed_check_points(
         raise HTTPException(
             422, f"Not a check point of this drawing: {', '.join(sorted(unknown))}"
         )
-    _refuse_if_closed(request, "check points")
+    _refuse_after_the_close(request, "check points")
     store = _store(request)
     if store.record(student).latest(DrawingPayload, competency, step_id) is None:
         raise HTTPException(

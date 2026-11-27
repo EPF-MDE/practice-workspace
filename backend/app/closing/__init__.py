@@ -3,13 +3,27 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from html.parser import HTMLParser
-from typing import Any, Literal
+from typing import Any
 
 from app.content import Point
 from app.store import PointLevelPayload
 
-Phase = Literal["open", "closed", "over"]
+
+class Phase(Enum):
+    BEFORE_THE_CLOSE = "before-the-close"
+    AFTER_THE_CLOSE = "after-the-close"
+    AFTER_THE_READING_DAY = "after-the-reading-day"
+
+    @property
+    def after_the_close(self) -> bool:
+        return self is not Phase.BEFORE_THE_CLOSE
+
+    @property
+    def after_the_reading_day(self) -> bool:
+        return self is Phase.AFTER_THE_READING_DAY
+
 
 _LINK = re.compile(r"https://(github\.com|gitlab\.com)/[\w.-]+/[\w.-]+(/\S*)?")
 
@@ -90,12 +104,12 @@ def clean_levels(
 def check_move(
     previous: dict[str, PointLevelPayload],
     new: dict[str, PointLevelPayload],
-    now: Phase,
+    phase: Phase,
     scale: Scale,
 ) -> None:
-    if now == "open":
+    if not phase.after_the_close:
         return
-    if now == "over":
+    if phase.after_the_reading_day:
         raise Refused(
             403,
             "The Reading Day has passed: your Self-assessment can no longer change.",
