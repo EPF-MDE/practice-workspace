@@ -25,8 +25,12 @@ case "$1 $2" in
   "label create"|"issue comment") ;;
   "issue create")
     shift 2
+    args=("$@")
+    for i in "\${!args[@]}"; do
+      [ "\${args[$i]}" = "--body-file" ] && body_file="\${args[$((i + 1))]}"
+    done
     number=$(( ${FIRST_ISSUE} + $(wc -l < "${dir}/created") ))
-    jq -cn --argjson number "$number" --rawfile body "${dir}/ticket-body.md" \\
+    jq -cn --argjson number "$number" --rawfile body "$body_file" \\
       '{ number: $number, body: $body, args: $ARGS.positional }' --args -- "$@" >> "${dir}/created"
     echo "https://github.com/owner/repo/issues/$number" ;;
   *) echo "unexpected gh $*" >&2; exit 1 ;;
