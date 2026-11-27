@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { closing } from "./helpers/closing";
+import { DRAWING_WITH_THE_MOUSE } from "./helpers/draw";
 import {
   answerStep,
   BAKERY,
@@ -52,10 +53,9 @@ const STEPS = [
 ];
 
 for (const student of STUDENTS) {
-  test(`${student.group}: C1's Path, each reference only after the Student's own`, async ({
-    page,
-  }) => {
-    test.setTimeout(120_000);
+  test(`${student.group}: C1's Path, each reference only after the Student's own`, {
+    tag: DRAWING_WITH_THE_MOUSE,
+  }, async ({ page }) => {
     await signIn(page, student.id);
     await openCompetency(page, "C1");
     await expect(page.getByTestId("time-spent")).toContainText("out of 40");

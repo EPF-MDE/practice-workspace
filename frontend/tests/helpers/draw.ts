@@ -1,4 +1,6 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+
+export const DRAWING_WITH_THE_MOUSE = "@drawing-with-the-mouse";
 
 type Point = { x: number; y: number };
 
@@ -67,4 +69,52 @@ export async function drawChain(page: Page, canvas: Locator, labels: string[]) {
     await drag(page, canvas, [previous, centre]);
     await page.keyboard.press("Escape");
   }
+}
+
+type KeptDrawing = { shapes: number; labels: string[] };
+type DrawingStep = { competency: string; step: string };
+
+async function keptDrawing(
+  page: Page,
+  { competency, step }: DrawingStep
+): Promise<KeptDrawing | null> {
+  return page.evaluate((suffix) => {
+    const name = Object.keys(localStorage).find((key) => key.endsWith(suffix));
+    const text = name === undefined ? null : localStorage.getItem(name);
+    if (text === null) return null;
+    const records = Object.values(
+      (JSON.parse(text) as { document?: { store?: object } }).document?.store ??
+        {}
+    ) as { typeName?: string; props?: unknown }[];
+    const shapes = records.filter((record) => record.typeName === "shape");
+    const textIn = (node: unknown): string => {
+      if (Array.isArray(node)) return node.map(textIn).join("");
+      if (typeof node !== "object" || node === null) return "";
+      if ("text" in node && typeof node.text === "string") return node.text;
+      return "content" in node ? textIn(node.content) : "";
+    };
+    return {
+      shapes: shapes.length,
+      labels: shapes
+        .map((shape) =>
+          textIn((shape.props as { richText?: unknown })?.richText)
+        )
+        .filter((label) => label !== ""),
+    };
+  }, `:${competency}:drawing:${step}`);
+}
+
+export async function expectChainKept(
+  page: Page,
+  drawing: DrawingStep,
+  labels: string[]
+) {
+  await expect
+    .poll(async () => {
+      const kept = await keptDrawing(page, drawing);
+      return kept === null
+        ? null
+        : { shapes: kept.shapes, labels: [...kept.labels].sort() };
+    })
+    .toEqual({ shapes: shapesOfChain(labels), labels: [...labels].sort() });
 }

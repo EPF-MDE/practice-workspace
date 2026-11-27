@@ -1,5 +1,10 @@
 import { expect, type Page, test } from "@playwright/test";
-import { drawChain, shapesOfChain } from "./helpers/draw";
+import {
+  DRAWING_WITH_THE_MOUSE,
+  drawChain,
+  expectChainKept,
+  shapesOfChain,
+} from "./helpers/draw";
 import { path, signIn, step } from "./helpers/path";
 
 const STUDENTS = [
@@ -9,43 +14,43 @@ const STUDENTS = [
 const CHAIN = ["Start", "Front door", "Queue", "Worker", "Store", "Reply"];
 
 for (const student of STUDENTS) {
-  test(`${student.group}: the redraw is kept while drawing, sent, then compared with the Reference Drawing`, async ({
-    page,
-    browser,
-  }, testInfo) => {
-    test.setTimeout(90_000);
-    await signIn(page, student.id);
-    await page.goto("/competencies/C1");
-    await drawAndReload(page);
+  test(
+    `${student.group}: the redraw is kept while drawing, sent, then compared with the Reference Drawing`,
+    { tag: DRAWING_WITH_THE_MOUSE },
+    async ({ page, browser }, testInfo) => {
+      await signIn(page, student.id);
+      await page.goto("/competencies/C1");
+      await drawAndReload(page);
 
-    const redraw = step(page, "redraw");
-    const [response] = await Promise.all([
-      page.waitForResponse(
-        (answer) =>
-          answer.url().endsWith("/steps/redraw/drawing") &&
-          answer.request().method() === "POST"
-      ),
-      redraw.getByRole("button", { name: "Send my drawing" }).click(),
-    ]);
-    const sent = await response.json();
-    expect(sent.reference.check_points).toHaveLength(student.checkPoints);
-    testInfo.annotations.push({
-      type: "drawing sizes",
-      description: `${CHAIN.length} boxes, ${CHAIN.length - 1} arrows: PNG ${sent.png_bytes} bytes, snapshot ${sent.snapshot_bytes} bytes`,
-    });
-    await compare(page, student.checkPoints);
+      const redraw = step(page, "redraw");
+      const [response] = await Promise.all([
+        page.waitForResponse(
+          (answer) =>
+            answer.url().endsWith("/steps/redraw/drawing") &&
+            answer.request().method() === "POST"
+        ),
+        redraw.getByRole("button", { name: "Send my drawing" }).click(),
+      ]);
+      const sent = await response.json();
+      expect(sent.reference.check_points).toHaveLength(student.checkPoints);
+      testInfo.annotations.push({
+        type: "drawing sizes",
+        description: `${CHAIN.length} boxes, ${CHAIN.length - 1} arrows: PNG ${sent.png_bytes} bytes, snapshot ${sent.snapshot_bytes} bytes`,
+      });
+      await compare(page, student.checkPoints);
 
-    const other = await browser.newContext();
-    const elsewhere = await other.newPage();
-    await signIn(elsewhere, student.id);
-    await elsewhere.goto("/competencies/C1");
-    await expect(
-      step(elsewhere, "redraw")
-        .getByRole("figure", { name: "Your drawing" })
-        .locator(".tl-shape")
-    ).toHaveCount(shapesOfChain(CHAIN));
-    await other.close();
-  });
+      const other = await browser.newContext();
+      const elsewhere = await other.newPage();
+      await signIn(elsewhere, student.id);
+      await elsewhere.goto("/competencies/C1");
+      await expect(
+        step(elsewhere, "redraw")
+          .getByRole("figure", { name: "Your drawing" })
+          .locator(".tl-shape")
+      ).toHaveCount(shapesOfChain(CHAIN));
+      await other.close();
+    }
+  );
 }
 
 async function drawAndReload(page: Page) {
@@ -60,7 +65,7 @@ async function drawAndReload(page: Page) {
   const shapes = canvas.locator(".tl-shape");
   await expect(shapes).toHaveCount(shapesOfChain(CHAIN));
   await expect(canvas.getByText("Worker")).toBeVisible();
-  await page.waitForTimeout(500);
+  await expectChainKept(page, { competency: "C1", step: "redraw" }, CHAIN);
   await page.reload();
   await expect(shapes).toHaveCount(shapesOfChain(CHAIN));
   await expect(redraw.getByTestId("reference-locked")).toBeVisible();
