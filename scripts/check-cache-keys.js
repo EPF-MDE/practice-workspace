@@ -5,30 +5,39 @@ import { parse } from "yaml";
 const WRITER = "warm-caches.yml";
 const READER = /^agent-.*\.yml$/;
 
-const sortedList = (value) =>
+const listed = (value) =>
   String(value ?? "")
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
-    .sort()
     .join(", ");
+
+const UV_KEY_INPUTS = ["cache-suffix", "python-version", "working-directory"];
+
+const uvKeyOf = (given) =>
+  [
+    listed(given["cache-dependency-glob"]),
+    ...UV_KEY_INPUTS.filter((input) => given[input] !== undefined).map(
+      (input) => `${input}: ${given[input]}`
+    ),
+  ].join("; ");
 
 const cacheOf = (step) => {
   const action = String(step.uses ?? "").split("@")[0];
   const given = step.with ?? {};
   if (action === "actions/setup-node" && given.cache === "npm") {
-    return { cache: "npm", key: sortedList(given["cache-dependency-path"]) };
+    return { cache: "npm", key: listed(given["cache-dependency-path"]) };
   }
   if (
     action === "astral-sh/setup-uv" &&
     String(given["enable-cache"]) !== "false"
   ) {
-    return { cache: "uv", key: sortedList(given["cache-dependency-glob"]) };
+    return { cache: "uv", key: uvKeyOf(given) };
   }
   if (action === "actions/cache" || action.startsWith("actions/cache/")) {
     return {
-      cache: sortedList(given.path),
-      key: String(given.key),
+      cache: listed(given.path),
+      key: String(given.key ?? ""),
       saves: action !== "actions/cache/restore",
       restores: action !== "actions/cache/save",
     };

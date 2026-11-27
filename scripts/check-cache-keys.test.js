@@ -195,3 +195,36 @@ describe("check-cache-keys, on what warm-caches.yml saves", () => {
     expect(result.status).toBe(1);
   });
 });
+
+describe("check-cache-keys, on everything that makes a key", () => {
+  it("refuses a uv cache under another suffix", () => {
+    const result = check({
+      "warm-caches.yml": WARM,
+      "agent-review.yml": workflow(`${UV}
+          cache-suffix: agent`),
+    });
+
+    expect(result.stderr).toContain(
+      'agent-review.yml: job work, step 1 reads the uv cache under "backend/uv.lock; cache-suffix: agent"'
+    );
+    expect(result.status).toBe(1);
+  });
+
+  it("refuses a cache whose paths come in another order", () => {
+    const paths = (first, second) => `      - uses: actions/cache@v6.1.0
+        with:
+          path: |
+            ${first}
+            ${second}
+          key: browsers`;
+    const result = check({
+      "warm-caches.yml": workflow(paths("~/.a", "~/.b")),
+      "agent-review.yml": workflow(paths("~/.b", "~/.a")),
+    });
+
+    expect(result.stderr).toContain(
+      "agent-review.yml: job work, step 1 reads the ~/.b, ~/.a cache, which warm-caches.yml does not write"
+    );
+    expect(result.status).toBe(1);
+  });
+});
