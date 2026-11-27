@@ -12,6 +12,8 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Instance**: One course's running Practice workspace: a released version of the Engine, that course's Course folder, and its own apps, secrets and Store. _Avoid_: deployment, tenant
 
+**Instance settings**: What an Instance is given in its environment rather than in its Course folder: its secrets, its GitHub Apps, its Store's repository, PostHog, its public URL and its tldraw licence key. They hold none of the Course's material.
+
 **Course**: A taught course that runs an Instance. Its material and what it says of its Students stay in its own repository, never here. _Avoid_: class, module
 
 **Course folder**: Everything a Course gives the Engine: its settings, its content (one Markdown file per Competency), its drawings and its images, under `images/`, which a Step shows. The Engine reads it at start and refuses to start on one that is incomplete or inconsistent. _Avoid_: course config, content directory

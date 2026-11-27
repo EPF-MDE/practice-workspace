@@ -42,10 +42,10 @@ flowchart LR
     instance --> students
 ```
 
-- **Course folder**, named by `WORKSPACE_COURSE_FOLDER`: `course.toml` gives the Course's name, its Groups (name, Group block, upstream repository), C1–C3's titles and minutes, the Self-assessment levels, the Close and the Reading Day, and what is read when a Student declares no Evidence Project. Beside it: `c1.md`, `c2.md`, `c3.md`, the drawings and the images.
+- **Course folder**, named by `WORKSPACE_COURSE_FOLDER`: `course.toml` gives the Course's name, its Groups (name, Group block, Upstream repository), C1–C3's titles and minutes, the Scale, the Close and the Reading Day, and what is read when a Student declares no Evidence Project. Beside it: `c1.md`, `c2.md`, `c3.md`, the drawings and the images.
 - **Instance settings**, in the environment: everything that is not the Course's material. Secrets, the GitHub Apps, the Store's repository, PostHog, the public URL and the tldraw licence key.
 
-[`demo-course/`](./demo-course/) is a complete Course folder and shows the format. The Engine refuses to start on a Course folder it cannot serve, and names every problem. To check a folder before you deploy it, run this from `backend/`:
+[`demo-course/`](./demo-course/) is a complete Course folder and shows the format. The Engine refuses to start on a Course folder it cannot serve, and names every problem. To check a folder before an Instance starts on it, run this from `backend/`:
 
 ```sh
 uv run python -m app verify <course folder>
