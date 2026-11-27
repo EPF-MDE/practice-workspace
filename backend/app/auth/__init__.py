@@ -2,14 +2,19 @@ from __future__ import annotations
 
 import logging
 import secrets
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Protocol, cast
+from datetime import datetime, timedelta
+from typing import Literal, Protocol, cast
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request
+import itsdangerous
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.types import ASGIApp
 
 from app.roster import RosterSource, Student
 from app.store import StoreUnavailable
@@ -19,6 +24,7 @@ logger = logging.getLogger(__name__)
 SESSION_ID = "github_id"
 SESSION_STATE = "oauth_state"
 SESSION_REFUSED = "refused_login"
+_SESSION_IDLE_LIMIT = timedelta(days=60)
 
 NOTICE = (
     "What you send here (your answers, drawings, Self-assessment, Evidence Plan "
@@ -138,6 +144,52 @@ def _open_record(request: Request, student: Student) -> None:
         )
 
 
+class _ClockSigner(itsdangerous.TimestampSigner):
+    def __init__(self, secret: str, clock: Callable[[], datetime]) -> None:
+        super().__init__(secret)
+        self._clock = clock
+
+    def get_timestamp(self) -> int:
+        return int(self._clock().timestamp())
+
+
+class _ClockSessionMiddleware(SessionMiddleware):
+    def __init__(
+        self,
+        app: ASGIApp,
+        /,
+        secret_key: str,
+        clock: Callable[[], datetime],
+        session_cookie: str,
+        max_age: int,
+        same_site: Literal["lax", "strict", "none"],
+        https_only: bool,
+    ) -> None:
+        super().__init__(
+            app,
+            secret_key=secret_key,
+            session_cookie=session_cookie,
+            max_age=max_age,
+            same_site=same_site,
+            https_only=https_only,
+        )
+        self.signer = _ClockSigner(secret_key, clock)
+
+
+def add_session(
+    app: FastAPI, secret: str, https_only: bool, clock: Callable[[], datetime]
+) -> None:
+    app.add_middleware(
+        _ClockSessionMiddleware,
+        secret_key=secret or secrets.token_urlsafe(32),
+        clock=clock,
+        session_cookie="cws_session",
+        max_age=int(_SESSION_IDLE_LIMIT.total_seconds()),
+        same_site="lax",
+        https_only=https_only,
+    )
+
+
 def current_student(request: Request) -> Student:
     github_id = request.session.get(SESSION_ID)
     student = (
@@ -146,7 +198,12 @@ def current_student(request: Request) -> Student:
     if student is None:
         request.session.pop(SESSION_ID, None)
         raise HTTPException(401, "Not signed in")
+    _sign_session_again(request, student)
     return student
+
+
+def _sign_session_again(request: Request, student: Student) -> None:
+    request.session[SESSION_ID] = student.github_id
 
 
 class SignInPage(BaseModel):
