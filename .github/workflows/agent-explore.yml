@@ -47,8 +47,15 @@ name: Agent — Explore The Tickets
 #     easy-call       →  swap `agent:explore` for `agent:implement`, which is
 #                        the trigger for agent-implement.yml. The factory
 #                        keeps going without being asked.
-#     anything else   →  swap it for `needs-a-human` and stop. Somebody has
-#                        to come and look.
+#     blocked         →  swap it for `agent:blocked-by-ticket`, and mark the
+#                        issue blocked by the issues the entry names, with
+#                        GitHub's own "blocked by" relation. When the last of
+#                        them closes, the unblock job puts `agent:explore`
+#                        back on it. Nobody has to come and look. Why:
+#                        docs/adr/0019-an-issue-waiting-on-another-ticket-*.
+#     needs-a-human   →  swap it for `needs-a-human` and stop. The comment
+#                        ends with the one decision a person has to make, as
+#                        a question with its options.
 #     a duplicate     →  closed, whatever its tag.
 #
 #   That is a real if/else in the apply job, on a value the agent chose. Not a
@@ -89,7 +96,8 @@ name: Agent — Explore The Tickets
 
 on:
   issues:
-    types: [labeled]
+    # `closed` is for the unblock job only: see it at the end.
+    types: [labeled, closed]
 
 # One batch at a time, and never cancelled. A label that lands mid-run queues
 # one more run behind this one, and that run lists the batch again when it
@@ -113,6 +121,7 @@ jobs:
     # reads both.
     outputs:
       batch: ${{ steps.batch.outputs.numbers }}
+      open: ${{ steps.batch.outputs.open }}
       plan: ${{ steps.plan.outputs.json }}
 
     env:
@@ -166,6 +175,14 @@ jobs:
           echo "Batch: $numbers"
           echo "numbers=$numbers" >> "$GITHUB_OUTPUT"
 
+          # Every open issue, pull requests left out, with the id GitHub's
+          # "blocked by" relation takes. Only these can block an issue of the
+          # batch: one already closed would send it straight back to explore,
+          # to be found blocked again, forever.
+          open="$(gh api --paginate "repos/$GH_REPO/issues?state=open&per_page=100" \
+            --jq '.[] | select(.pull_request | not) | {number, id}' | jq -sc .)"
+          echo "open=$open" >> "$GITHUB_OUTPUT"
+
           # The trigger comes off, so putting it back on is how you retry.
           # `agent:in-progress` stays on until apply moves the issue on.
           if [ "$numbers" != "[]" ]; then
@@ -178,6 +195,10 @@ jobs:
           for n in $(jq -r '.[]' <<< "$numbers"); do
             gh issue edit "$n" --remove-label "agent:explore" || true
             gh issue edit "$n" --remove-label "agent:blocked" || true
+            # Explore decides again whether it waits on a ticket. Left on, the
+            # label would send it back here when an old blocker closes, even
+            # once it is being implemented.
+            gh issue edit "$n" --remove-label "agent:blocked-by-ticket" || true
             gh issue edit "$n" --add-label "agent:in-progress"
           done
 
@@ -316,6 +337,7 @@ jobs:
           # `run:` is text bash runs, and the plan was written by an agent
           # that has just read a pile of untrusted issues.
           BATCH: ${{ needs.explore.outputs.batch }}
+          OPEN: ${{ needs.explore.outputs.open }}
           PLAN: ${{ needs.explore.outputs.plan }}
         run: |
           set -euo pipefail
@@ -323,7 +345,7 @@ jobs:
           [ -s /tmp/plan.json ] || { echo "The explore run returned no plan." >&2; exit 1; }
 
           # Every rule, written as "what is wrong". An empty list means apply.
-          jq -r --argjson batch "$BATCH" '
+          jq -r --argjson batch "$BATCH" --argjson open "$OPEN" '
             .issues as $plan
             | [
                 # Every issue in the batch, exactly once.
@@ -338,6 +360,33 @@ jobs:
                 # Something to post.
                 ($plan[] | select((.comment // "") | test("\\S") | not)
                  | "#\(.number) has an empty comment."),
+
+                # A survivor tagged `blocked` names the issues it waits on, and
+                # only it does.
+                ($plan[] | select(.duplicate_of | not) | select(.tag == "blocked")
+                 | select((.blocked_by // []) == [])
+                 | "#\(.number) is blocked but names no issue it is blocked by."),
+                ($plan[] | select(.blocked_by)
+                 | select(.tag != "blocked" or .duplicate_of)
+                 | "#\(.number) names blockers but is not a surviving blocked issue."),
+                ($plan[] | select(.number as $n | (.blocked_by // []) | index($n))
+                 | "#\(.number) is blocked by itself."),
+                ($plan[] | .number as $n | (.blocked_by // [])[]
+                 | select(IN($open[].number) | not)
+                 | "#\($n) is blocked by #\(.), which is not an open issue."),
+                ($plan[] | .number as $n | (.blocked_by // [])[] | . as $b
+                 | select(any($plan[]; .number == $b and .duplicate_of))
+                 | "#\($n) is blocked by #\(.), which this run closes as a duplicate."),
+
+                # A survivor tagged `needs-a-human` asks one question, with
+                # options, and only it does.
+                ($plan[] | select(.duplicate_of | not) | select(.tag == "needs-a-human")
+                 | select((.decision.question // "" | test("\\S") | not)
+                          or ((.decision.options // []) | length) < 2)
+                 | "#\(.number) needs a human but asks no question with options."),
+                ($plan[] | select(.decision)
+                 | select(.tag != "needs-a-human" or .duplicate_of)
+                 | "#\(.number) asks a question but does not need a human."),
 
                 # A duplicate points at an issue in this batch that survives.
                 ($plan[] | select(.duplicate_of) | . as $dup
@@ -354,6 +403,8 @@ jobs:
           fi
 
       - name: Apply the plan
+        env:
+          OPEN: ${{ needs.explore.outputs.open }}
         # Every label below goes on with FACTORY_PAT, and that matters for
         # `agent:implement`: a label applied by the built-in token does not
         # fire `issues: labeled`, so agent-implement.yml would never wake up
@@ -368,6 +419,8 @@ jobs:
             --description "The factory stopped here" || true
           gh label create "agent:implement" --color 5319E7 \
             --description "Hand this issue to the implementer agent" || true
+          gh label create "agent:blocked-by-ticket" --color C5DEF5 \
+            --description "Waits on the issues GitHub lists as blocking it, and goes back to explore when they close" || true
 
           # nullglob: an issue with no screenshots gets no --attach.
           shopt -s nullglob
@@ -383,11 +436,18 @@ jobs:
               next="Closed as duplicate of #$dup."
             elif [ "$tag" = "easy-call" ]; then
               next="Easy call. Handed to the implementer. Nobody is being asked first."
+            elif [ "$tag" = "blocked" ]; then
+              next="Blocked by $(jq -r '[.blocked_by[] | "#\(.)"] | join(", ")' <<< "$entry"). It goes back to explore when they are all closed, without anyone being asked."
             else
-              next="Stopped at \`$tag\`. Settle the open questions, then label \`agent:implement\` yourself."
+              next="Stopped at \`$tag\`. Answer the question above, then label \`agent:implement\` yourself."
             fi
 
-            jq -r '.comment' <<< "$entry" > /tmp/comment.md
+            # The decision a human has to make goes last, so the comment ends
+            # with it.
+            jq -r '.comment,
+              (.decision // empty
+               | "\n**The decision:** \(.question)\n", (.options[] | "- \(.)"))' \
+              <<< "$entry" > /tmp/comment.md
             printf '\n\n---\n\n_%s_ [Logs](%s)\n' "$next" "$RUN_URL" >> /tmp/comment.md
             # This issue's screenshots, /tmp/evidence/<n>-*.png. --attach
             # uploads them and swaps each path in the comment for its URL.
@@ -404,6 +464,26 @@ jobs:
             elif [ "$tag" = "easy-call" ]; then
               gh issue edit "$n" \
                 --remove-label "agent:in-progress" --add-label "agent:implement"
+            elif [ "$tag" = "blocked" ]; then
+              # GitHub's own "blocked by" relation, which takes the blocker's
+              # id, not its number. One already there is left as it is.
+              existing="$(gh api --paginate "repos/$GH_REPO/issues/$n/dependencies/blocked_by" --jq '.[].number')"
+              for b in $(jq -r '.blocked_by[]' <<< "$entry"); do
+                grep -qx "$b" <<< "$existing" && continue
+                gh api --method POST "repos/$GH_REPO/issues/$n/dependencies/blocked_by" \
+                  -F issue_id="$(jq -r --argjson b "$b" '.[] | select(.number == $b) | .id' <<< "$OPEN")" --silent
+              done
+              gh issue edit "$n" \
+                --remove-label "agent:in-progress" --add-label "agent:blocked-by-ticket"
+              # Read after the label is on: a blocker that closes from then on
+              # finds it, and the unblock job sends it back. One that closed
+              # before sent nothing back, so this run does it.
+              still_open="$(gh api --paginate "repos/$GH_REPO/issues/$n/dependencies/blocked_by" \
+                --jq '.[] | select(.state == "open") | .number')"
+              if [ -z "$still_open" ]; then
+                gh issue edit "$n" \
+                  --remove-label "agent:blocked-by-ticket" --add-label "agent:explore"
+              fi
             else
               gh issue edit "$n" \
                 --remove-label "agent:in-progress" --add-label "needs-a-human"
@@ -445,4 +525,42 @@ jobs:
         run: |
           for n in $(jq -r '.[]' <<< "$BATCH"); do
             gh issue edit "$n" --remove-label "agent:in-progress" || true
+          done
+
+  # An issue tagged `blocked` waits on the issues GitHub lists as blocking it.
+  # When one of those closes, every issue it blocked that has no open blocker
+  # left goes back to explore, with FACTORY_PAT so that `agent:explore` starts
+  # this workflow again. Nobody has to notice.
+  unblock:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    # No checkout and no agent. It reads relations and moves labels with
+    # FACTORY_PAT.
+    permissions: {}
+
+    env:
+      GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+      GH_REPO: ${{ github.repository }}
+      CLOSED: ${{ github.event.issue.number }}
+
+    steps:
+      - name: Send the issues it blocked back to explore
+        run: |
+          set -euo pipefail
+          # Only the issues explore marked blocked: a relation someone drew by
+          # hand on an issue the factory is not holding starts nothing.
+          waiting="$(gh api --paginate "repos/$GH_REPO/issues/$CLOSED/dependencies/blocking" \
+            --jq '.[] | select(.state == "open")
+                      | select(any(.labels[].name; . == "agent:blocked-by-ticket"))
+                      | .number')"
+          for n in $waiting; do
+            open="$(gh api --paginate "repos/$GH_REPO/issues/$n/dependencies/blocked_by" \
+              --jq '.[] | select(.state == "open") | .number')"
+            [ -z "$open" ] || continue
+            gh issue edit "$n" \
+              --remove-label "agent:blocked-by-ticket" --add-label "agent:explore"
+            gh issue comment "$n" --body \
+              "Its last blocker, #$CLOSED, is closed: back to explore. <!-- factory:status -->"
           done

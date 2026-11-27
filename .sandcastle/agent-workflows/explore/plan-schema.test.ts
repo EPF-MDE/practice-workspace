@@ -12,6 +12,18 @@ describe("explorePlanSchema", () => {
     }
   });
 
+  it("takes the blockers of a blocked issue and the decision a human makes", () => {
+    for (const entry of [
+      { tag: "blocked", blocked_by: [2] },
+      {
+        tag: "needs-a-human",
+        decision: { question: "Which one?", options: ["This", "That"] },
+      },
+    ]) {
+      expect(explorePlanSchema.safeParse(plan(entry)).success).toBe(true);
+    }
+  });
+
   it("takes a duplicate pointing at the issue it duplicates", () => {
     expect(explorePlanSchema.safeParse(plan({ duplicate_of: 2 })).success).toBe(
       true
@@ -23,6 +35,7 @@ describe("explorePlanSchema", () => {
       { tag: "ship-it" },
       { comment: "" },
       { labels: ["agent:implement"] },
+      { decision: { question: "Which one?", options: ["Only this"] } },
     ]) {
       expect(explorePlanSchema.safeParse(plan(entry)).success).toBe(false);
     }

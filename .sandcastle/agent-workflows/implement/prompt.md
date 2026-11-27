@@ -12,4 +12,4 @@ Read CODING_STANDARDS.md.
 - Leave `.github/` untouched, unless the ticket explicitly asks for a change there.
 - When the change shows in the UI, save a before and an after screenshot as PNGs in /tmp/evidence/.
 
-Write /tmp/pr-body.md in the voice of the `pr` skill: what the ticket asked for, what you built, what you deliberately left out. In its Evidence section, reference each screenshot by its absolute path, e.g. `![after](/tmp/evidence/after.png)`. The workflow uploads them.
+Write /tmp/pr-body.md in the voice of the `pr` skill: what the ticket asked for, what you built, what you deliberately left out, and each two-way choice the explore run's findings made, with its reasoning, so the review can turn it back. In its Evidence section, reference each screenshot by its absolute path, e.g. `![after](/tmp/evidence/after.png)`. The workflow uploads them.
