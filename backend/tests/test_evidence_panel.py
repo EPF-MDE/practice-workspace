@@ -124,7 +124,7 @@ def test_each_fact_names_the_point_it_supports(
     assert panel["facts"][0]["point"] == "C1"
 
 
-def test_a_point_the_repository_cannot_show_says_to_show_it_at_the_eval(
+def test_a_point_the_repository_cannot_show_gives_its_statement_and_says_to_show_it_at_the_eval(  # noqa: E501
     panel_client: TestClient,
     repositories: OfflineRepositoryReading,
     student: OnTheRoster,
@@ -137,19 +137,79 @@ def test_a_point_the_repository_cannot_show_says_to_show_it_at_the_eval(
     assert c2["not_visible"] == [
         {
             "point": "C2.f",
+            "statement": "DEPLOY-STATEMENT: a deployment rolled back.",
             "text": "Not visible from your Evidence Project: show it at the Eval",
         },
         {
             "point": "C2.g",
+            "statement": None,
             "text": "Not visible from your Evidence Project: show it at the Eval",
         },
     ]
     assert {n["point"] for n in c3["not_visible"]} == {"C3.a", "C3.c", "C3.d", "C3.f"}
     assert all("show your PostHog at the Eval" in n["text"] for n in c3["not_visible"])
+
+
+def test_a_point_not_found_yet_gives_its_statement_and_its_to_get_there(  # noqa: E501
+    panel_client: TestClient,
+    repositories: OfflineRepositoryReading,
+    student: OnTheRoster,
+) -> None:
+    repositories.put(reading(student))
+
+    c2 = panel_client.get("/api/competencies/C2/evidence-panel").json()
+
     assert c2["nothing_found_text"] == (
         "Looked for on your Evidence Project (3 branches, 2 pull requests read), "
-        "nothing found yet: C2.a, C2.d, C2.e."
+        "nothing found yet:"
     )
+    assert c2["nothing_found"] == [
+        {
+            "point": "C2.a",
+            "statement": "JOB-STATEMENT: which job stops which mistake.",
+            "to_get_there": "JOB-REDO: turn your own pipeline red.",
+        },
+        {"point": "C2.d", "statement": None, "to_get_there": None},
+        {"point": "C2.e", "statement": None, "to_get_there": None},
+    ]
+
+
+def test_a_point_without_a_to_get_there_just_below_the_top_takes_the_highest_it_has(
+    panel_client: TestClient,
+    repositories: OfflineRepositoryReading,
+    student: OnTheRoster,
+) -> None:
+    found = reading(student)
+    c2 = found.competencies["C2"]
+    found.competencies["C2"] = CompetencyReading(
+        "C2", [], [PointId.C2_B], c2.not_visible
+    )
+    repositories.put(found)
+
+    c2_panel = panel_client.get("/api/competencies/C2/evidence-panel").json()
+
+    assert c2_panel["nothing_found"] == [
+        {
+            "point": "C2.b",
+            "statement": "REQUIRED-STATEMENT: a job required before a merge.",
+            "to_get_there": "REQUIRED-UNDERSTAND: find which jobs are required.",
+        }
+    ]
+
+
+def test_a_fact_gives_the_statement_of_the_point_it_supports(
+    panel_client: TestClient,
+    repositories: OfflineRepositoryReading,
+    student: OnTheRoster,
+) -> None:
+    repositories.put(reading(student))
+
+    c2 = panel_client.get("/api/competencies/C2/evidence-panel").json()
+
+    assert [(f["point"], f["statement"]) for f in c2["facts"]] == [
+        ("C2.c", None),
+        ("C2.b", "REQUIRED-STATEMENT: a job required before a merge."),
+    ]
 
 
 def test_c1s_changed_files_come_with_a_sentence_saying_the_workspace_does_not_judge_them(  # noqa: E501

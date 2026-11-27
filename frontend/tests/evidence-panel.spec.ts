@@ -69,7 +69,6 @@ async function readThePanel(page: Page) {
   await expect(panel.getByTestId("fact-C1")).toContainText(
     "feature/order-timeout changes 3 files"
   );
-  await expect(panel.getByTestId("fact-C1")).toContainText("→ C1");
   await expect(panel.getByTestId("evidence-panel-not-judged")).toContainText(
     "does not judge them"
   );
@@ -89,6 +88,32 @@ async function readThePanel(page: Page) {
     page.getByRole("textbox", { name: "Your question on Read the scenario" })
   ).toBeFocused();
 }
+
+test("each point on the Evidence panel gives its statement, then what was found, what to do to get there, or to show it at the Eval", async ({
+  page,
+}) => {
+  await signIn(page, READS_A_BRANCH);
+  await page.goto("/competencies/C2");
+  const panel = sidebar(page);
+
+  const found = panel.getByTestId("fact-C2.b");
+  await expect(found).toContainText(
+    "I can make a job required before a merge."
+  );
+  await expect(found).toContainText("Found: main contains the Clean Bench");
+
+  const notFound = panel.getByTestId("nothing-found-C2.a");
+  await expect(notFound).toContainText(
+    "I can say which job stops which kind of mistake."
+  );
+  await expect(notFound).toContainText(
+    "To get there: Turn your own pipeline red on purpose."
+  );
+
+  await expect(panel.getByTestId("not-visible-C2.f")).toContainText(
+    "show it at the Eval"
+  );
+});
 
 async function checkAccess(evidence: Locator) {
   await expect(evidence.getByTestId("notice")).toContainText(

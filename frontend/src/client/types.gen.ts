@@ -445,7 +445,7 @@ export type EvidencePanel = {
     /**
      * Nothing Found
      */
-    nothing_found: Array<PointId>;
+    nothing_found: Array<NothingFound>;
     /**
      * Nothing Found Text
      */
@@ -688,9 +688,28 @@ export type MyDrawing = {
 export type NotVisible = {
     point: PointId;
     /**
+     * Statement
+     */
+    statement: string | null;
+    /**
      * Text
      */
     text: string;
+};
+
+/**
+ * NothingFound
+ */
+export type NothingFound = {
+    point: PointId;
+    /**
+     * Statement
+     */
+    statement: string | null;
+    /**
+     * To Get There
+     */
+    to_get_there: string | null;
 };
 
 /**
@@ -698,6 +717,10 @@ export type NotVisible = {
  */
 export type PanelFact = {
     point: PointId;
+    /**
+     * Statement
+     */
+    statement: string | null;
     /**
      * Text
      */
