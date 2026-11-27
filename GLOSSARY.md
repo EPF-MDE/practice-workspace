@@ -20,6 +20,8 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Software Factory**: The agent runs that work on the Engine's own issues and pull requests: GitHub Actions workflows that a label starts, each running an agent script in `.sandcastle/`. It implements and reviews; the Instructor merges. _Avoid_: bot, pipeline
 
+**Agent slot**: One of the two places the Software Factory has for an agent run talking to Claude at once. An agent job waits for one before its agent starts, and holds it until the job ends (ADR-0020). _Avoid_: semaphore
+
 ### People
 
 **Student**: Someone on a Course's Roster, who follows the Paths. _Avoid_: user, learner

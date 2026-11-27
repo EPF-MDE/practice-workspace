@@ -86,7 +86,8 @@ name: Agent — Review A Pull Request
 #     environment is tidiness, not a wall: the agent shares the machine with
 #     the steps that push and post. The real defence is who can reach the
 #     agent — same-repo PRs only, and a label only a collaborator can apply.
-#   secrets.GITHUB_TOKEN — supplied by Actions, used only for the checkout.
+#   secrets.GITHUB_TOKEN — supplied by Actions, used only for the checkout and
+#     to count the agent runs.
 #   The `agent:review` label. A fresh clone of this repository does not have
 #     it, and no workflow can create the label that starts it. Create it once:
 #       gh label create "agent:review" --color 5319E7 \
@@ -106,11 +107,13 @@ on:
   merge_group:
     types: [checks_requested]
 
-# A ceiling on the GITHUB_TOKEN, which only checks the code out. Reading the
-# PR and the ticket, pushing the fixes, posting the verdict and the inline
-# comments, and marking the PR ready all go through FACTORY_PAT.
+# A ceiling on the GITHUB_TOKEN, which only checks the code out and counts the
+# agent runs. Reading the PR and the ticket, pushing the fixes, posting the
+# verdict and the inline comments, and marking the PR ready all go through
+# FACTORY_PAT.
 permissions:
   contents: read # the checkout
+  actions: read # the agent slot: counting the agent runs
 
 # One review per PR, never cancelled: a cancelled review would lose the
 # commits it made. A fresh `agent:review` waits for the one running. Only
@@ -125,7 +128,7 @@ jobs:
   review:
     if: github.event.label.name == 'agent:review'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 225 # 45 for the agent, 180 to wait for its slot
 
     env:
       GH_REPO: ${{ github.repository }}
@@ -285,6 +288,17 @@ jobs:
             exit 1
           fi
 
+      - name: Wait for an agent slot
+        id: slot
+        # At most AGENT_SLOTS agent runs talk to Claude at once, across the
+        # agent workflows (.sandcastle/agent-workflows/agent-slot/slots.ts).
+        # This job waits its turn here, for up to three hours (ADR-0020).
+        timeout-minutes: 185
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: npx tsx .sandcastle/agent-workflows/agent-slot/wait.ts
+
       - name: Review the pull request
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -388,8 +402,13 @@ jobs:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
           FALLBACK: ${{ steps.push.outputs.fallback }}
           FALLBACK_URL: ${{ steps.fallback.outputs.url }}
+          SLOT: ${{ steps.slot.outcome }}
         run: |
           set -euo pipefail
+          if [ "$SLOT" = "failure" ]; then
+            echo "The review never started: no agent slot came free in three hours (ADR-0020). Re-add \`agent:review\` to retry." \
+              > /tmp/review-verdict.md
+          fi
           [ -s /tmp/review-verdict.md ] || \
             echo "The review run produced no verdict. See the logs. Re-add \`agent:review\` to retry." \
               > /tmp/review-verdict.md

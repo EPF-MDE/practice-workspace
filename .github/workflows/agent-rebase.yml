@@ -77,6 +77,7 @@ on:
 
 permissions:
   contents: read # the checkout
+  actions: read # the agent slot: counting the agent runs
 
 env:
   # Ties a needs-a-human issue to its pull request: <!-- factory:rebase #12 -->
@@ -160,7 +161,7 @@ jobs:
     needs: survey
     if: needs.survey.outputs.prs != '[]' && needs.survey.outputs.prs != ''
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 225 # 45 for the agent, 180 to wait for its slot
     strategy:
       fail-fast: false
       max-parallel: 5
@@ -314,6 +315,19 @@ jobs:
           jq -e 'keys - ["name", "description", "version", "author", "homepage", "repository", "license", "keywords"] == []' \
             "$plugin/.claude-plugin/plugin.json"
           jq -e '.hooks | keys == ["SessionEnd"]' "$plugin/hooks/hooks.json"
+
+      - name: Wait for an agent slot
+        # At most AGENT_SLOTS agent runs talk to Claude at once, across the
+        # agent workflows (.sandcastle/agent-workflows/agent-slot/slots.ts).
+        # This job waits its turn here, for up to three hours (ADR-0020).
+        if: >-
+          steps.script.outputs.outcome == 'conflicts' ||
+          steps.check.outcome == 'failure'
+        timeout-minutes: 185
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: npx tsx .sandcastle/agent-workflows/agent-slot/wait.ts
 
       - name: Resolve with an agent
         id: agent

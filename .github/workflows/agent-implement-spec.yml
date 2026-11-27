@@ -135,10 +135,12 @@ on:
         required: false
         type: string
 
-# A ceiling on the GITHUB_TOKEN, which now only checks the code out. Pushing,
-# labelling, commenting and dispatching all go through FACTORY_PAT.
+# A ceiling on the GITHUB_TOKEN, which only checks the code out and counts the
+# agent runs. Pushing, labelling, commenting and dispatching all go through
+# FACTORY_PAT.
 permissions:
   contents: read # the checkout
+  actions: read # the agent slot: counting the agent runs
 
 # One run of this workflow at a time, repo-wide, and never cancelled. The queue
 # is shared state: two runs at once would both pick the same frontier ticket
@@ -305,7 +307,7 @@ jobs:
     needs: survey
     if: needs.survey.outputs.mode == 'decompose'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 210 # 30 for the agent, 180 to wait for its slot
 
     env:
       GH_REPO: ${{ github.repository }}
@@ -383,6 +385,16 @@ jobs:
         run: |
           npm install -g agent-browser@0.27.0
           agent-browser install
+
+      - name: Wait for an agent slot
+        # At most AGENT_SLOTS agent runs talk to Claude at once, across the
+        # agent workflows (.sandcastle/agent-workflows/agent-slot/slots.ts).
+        # This job waits its turn here, for up to three hours (ADR-0020).
+        timeout-minutes: 185
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: npx tsx .sandcastle/agent-workflows/agent-slot/wait.ts
 
       - name: Decompose the spec into a queue
         env:
@@ -475,7 +487,7 @@ jobs:
     needs: survey
     if: needs.survey.outputs.mode == 'implement'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 240 # 60 for the agent, 180 to wait for its slot
 
     env:
       GH_REPO: ${{ github.repository }}
@@ -601,6 +613,16 @@ jobs:
             echo "::error::The pre-commit hook is not installed (core.hooksPath is '$(git config core.hooksPath)')."
             exit 1
           fi
+
+      - name: Wait for an agent slot
+        # At most AGENT_SLOTS agent runs talk to Claude at once, across the
+        # agent workflows (.sandcastle/agent-workflows/agent-slot/slots.ts).
+        # This job waits its turn here, for up to three hours (ADR-0020).
+        timeout-minutes: 185
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: npx tsx .sandcastle/agent-workflows/agent-slot/wait.ts
 
       - name: Build the ticket
         env:
