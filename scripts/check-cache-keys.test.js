@@ -69,7 +69,7 @@ describe("check-cache-keys", () => {
     });
 
     expect(result.stderr).toContain(
-      "agent-implement.yml: job work, step Cache agent-browser's Chrome reads the ~/.agent-browser/browsers cache"
+      "agent-implement.yml: job work, step Cache agent-browser's Chrome reads the ~/.agent-browser/browsers cache under \"agent-browser-0.28.0-"
     );
     expect(result.status).toBe(1);
   });
@@ -120,7 +120,7 @@ describe("check-cache-keys, on every form of a cache step", () => {
     });
 
     expect(result.stderr).toContain(
-      "agent-implement.yml: job work, step 1 reads the ~/.agent-browser/browsers cache"
+      'agent-implement.yml: job work, step 1 reads the ~/.agent-browser/browsers cache under "agent-browser-0.28.0-'
     );
     expect(result.status).toBe(1);
   });
@@ -147,5 +147,51 @@ describe("check-cache-keys, on every form of a cache step", () => {
 
     expect(result.stderr).toBe("");
     expect(result.status).toBe(0);
+  });
+});
+
+const restoreChrome = (version) => `      - uses: actions/cache/restore@v6.1.0
+        with:
+          path: ~/.agent-browser/browsers
+          key: agent-browser-${version}-\${{ runner.os }}`;
+
+describe("check-cache-keys, on what warm-caches.yml saves", () => {
+  it("does not count a key warm-caches.yml only restores as written", () => {
+    const result = check({
+      "warm-caches.yml": workflow(restoreChrome("0.27.0")),
+      "agent-review.yml": workflow(restoreChrome("0.27.0")),
+    });
+
+    expect(result.stderr).toContain(
+      "agent-review.yml: job work, step 1 reads the ~/.agent-browser/browsers cache, which warm-caches.yml does not write"
+    );
+    expect(result.status).toBe(1);
+  });
+
+  it("passes a key warm-caches.yml writes beside another on the same cache", () => {
+    const result = check({
+      "warm-caches.yml": workflow(
+        [chrome("0.27.0"), chrome("0.28.0")].join("\n")
+      ),
+      "agent-review.yml": workflow(restoreChrome("0.27.0")),
+    });
+
+    expect(result.stderr).toBe("");
+    expect(result.status).toBe(0);
+  });
+
+  it("refuses an agent workflow that saves a cache", () => {
+    const result = check({
+      "warm-caches.yml": WARM,
+      "agent-review.yml": workflow(`      - uses: actions/cache/save@v6.1.0
+        with:
+          path: ~/.agent-browser/browsers
+          key: agent-browser-0.27.0-\${{ runner.os }}`),
+    });
+
+    expect(result.stderr).toContain(
+      "agent-review.yml: job work, step 1 saves the ~/.agent-browser/browsers cache, which only warm-caches.yml writes"
+    );
+    expect(result.status).toBe(1);
   });
 });
