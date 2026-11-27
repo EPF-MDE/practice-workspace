@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { closing } from "./helpers/closing";
 import {
   answerStep,
@@ -76,6 +76,9 @@ for (const student of STUDENTS) {
 async function readAndAsk(page: Page, student: Student) {
   const read = step(page, "read-the-scenario");
   await expectOwnGroupOnly(read, student.group);
+  await expectReadableImage(
+    read.getByRole("img", { name: /^One number decides the design/ })
+  );
   const question = read.getByLabel("Your question on Read the scenario");
   await expect(question).toBeHidden();
   await read.getByText("Ask the Instructor a question").click();
@@ -84,6 +87,15 @@ async function readAndAsk(page: Page, student: Student) {
   await expect(
     read.getByRole("list", { name: "Your questions" })
   ).toContainText("Is the peak always at opening time?");
+}
+
+async function expectReadableImage(image: Locator) {
+  await expect(image).toBeVisible();
+  await expect
+    .poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBeGreaterThan(0);
+  const box = await image.boundingBox();
+  expect(box?.width).toBeGreaterThanOrEqual(480);
 }
 
 async function estimate(page: Page, student: Student) {

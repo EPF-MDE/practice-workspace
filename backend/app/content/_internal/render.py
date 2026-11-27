@@ -3,8 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from markdown_it import MarkdownIt
-
+from .images import markdown
 from .model import (
     Answer,
     Block,
@@ -29,6 +28,7 @@ class CompetencyContent:
     intro: str
     _steps: tuple[_RawStep, ...]
     group_block_ids: dict[str, str] = field(hash=False)
+    images_shown: frozenset[str] = frozenset()
 
     def for_group(self, group_name: str) -> Page:
         return self._page(self.group_block_ids[group_name])
@@ -41,12 +41,9 @@ class CompetencyContent:
         return Page(self.id, _render(self.intro), steps)
 
 
-_markdown = MarkdownIt("commonmark", {"html": False}).enable("table")
-
-
 def _render(text: str) -> str:
     text = text.strip()
-    return _markdown.render(text) if text else ""
+    return markdown.render(text) if text else ""
 
 
 def _step_for(step: _RawStep, block_id: str | None, after_title: str = "") -> Step:

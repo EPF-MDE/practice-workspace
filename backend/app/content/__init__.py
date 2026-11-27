@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from ._internal.images import IMAGES_URL, Image, read_images
 from ._internal.model import (
     Answer,
     Block,
@@ -25,6 +26,7 @@ from ._internal.parse import parse_competency
 from ._internal.render import CompetencyContent
 
 __all__ = [
+    "IMAGES_URL",
     "Answer",
     "Block",
     "Canvas",
@@ -35,6 +37,7 @@ __all__ = [
     "ExampleDrawing",
     "Field",
     "Html",
+    "Image",
     "Page",
     "Point",
     "ReferenceDrawing",
@@ -49,6 +52,7 @@ __all__ = [
 class ContentLoading:
     competencies: dict[str, CompetencyContent]
     with_a_file: set[str]
+    images: dict[str, Image]
     problems: list[str]
 
 
@@ -69,7 +73,8 @@ def load_content(
         snapshot: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
         return snapshot
 
-    loading = ContentLoading({}, set(), [])
+    held = read_images(directory)
+    loading = ContentLoading({}, set(), {}, [])
     for path in sorted(directory.glob("c[0-9].md")):
         try:
             competency = parse_competency(
@@ -78,6 +83,7 @@ def load_content(
                 path.name,
                 drawings,
                 to_get_there_levels=to_get_there_levels,
+                images=held,
             )
         except ContentError as error:
             loading.with_a_file.add(path.stem.upper())
@@ -91,4 +97,6 @@ def load_content(
             continue
         loading.with_a_file.add(competency.id)
         loading.competencies[competency.id] = competency
+    for competency in loading.competencies.values():
+        loading.images.update((name, held[name]) for name in competency.images_shown)
     return loading

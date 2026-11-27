@@ -1,0 +1,35 @@
+name = "Harbour course"
+read_when_none_declared = "roster"
+
+[[groups]]
+name = "Harbour"
+block = "harbour"
+
+[[groups]]
+name = "Lighthouse"
+block = "lighthouse"
+
+[competencies.C1]
+title = "Keep a harbour running"
+minutes = 40
+
+[competencies.C2]
+title = "Light the way"
+minutes = 40
+
+[competencies.C3]
+title = "Read the tide"
+minutes = 40
+
+[[levels]]
+id = "not-yet"
+label = "Not yet"
+
+[[levels]]
+id = "done"
+label = "I have done it"
+
+[calendar]
+time_zone = "Europe/Paris"
+close = 2030-06-14T23:59:00
+reading_day = 2030-07-04T23:59:00

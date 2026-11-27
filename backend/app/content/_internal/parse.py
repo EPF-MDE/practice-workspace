@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Collection, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping
 from typing import Any
 
 from .check import _check, _served_markers
+from .images import images_in
 from .model import (
     DIRECTIVES,
     ContentError,
@@ -75,6 +76,13 @@ def _without_instructor(nodes: list[_Node]) -> list[_Node]:
     return kept
 
 
+def _markdown_of(nodes: Iterable[_Node]) -> str:
+    return "\n".join(
+        node if isinstance(node, str) else f"\n{_markdown_of(node.children)}\n"
+        for node in nodes
+    )
+
+
 Drawings = Callable[[str], dict[str, Any]]
 
 
@@ -89,6 +97,7 @@ def parse_competency(
     drawings: Drawings = _no_drawings,
     *,
     to_get_there_levels: Collection[str] | None,
+    images: Collection[str] = (),
 ) -> CompetencyContent:
     clashing = sorted(set(group_block_ids.values()) & DIRECTIVES)
     if clashing:
@@ -129,6 +138,10 @@ def parse_competency(
     intro_nodes = _tree(intro, f"{source}, intro", block_ids, problems)
     if any(isinstance(n, _Directive) for n in intro_nodes):
         problems.append(f"{source}, intro: blocks belong in a step, not the intro")
+    shown, found_in_intro = images_in(
+        _markdown_of(intro_nodes), images, f"{source}, intro"
+    )
+    problems += found_in_intro
     raw_steps: list[_RawStep] = []
     unreadable: set[str] = set()
     for title, attrs, lines in steps:
@@ -142,6 +155,11 @@ def parse_competency(
         for d in _walk(step.nodes):
             if d.name in ("example-drawing", "reference-drawing"):
                 d.snapshot = _snapshot(d, drawings, where, problems)
+        shown_in_step, found_in_step = images_in(
+            _markdown_of(step.nodes), images, where
+        )
+        shown |= shown_in_step
+        problems += found_in_step
         if len(problems) > found:
             unreadable.add(step.id)
         raw_steps.append(step)
@@ -150,6 +168,7 @@ def parse_competency(
         "\n".join(n for n in intro_nodes if isinstance(n, str)),
         tuple(raw_steps),
         dict(group_block_ids),
+        frozenset(shown),
     )
     problems += _check(result, source, to_get_there_levels, unreadable)
     if problems:

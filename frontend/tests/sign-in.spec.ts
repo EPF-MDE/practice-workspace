@@ -25,25 +25,13 @@ test("the sign-in page says what is stored, where, who reads it, and until when"
 });
 
 for (const student of [ADA, GRACE]) {
-  test(`${student.name} lands on the annotated slide with their Group`, async ({
+  test(`${student.name} lands on the opening screen with their Group`, async ({
     page,
   }) => {
     await signIn(page, student.id);
 
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId("group")).toHaveText(student.group);
-    const slide = page.getByRole("img", {
-      name: "A Software Factory Circa 2022, annotated with C1, C2 and C3",
-    });
-    await expect(slide).toBeVisible();
-    for (const id of ["C1", "C2", "C3"]) {
-      await expect(slide.locator(`[data-competency="${id}"]`)).toBeVisible();
-    }
-    const citation = page.getByRole("link", {
-      name: "Why Software Factories Fail",
-    });
-    await expect(citation).toHaveAttribute("href", /youtube\.com.*t=220/);
-    await expect(page.getByText(/Watch 3:40 to 5:45/)).toBeVisible();
 
     await page.reload();
     await expect(page.getByTestId("group")).toHaveText(student.group);

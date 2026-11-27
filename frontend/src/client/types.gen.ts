@@ -1173,6 +1173,34 @@ export type courseCourseResponses = {
 
 export type courseCourseResponse = courseCourseResponses[keyof courseCourseResponses];
 
+export type courseImageData = {
+    body?: never;
+    path: {
+        /**
+         * Name
+         */
+        name: string;
+    };
+    query?: never;
+    url: '/api/course/images/{name}';
+};
+
+export type courseImageErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type courseImageError = courseImageErrors[keyof courseImageErrors];
+
+export type courseImageResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type practiceCompetencyPageData = {
     body?: never;
     path: {
