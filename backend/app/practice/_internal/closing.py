@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app import closing, evidence_panel
 from app.auth import current_student
@@ -33,7 +33,6 @@ from .review import (
     _plan_version,
     _ticks,
 )
-from .router import router
 from .steps import (
     _now,
     _page,
@@ -43,6 +42,8 @@ from .steps import (
     _store,
     _upstream,
 )
+
+router = APIRouter()
 
 
 @router.post("/api/competencies/{competency}/self-assessment", tags=["practice"])
