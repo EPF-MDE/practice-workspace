@@ -2,6 +2,8 @@ import { resolve } from "node:path";
 
 const backend = resolve(import.meta.dirname, "../backend");
 
+export const demoCourse = resolve(import.meta.dirname, "../demo-course");
+
 export function localInstance(
   courseFolder: string,
   port: string,

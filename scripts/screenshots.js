@@ -3,11 +3,10 @@ import { mkdirSync } from "node:fs";
 import { createServer } from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { localInstance } from "../frontend/instance.ts";
+import { demoCourse, localInstance } from "../frontend/instance.ts";
 import { drawChainWith } from "../frontend/tests/helpers/draw.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const demoCourse = resolve(root, "demo-course");
 const out = resolve(root, process.argv[2] ?? "docs/screenshots");
 const session = `screenshots-${process.pid}`;
 const ADA = 1001;
