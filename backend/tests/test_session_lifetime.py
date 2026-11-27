@@ -15,8 +15,8 @@ class Clock:
     def __call__(self) -> datetime:
         return self._now
 
-    def advance(self, time: timedelta) -> None:
-        self._now += time
+    def advance(self, by: timedelta) -> None:
+        self._now += by
 
 
 @pytest.fixture
