@@ -1,5 +1,10 @@
 import { expect, type Page, test } from "@playwright/test";
-import { drawChain, expectChainKept, shapesOfChain } from "./helpers/draw";
+import {
+  DRAWING_WITH_THE_MOUSE,
+  drawChain,
+  expectChainKept,
+  shapesOfChain,
+} from "./helpers/draw";
 import { path, signIn, step } from "./helpers/path";
 
 const STUDENTS = [
@@ -11,7 +16,7 @@ const CHAIN = ["Start", "Front door", "Queue", "Worker", "Store", "Reply"];
 for (const student of STUDENTS) {
   test(
     `${student.group}: the redraw is kept while drawing, sent, then compared with the Reference Drawing`,
-    { tag: "@drawing-with-the-mouse" },
+    { tag: DRAWING_WITH_THE_MOUSE },
     async ({ page, browser }, testInfo) => {
       await signIn(page, student.id);
       await page.goto("/competencies/C1");

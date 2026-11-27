@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+import { DRAWING_WITH_THE_MOUSE } from "./tests/helpers/draw";
 
 const isWorker = process.env.TEST_WORKER_INDEX !== undefined;
 
@@ -21,7 +22,7 @@ const backend = resolve(import.meta.dirname, "../backend");
 const demoCourse = resolve(import.meta.dirname, "../demo-course");
 const readingNothing = resolve(backend, "tests/fixtures/courses/reads-nothing");
 const READS_NOTHING = /reads-nothing\.spec\.ts/;
-const DRAWING_WITH_THE_MOUSE = /@drawing-with-the-mouse/;
+const DRAWS_WITH_THE_MOUSE = new RegExp(DRAWING_WITH_THE_MOUSE);
 const DRAWING_TEST_TIMEOUT = 120_000;
 
 const instance = (courseFolder: string, portVariable: string) => {
@@ -69,12 +70,12 @@ export default defineConfig({
     {
       name: "chromium",
       testIgnore: READS_NOTHING,
-      grepInvert: DRAWING_WITH_THE_MOUSE,
+      grepInvert: DRAWS_WITH_THE_MOUSE,
       use: { ...devices["Desktop Chrome"], baseURL: demo.baseURL },
     },
     {
       name: "chromium, drawing with the mouse",
-      grep: DRAWING_WITH_THE_MOUSE,
+      grep: DRAWS_WITH_THE_MOUSE,
       timeout: DRAWING_TEST_TIMEOUT,
       use: { ...devices["Desktop Chrome"], baseURL: demo.baseURL },
     },

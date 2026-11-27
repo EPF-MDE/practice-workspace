@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
+export const DRAWING_WITH_THE_MOUSE = "@drawing-with-the-mouse";
+
 type Point = { x: number; y: number };
 
 const WIDTH = 150;
