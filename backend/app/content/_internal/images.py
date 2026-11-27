@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Collection, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 from markdown_it import MarkdownIt
 from markdown_it.renderer import RendererHTML
@@ -42,6 +42,10 @@ def read_images(course_folder: Path) -> dict[str, Image]:
     }
 
 
+def _source(token: Token) -> str:
+    return unquote(str(token.attrGet("src") or ""))
+
+
 def _name_in_images(src: str) -> str | None:
     within = src.removeprefix("./").removeprefix(f"{IMAGES_FOLDER}/")
     parts = within.split("/")
@@ -57,9 +61,9 @@ def _image(
     options: OptionsDict,
     env: EnvType,
 ) -> str:
-    name = _name_in_images(str(tokens[idx].attrGet("src") or ""))
+    name = _name_in_images(_source(tokens[idx]))
     if name is not None:
-        tokens[idx].attrSet("src", IMAGES_URL + name)
+        tokens[idx].attrSet("src", IMAGES_URL + quote(name))
     return renderer.image(tokens, idx, options, env)
 
 
@@ -70,7 +74,7 @@ markdown.add_render_rule("image", _image)
 def _sources_in(tokens: list[Token]) -> Iterator[str]:
     for token in tokens:
         if token.type == "image":
-            yield unquote(str(token.attrGet("src") or ""))
+            yield _source(token)
         if token.children:
             yield from _sources_in(token.children)
 

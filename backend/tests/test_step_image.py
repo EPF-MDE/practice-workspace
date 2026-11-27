@@ -17,15 +17,17 @@ def image_sources(signed_in: TestClient) -> list[str]:
     return re.findall(r'<img src="([^"]+)" alt="The harbour the chain starts', html)
 
 
-def test_a_steps_image_is_served_from_the_course_folder(
+def test_a_steps_image_is_served_from_the_course_folder_however_its_path_is_encoded(
     signed_in: TestClient,
 ) -> None:
-    [src] = image_sources(signed_in)
-    response = signed_in.get(src)
+    sources = image_sources(signed_in)
 
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "image/png"
-    assert response.content == HARBOUR.read_bytes()
+    assert len(sources) == 2
+    for src in sources:
+        response = signed_in.get(src)
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "image/png"
+        assert response.content == HARBOUR.read_bytes()
 
 
 @pytest.mark.parametrize(
