@@ -6,11 +6,13 @@ from app.content import CompetencyContent, ContentError, Html, Waiting, parse_co
 
 HEAD = "---\ncompetency: C1\n---\n\n"
 BELOW_THE_TOP = ("not-yet", "understand", "redo")
-GROUPS = {"OcéENS": "oceens", "MATHutrice": "mathutrice"}
+GROUP_BLOCK_IDS = {"OcéENS": "oceens", "MATHutrice": "mathutrice"}
 
 
 def parse(body: str) -> CompetencyContent:
-    return parse_competency(HEAD + body, GROUPS, to_get_there_levels=BELOW_THE_TOP)
+    return parse_competency(
+        HEAD + body, GROUP_BLOCK_IDS, to_get_there_levels=BELOW_THE_TOP
+    )
 
 
 @pytest.mark.parametrize(
@@ -147,7 +149,7 @@ CLOSING = (
 def parse_drawing(body: str) -> CompetencyContent:
     return parse_competency(
         HEAD + body,
-        GROUPS,
+        GROUP_BLOCK_IDS,
         drawings=lambda src: SNAPSHOTS[src],
         to_get_there_levels=BELOW_THE_TOP,
     )
@@ -258,7 +260,7 @@ def test_a_drawing_is_read_from_the_course_folder_and_never_outside_it(
     (tmp_path / "c1.md").write_text(text)
 
     reference = (
-        load_content(tmp_path, GROUPS, to_get_there_levels=BELOW_THE_TOP)
+        load_content(tmp_path, GROUP_BLOCK_IDS, to_get_there_levels=BELOW_THE_TOP)
         .competencies["C1"]
         .for_group("OcéENS")
         .steps[0]
@@ -270,7 +272,7 @@ def test_a_drawing_is_read_from_the_course_folder_and_never_outside_it(
     (tmp_path / "c1.md").write_text(
         text.replace("src=drawings/example.json", "src=../c1.md")
     )
-    loading = load_content(tmp_path, GROUPS, to_get_there_levels=BELOW_THE_TOP)
+    loading = load_content(tmp_path, GROUP_BLOCK_IDS, to_get_there_levels=BELOW_THE_TOP)
     assert loading.problems != []
 
 

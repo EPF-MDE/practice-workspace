@@ -28,15 +28,15 @@ class CompetencyContent:
     id: str
     intro: str
     _steps: tuple[_RawStep, ...]
-    groups: dict[str, str] = field(hash=False)
+    group_block_ids: dict[str, str] = field(hash=False)
 
-    def for_group(self, group: str) -> Page:
-        return self._page(self.groups[group])
+    def for_group(self, group_name: str) -> Page:
+        return self._page(self.group_block_ids[group_name])
 
-    def _page(self, block: str) -> Page:
+    def _page(self, block_id: str) -> Page:
         titles = {s.id: s.title for s in self._steps}
         steps = tuple(
-            _step_for(s, block, titles.get(s.after or "", "")) for s in self._steps
+            _step_for(s, block_id, titles.get(s.after or "", "")) for s in self._steps
         )
         return Page(self.id, _render(self.intro), steps)
 
@@ -49,9 +49,9 @@ def _render(text: str) -> str:
     return _markdown.render(text) if text else ""
 
 
-def _step_for(step: _RawStep, group: str | None, after_title: str = "") -> Step:
+def _step_for(step: _RawStep, block_id: str | None, after_title: str = "") -> Step:
     blocks: list[Block] = []
-    _flatten(step.nodes, group, blocks)
+    _flatten(step.nodes, block_id, blocks)
     kind = step.kind or (
         "answer" if any(isinstance(b, Field) for b in blocks) else "read"
     )
@@ -81,7 +81,7 @@ def _step_for(step: _RawStep, group: str | None, after_title: str = "") -> Step:
     )
 
 
-def _flatten(nodes: Iterable[_Node], group: str | None, out: list[Block]) -> None:
+def _flatten(nodes: Iterable[_Node], block_id: str | None, out: list[Block]) -> None:
     pending: list[str] = []
 
     def flush() -> None:
@@ -95,9 +95,9 @@ def _flatten(nodes: Iterable[_Node], group: str | None, out: list[Block]) -> Non
             pending.append(node)
             continue
         if node.is_group_block:
-            if node.name == group:
+            if node.name == block_id:
                 flush()
-                _flatten(node.children, group, out)
+                _flatten(node.children, block_id, out)
             continue
         flush()
         if node.name == "field":
@@ -110,13 +110,13 @@ def _flatten(nodes: Iterable[_Node], group: str | None, out: list[Block]) -> Non
                 )
             )
         elif node.name == "answer":
-            out.append(Answer(_group_html(node.children, group)))
+            out.append(Answer(_group_html(node.children, block_id)))
         elif node.name == "point":
-            out.append(_point(node, group))
+            out.append(_point(node, block_id))
         elif node.name == "example-drawing":
             out.append(ExampleDrawing(node.snapshot or {}, _text_html(node.children)))
         elif node.name == "canvas":
-            out.append(Canvas(_group_html(node.children, group)))
+            out.append(Canvas(_group_html(node.children, block_id)))
         elif node.name == "reference-drawing":
             check_points = tuple(
                 CheckPoint(
@@ -141,20 +141,20 @@ def _text_html(nodes: Iterable[_Node]) -> str:
     return _render("\n".join(n for n in nodes if isinstance(n, str)))
 
 
-def _group_html(nodes: Iterable[_Node], group: str | None) -> str:
+def _group_html(nodes: Iterable[_Node], block_id: str | None) -> str:
     inner: list[Block] = []
-    _flatten(nodes, group, inner)
+    _flatten(nodes, block_id, inner)
     return "".join(b.html for b in inner if isinstance(b, Html))
 
 
-def _point(node: _Directive, group: str | None) -> Point:
+def _point(node: _Directive, block_id: str | None) -> Point:
     statement = [n for n in node.children if isinstance(n, str)]
     proof = next(
         (n for n in node.children if isinstance(n, _Directive) and n.name == "proof"),
         None,
     )
     to_get_there = {
-        n.attrs["level"]: _group_html(n.children, group)
+        n.attrs["level"]: _group_html(n.children, block_id)
         for n in node.children
         if isinstance(n, _Directive) and n.name == "to-get-there"
     }
@@ -162,6 +162,6 @@ def _point(node: _Directive, group: str | None) -> Point:
         node.attrs["id"],
         node.attrs["band"],
         _render("\n".join(statement)),
-        _group_html(proof.children, group) if proof else None,
+        _group_html(proof.children, block_id) if proof else None,
         to_get_there,
     )
