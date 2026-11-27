@@ -15,14 +15,14 @@
         "id": "document:document",
         "typeName": "document"
       },
-      "shape:c3-oceens-reference-0": {
+      "shape:c3-cedar-reference-0": {
         "x": 30,
         "y": 70,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-oceens-reference-0",
+        "id": "shape:c3-cedar-reference-0",
         "type": "geo",
         "props": {
           "w": 170,
@@ -55,7 +55,7 @@
                 "content": [
                   {
                     "type": "text",
-                    "text": "Loan API"
+                    "text": "Sender"
                   }
                 ]
               }
@@ -66,14 +66,14 @@
         "index": "a1",
         "typeName": "shape"
       },
-      "shape:c3-oceens-reference-1": {
+      "shape:c3-cedar-reference-1": {
         "x": 210,
         "y": 95,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-oceens-reference-1",
+        "id": "shape:c3-cedar-reference-1",
         "type": "geo",
         "props": {
           "w": 70,
@@ -111,14 +111,14 @@
         "index": "a2",
         "typeName": "shape"
       },
-      "shape:c3-oceens-reference-2": {
+      "shape:c3-cedar-reference-2": {
         "x": 290,
         "y": 70,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-oceens-reference-2",
+        "id": "shape:c3-cedar-reference-2",
         "type": "geo",
         "props": {
           "w": 170,
@@ -151,7 +151,7 @@
                 "content": [
                   {
                     "type": "text",
-                    "text": "Exception"
+                    "text": "Gateway refusal"
                   }
                 ]
               }
@@ -162,14 +162,14 @@
         "index": "a3",
         "typeName": "shape"
       },
-      "shape:c3-oceens-reference-3": {
+      "shape:c3-cedar-reference-3": {
         "x": 470,
         "y": 95,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-oceens-reference-3",
+        "id": "shape:c3-cedar-reference-3",
         "type": "geo",
         "props": {
           "w": 70,
@@ -207,14 +207,14 @@
         "index": "a4",
         "typeName": "shape"
       },
-      "shape:c3-oceens-reference-4": {
+      "shape:c3-cedar-reference-4": {
         "x": 550,
         "y": 70,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-oceens-reference-4",
+        "id": "shape:c3-cedar-reference-4",
         "type": "geo",
         "props": {
           "w": 170,
@@ -258,14 +258,14 @@
         "index": "a5",
         "typeName": "shape"
       },
-      "shape:c3-oceens-reference-5": {
+      "shape:c3-cedar-reference-5": {
         "x": 615,
         "y": 170,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-oceens-reference-5",
+        "id": "shape:c3-cedar-reference-5",
         "type": "geo",
         "props": {
           "w": 40,
@@ -303,14 +303,14 @@
         "index": "a6",
         "typeName": "shape"
       },
-      "shape:c3-oceens-reference-6": {
+      "shape:c3-cedar-reference-6": {
         "x": 30,
         "y": 230,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-oceens-reference-6",
+        "id": "shape:c3-cedar-reference-6",
         "type": "geo",
         "props": {
           "w": 170,
@@ -343,7 +343,7 @@
                 "content": [
                   {
                     "type": "text",
-                    "text": "Readers affected"
+                    "text": "Subscribers affected"
                   }
                 ]
               }
@@ -354,14 +354,14 @@
         "index": "a7",
         "typeName": "shape"
       },
-      "shape:c3-oceens-reference-7": {
+      "shape:c3-cedar-reference-7": {
         "x": 210,
         "y": 255,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-oceens-reference-7",
+        "id": "shape:c3-cedar-reference-7",
         "type": "geo",
         "props": {
           "w": 70,
@@ -399,14 +399,14 @@
         "index": "a8",
         "typeName": "shape"
       },
-      "shape:c3-oceens-reference-8": {
+      "shape:c3-cedar-reference-8": {
         "x": 290,
         "y": 230,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-oceens-reference-8",
+        "id": "shape:c3-cedar-reference-8",
         "type": "geo",
         "props": {
           "w": 170,

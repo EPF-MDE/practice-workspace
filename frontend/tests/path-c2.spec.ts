@@ -25,7 +25,7 @@ const FAILS = "Change 2: which job fails?";
 const STUDENTS: Student[] = [
   {
     id: 1031,
-    group: "OcéENS",
+    group: "Willow",
     picks: {
       "Change 1: which job fails?": "lint",
       "Change 1: can its pull request merge?": "no",
@@ -36,7 +36,7 @@ const STUDENTS: Student[] = [
   },
   {
     id: 1032,
-    group: "MATHutrice",
+    group: "Cedar",
     picks: {
       "Change 1: which job fails?": "lint",
       "Change 1: can its pull request merge?": "yes",

@@ -7,39 +7,39 @@ from fake_github import FakeGitHub
 
 from app.store import DrawingFiles, StoreUnavailable
 
-from .conftest import ADA_OF_OCEENS, PNG, SNAPSHOT, github_store
+from .conftest import ADA_OF_WILLOW, PNG, SNAPSHOT, github_store
 
 
 def test_a_drawing_send_is_two_files_on_workspace_data_and_one_comment(
     github: FakeGitHub,
 ) -> None:
     store = github_store(github)
-    store.open_record(ADA_OF_OCEENS)
+    store.open_record(ADA_OF_WILLOW)
     writes = github.write_requests
 
-    store.send_drawing(ADA_OF_OCEENS, "C1", "redraw", PNG, SNAPSHOT)
+    store.send_drawing(ADA_OF_WILLOW, "C1", "redraw", PNG, SNAPSHOT)
 
     assert github.write_requests == writes + 3
     files = github.files("workspace-data")
-    assert files["drawings/ada-oceens/C1/redraw.png"] == PNG
-    assert json.loads(files["drawings/ada-oceens/C1/redraw.snapshot.json"]) == SNAPSHOT
+    assert files["drawings/ada-willow/C1/redraw.png"] == PNG
+    assert json.loads(files["drawings/ada-willow/C1/redraw.snapshot.json"]) == SNAPSHOT
     (comment,) = github.comments[401]
     assert comment["body"].startswith("**Drawing** `redraw` for C1 (version 1)")
-    assert "drawings/ada-oceens/C1/redraw.png" in comment["body"]
+    assert "drawings/ada-willow/C1/redraw.png" in comment["body"]
 
 
 def test_a_new_version_overwrites_the_same_paths_and_git_history_keeps_every_version(
     github: FakeGitHub,
 ) -> None:
     store = github_store(github)
-    store.send_drawing(ADA_OF_OCEENS, "C1", "redraw", PNG, SNAPSHOT)
-    store.send_drawing(ADA_OF_OCEENS, "C1", "redraw", b"\x89PNG second", SNAPSHOT)
+    store.send_drawing(ADA_OF_WILLOW, "C1", "redraw", PNG, SNAPSHOT)
+    store.send_drawing(ADA_OF_WILLOW, "C1", "redraw", b"\x89PNG second", SNAPSHOT)
 
     assert [p for p in github.files() if p.startswith("drawings/")] == [
-        "drawings/ada-oceens/C1/redraw.png",
-        "drawings/ada-oceens/C1/redraw.snapshot.json",
+        "drawings/ada-willow/C1/redraw.png",
+        "drawings/ada-willow/C1/redraw.snapshot.json",
     ]
-    assert github.history("drawings/ada-oceens/C1/redraw.png") == [
+    assert github.history("drawings/ada-willow/C1/redraw.png") == [
         PNG,
         b"\x89PNG second",
     ]
@@ -48,12 +48,12 @@ def test_a_new_version_overwrites_the_same_paths_and_git_history_keeps_every_ver
 def test_after_a_restart_a_drawing_is_read_from_workspace_data_at_its_version(
     github: FakeGitHub,
 ) -> None:
-    github_store(github).send_drawing(ADA_OF_OCEENS, "C1", "redraw", PNG, SNAPSHOT)
+    github_store(github).send_drawing(ADA_OF_WILLOW, "C1", "redraw", PNG, SNAPSHOT)
     github.commit_by_hand(
-        "workspace-data", "drawings/ada-oceens/C1/redraw.png", b"overwritten by hand"
+        "workspace-data", "drawings/ada-willow/C1/redraw.png", b"overwritten by hand"
     )
 
-    assert github_store(github).drawing(ADA_OF_OCEENS, "C1", "redraw") == DrawingFiles(
+    assert github_store(github).drawing(ADA_OF_WILLOW, "C1", "redraw") == DrawingFiles(
         PNG, SNAPSHOT
     )
 
@@ -63,13 +63,13 @@ def test_a_drawing_send_retries_when_another_writer_moved_the_branch(
 ) -> None:
     store = github_store(github)
     github.commit_by_hand(
-        "workspace-data", "drawings/ada-oceens/C1/redraw.png", b"an older one"
+        "workspace-data", "drawings/ada-willow/C1/redraw.png", b"an older one"
     )
     github.refuse_next_file_writes = 2
 
-    store.send_drawing(ADA_OF_OCEENS, "C1", "redraw", PNG, SNAPSHOT)
+    store.send_drawing(ADA_OF_WILLOW, "C1", "redraw", PNG, SNAPSHOT)
 
-    assert github.files()["drawings/ada-oceens/C1/redraw.png"] == PNG
+    assert github.files()["drawings/ada-willow/C1/redraw.png"] == PNG
 
 
 def test_a_branch_that_keeps_moving_makes_the_store_unavailable_and_records_no_version(  # noqa: E501
@@ -79,11 +79,11 @@ def test_a_branch_that_keeps_moving_makes_the_store_unavailable_and_records_no_v
     github.refuse_next_file_writes = 100
 
     with pytest.raises(StoreUnavailable):
-        store.send_drawing(ADA_OF_OCEENS, "C1", "redraw", PNG, SNAPSHOT)
+        store.send_drawing(ADA_OF_WILLOW, "C1", "redraw", PNG, SNAPSHOT)
 
-    assert store.record(ADA_OF_OCEENS).entries == ()
+    assert store.record(ADA_OF_WILLOW).entries == ()
     github.refuse_next_file_writes = 0
-    assert store.send_drawing(ADA_OF_OCEENS, "C1", "redraw", PNG, SNAPSHOT).version == 1
+    assert store.send_drawing(ADA_OF_WILLOW, "C1", "redraw", PNG, SNAPSHOT).version == 1
 
 
 def test_github_failing_on_a_drawing_makes_the_store_unavailable(
@@ -93,4 +93,4 @@ def test_github_failing_on_a_drawing_makes_the_store_unavailable(
     github.fail_every_request_with = 502
 
     with pytest.raises(StoreUnavailable):
-        store.send_drawing(ADA_OF_OCEENS, "C1", "redraw", PNG, SNAPSHOT)
+        store.send_drawing(ADA_OF_WILLOW, "C1", "redraw", PNG, SNAPSHOT)

@@ -9,7 +9,8 @@
     "demo": "npm --prefix frontend run build && cd backend && WORKSPACE_COURSE_FOLDER=../demo-course WORKSPACE_ROSTER_FILE=../demo-course/roster.csv WORKSPACE_SIGN_IN=fake WORKSPACE_STORE=memory WORKSPACE_SESSION_SECRET=demo WORKSPACE_POSTHOG_PROJECT_TOKEN= uv run --frozen uvicorn app.main:app --port 8000",
     "format": "biome format --write . && cd backend && uv run --frozen ruff format .",
     "prepare": "husky",
-    "setup": "sh scripts/setup.sh"
+    "setup": "sh scripts/setup.sh",
+    "screenshots": "node scripts/screenshots.js"
   },
   "lint-staged": {
     "*": [
@@ -28,6 +29,7 @@
     "@biomejs/biome": "^2.6.8",
     "@oxlint/plugins": "^1.85.0",
     "@types/node": "^22",
+    "agent-browser": "^0.45.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.1",
     "oxlint": "^1.94.0",

@@ -8,8 +8,8 @@ import {
 import { path, signIn, step } from "./helpers/path";
 
 const STUDENTS = [
-  { id: 1021, group: "OcéENS", checkPoints: 3 },
-  { id: 1022, group: "MATHutrice", checkPoints: 4 },
+  { id: 1021, group: "Willow", checkPoints: 3 },
+  { id: 1022, group: "Cedar", checkPoints: 4 },
 ];
 const CHAIN = ["Start", "Front door", "Queue", "Worker", "Store", "Reply"];
 

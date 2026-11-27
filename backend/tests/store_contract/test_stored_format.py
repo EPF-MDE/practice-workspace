@@ -18,7 +18,7 @@ from app.store import (
     WithdrawalPayload,
 )
 
-from .conftest import ADA_OF_OCEENS, PNG, SENDS, SNAPSHOT, github_store
+from .conftest import ADA_OF_WILLOW, PNG, SENDS, SNAPSHOT, github_store
 
 WRITTEN: dict[Kind, dict[str, Any]] = {
     Kind.ANSWER: {"fields": {"sentence": "D ≤ 2 h", "unit": "h"}},
@@ -72,16 +72,16 @@ def _payloads(github: FakeGitHub) -> list[dict[str, Any]]:
 def test_each_kind_is_written_as_the_json_it_always_was(
     github: FakeGitHub, kind: Kind
 ) -> None:
-    SENDS[kind](github_store(github), ADA_OF_OCEENS)
+    SENDS[kind](github_store(github), ADA_OF_WILLOW)
 
     assert _payloads(github) == [WRITTEN[kind]]
 
 
 def test_a_field_left_at_its_default_is_not_written(github: FakeGitHub) -> None:
     store = github_store(github)
-    store.send_evidence_plan(ADA_OF_OCEENS, "C1", EvidencePlanPayload(text="plan"))
-    store.send_self_assessment(ADA_OF_OCEENS, "C1", SelfAssessmentPayload(levels={}))
-    store.withdraw_declaration(ADA_OF_OCEENS)
+    store.send_evidence_plan(ADA_OF_WILLOW, "C1", EvidencePlanPayload(text="plan"))
+    store.send_self_assessment(ADA_OF_WILLOW, "C1", SelfAssessmentPayload(levels={}))
+    store.withdraw_declaration(ADA_OF_WILLOW)
 
     assert _payloads(github) == [{"text": "plan"}, {"levels": {}}, {}]
 
@@ -89,14 +89,14 @@ def test_a_field_left_at_its_default_is_not_written(github: FakeGitHub) -> None:
 def test_a_drawing_is_written_with_the_commit_holding_its_files(
     github: FakeGitHub,
 ) -> None:
-    github_store(github).send_drawing(ADA_OF_OCEENS, "C1", "redraw", PNG, SNAPSHOT)
+    github_store(github).send_drawing(ADA_OF_WILLOW, "C1", "redraw", PNG, SNAPSHOT)
 
     snapshot = json.dumps(SNAPSHOT, ensure_ascii=False, separators=(",", ":"))
     assert _payloads(github) == [
         {
-            "png": "drawings/ada-oceens/C1/redraw.png",
+            "png": "drawings/ada-willow/C1/redraw.png",
             "png_bytes": len(PNG),
-            "snapshot": "drawings/ada-oceens/C1/redraw.snapshot.json",
+            "snapshot": "drawings/ada-willow/C1/redraw.snapshot.json",
             "snapshot_bytes": len(snapshot.encode("utf-8")),
             "commit": github.branches["workspace-data"][-1][0],
         }
@@ -111,7 +111,7 @@ def _sent_before(github: FakeGitHub, block: dict[str, Any]) -> None:
 
 
 def test_entries_written_before_read_back_typed(github: FakeGitHub) -> None:
-    github_store(github).open_record(ADA_OF_OCEENS)
+    github_store(github).open_record(ADA_OF_WILLOW)
     _sent_before(
         github,
         {
@@ -135,7 +135,7 @@ def test_entries_written_before_read_back_typed(github: FakeGitHub) -> None:
         {"kind": "declaration", "competency": None, "version": 2, "payload": {}},
     )
 
-    record = github_store(github).record(ADA_OF_OCEENS)
+    record = github_store(github).record(ADA_OF_WILLOW)
 
     assert [type(e.payload) for e in record.entries] == [
         DeclarationPayload,
@@ -163,7 +163,7 @@ def test_a_declaration_stored_under_its_former_names_reads_back(
         "host": "gitlab",
         "access": "gitlab",
     }
-    github_store(github).open_record(ADA_OF_OCEENS)
+    github_store(github).open_record(ADA_OF_WILLOW)
     _sent_before(
         github,
         {"kind": "declaration", "competency": None, "version": 1, "payload": former},
@@ -178,7 +178,7 @@ def test_a_declaration_stored_under_its_former_names_reads_back(
         },
     )
 
-    record = github_store(github).record(ADA_OF_OCEENS)
+    record = github_store(github).record(ADA_OF_WILLOW)
 
     declaration = record.latest(DeclarationPayload, EVERY_COMPETENCY)
     plan = record.latest(EvidencePlanPayload, "C1")
@@ -191,10 +191,10 @@ def test_a_declaration_stored_under_its_former_names_reads_back(
 def test_a_drawing_written_without_its_commit_reads_from_the_data_branch(
     github: FakeGitHub,
 ) -> None:
-    github_store(github).open_record(ADA_OF_OCEENS)
-    github.commit_by_hand("workspace-data", "drawings/ada-oceens/C1/redraw.png", PNG)
+    github_store(github).open_record(ADA_OF_WILLOW)
+    github.commit_by_hand("workspace-data", "drawings/ada-willow/C1/redraw.png", PNG)
     github.commit_by_hand(
-        "workspace-data", "drawings/ada-oceens/C1/redraw.snapshot.json", b"{}"
+        "workspace-data", "drawings/ada-willow/C1/redraw.snapshot.json", b"{}"
     )
     _sent_before(
         github,
@@ -204,25 +204,25 @@ def test_a_drawing_written_without_its_commit_reads_from_the_data_branch(
             "drawing": "redraw",
             "version": 1,
             "payload": {
-                "png": "drawings/ada-oceens/C1/redraw.png",
+                "png": "drawings/ada-willow/C1/redraw.png",
                 "png_bytes": 3,
-                "snapshot": "drawings/ada-oceens/C1/redraw.snapshot.json",
+                "snapshot": "drawings/ada-willow/C1/redraw.snapshot.json",
                 "snapshot_bytes": 2,
             },
         },
     )
 
     store = github_store(github)
-    drawing = store.record(ADA_OF_OCEENS).latest(DrawingPayload, "C1", "redraw")
+    drawing = store.record(ADA_OF_WILLOW).latest(DrawingPayload, "C1", "redraw")
 
     assert drawing is not None
     assert drawing.payload.commit is None
-    assert store.drawing(ADA_OF_OCEENS, "C1", "redraw") == DrawingFiles(PNG, {})
+    assert store.drawing(ADA_OF_WILLOW, "C1", "redraw") == DrawingFiles(PNG, {})
 
 
 def test_a_send_whose_payload_does_not_parse_is_left_out(github: FakeGitHub) -> None:
     store = github_store(github)
-    store.send_question(ADA_OF_OCEENS, "C1", "read-the-chain", "kept")
+    store.send_question(ADA_OF_WILLOW, "C1", "read-the-chain", "kept")
     _sent_before(
         github,
         {
@@ -234,6 +234,6 @@ def test_a_send_whose_payload_does_not_parse_is_left_out(github: FakeGitHub) -> 
         },
     )
 
-    questions = github_store(github).record(ADA_OF_OCEENS).all(QuestionPayload)
+    questions = github_store(github).record(ADA_OF_WILLOW).all(QuestionPayload)
 
     assert [q.payload.text for q in questions] == ["kept"]

@@ -1,7 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
-const ADA = { id: 1001, name: "Ada Lovelace", group: "OcéENS" };
-const GRACE = { id: 1002, name: "Grace Hopper", group: "MATHutrice" };
+const ADA = { id: 1001, name: "Ada Lovelace", group: "Willow" };
+const GRACE = { id: 1002, name: "Grace Hopper", group: "Cedar" };
 
 async function signIn(page: Page, githubId: number) {
   await page.goto("/sign-in");

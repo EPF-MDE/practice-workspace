@@ -9,8 +9,8 @@ from app.settings import Settings
 
 ONE_STEP = "## Read {#read minutes=5}\n\nA Step to read.\n"
 TWO_GROUPS = (
-    '\n[[groups]]\nname = "OcéENS"\nblock = "oceens"\n'
-    '\n[[groups]]\nname = "MATHutrice"\nblock = "mathutrice"\n'
+    '\n[[groups]]\nname = "Willow"\nblock = "willow"\n'
+    '\n[[groups]]\nname = "Cedar"\nblock = "cedar"\n'
 )
 A_SCALE = (
     '\n[[levels]]\nid = "not-yet"\nlabel = "Not yet"\n'

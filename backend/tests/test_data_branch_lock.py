@@ -10,7 +10,7 @@ from app.roster import Repository, Student
 from app.store import GitHubStore
 
 STUDENT = Student(
-    1001, "ada-oceens", "Ada Lovelace", "OcéENS", Repository("ada-oceens/OceENS")
+    1001, "ada-willow", "Ada Lovelace", "Willow", Repository("ada-willow/lendly")
 )
 
 

@@ -183,7 +183,7 @@ def add_session(
         _ClockSessionMiddleware,
         secret_key=secret or secrets.token_urlsafe(32),
         clock=clock,
-        session_cookie="cws_session",
+        session_cookie="practice_workspace_session",
         max_age=int(_SESSION_IDLE_LIMIT.total_seconds()),
         same_site="lax",
         https_only=https_only,

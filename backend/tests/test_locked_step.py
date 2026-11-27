@@ -196,7 +196,10 @@ def test_links_to_the_instructors_material_are_links(signed_in: TestClient) -> N
     page = signed_in.get(PAGE).json()
 
     [reading] = blocks(page, "read-the-chain", "markdown")
-    assert '<a href="https://github.com/EPF-MDE/OceENS/issues/105"' in reading["html"]
+    assert (
+        '<a href="https://github.com/example-course/lendly/issues/105"'
+        in reading["html"]
+    )
 
 
 def test_nothing_is_written_before_a_send(

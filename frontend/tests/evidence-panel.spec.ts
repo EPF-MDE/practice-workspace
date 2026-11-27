@@ -57,7 +57,7 @@ test("the Evidence panel says what the Reading Day would find, then the closing 
   ).toBeVisible();
   await page.goto("/competencies/C1");
   await expect(sidebar(page).getByTestId("evidence-panel-project")).toHaveText(
-    "alan-oceens/OceENS"
+    "alan-willow/lendly"
   );
   await expect(sidebar(page).getByTestId("fact-C1")).toContainText(
     "feature/order-timeout"
@@ -156,7 +156,7 @@ test("a draft of an Evidence Project kept before its note was named what to read
 }) => {
   await signIn(page, GRACE);
   await page.evaluate(({ key, draft }) => localStorage.setItem(key, draft), {
-    key: `cws:${GRACE}:C2:evidence`,
+    key: `practice-workspace:${GRACE}:C2:evidence`,
     draft: JSON.stringify({
       url: "https://github.com/grace/compiler",
       note: "The README first.",

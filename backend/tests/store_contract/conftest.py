@@ -20,15 +20,15 @@ from app.store import (
     Store,
 )
 
-ADA_OF_OCEENS = Student(
-    1001, "ada-oceens", "Ada Lovelace", "OcéENS", Repository("ada-oceens/OceENS")
+ADA_OF_WILLOW = Student(
+    1001, "ada-willow", "Ada Lovelace", "Willow", Repository("ada-willow/lendly")
 )
-GRACE_OF_MATHUTRICE = Student(
+GRACE_OF_CEDAR = Student(
     1002,
-    "grace-math",
+    "grace-cedar",
     "Grace Hopper",
-    "MATHutrice",
-    Repository("grace-math/MATHutrice"),
+    "Cedar",
+    Repository("grace-cedar/skywatch"),
 )
 
 

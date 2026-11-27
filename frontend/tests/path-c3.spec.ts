@@ -31,7 +31,7 @@ type Student = {
 const STUDENTS: Student[] = [
   {
     id: 1051,
-    group: "OcéENS",
+    group: "Willow",
     later: "X",
     ranking: "Z, then X, then Y",
     notes: "https://example.com/demo/lendly-ranking",
@@ -40,7 +40,7 @@ const STUDENTS: Student[] = [
   },
   {
     id: 1052,
-    group: "MATHutrice",
+    group: "Cedar",
     later: "Q",
     ranking: "P, then Q, then R",
     notes: "https://example.com/demo/skywatch-ranking",

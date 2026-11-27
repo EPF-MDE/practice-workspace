@@ -1,15 +1,15 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { drawChain, shapesOfChain } from "./draw";
 
-export type Group = "OcéENS" | "MATHutrice";
+export type Group = "Willow" | "Cedar";
 
 export const SERVICE: Record<Group, string> = {
-  OcéENS: "Lendly",
-  MATHutrice: "Skywatch",
+  Willow: "Lendly",
+  Cedar: "Skywatch",
 };
 export const OTHER: Record<Group, Group> = {
-  OcéENS: "MATHutrice",
-  MATHutrice: "OcéENS",
+  Willow: "Cedar",
+  Cedar: "Willow",
 };
 
 export const BAKERY = "https://github.com/me/bakery";

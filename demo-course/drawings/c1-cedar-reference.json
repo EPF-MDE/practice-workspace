@@ -15,14 +15,14 @@
         "id": "document:document",
         "typeName": "document"
       },
-      "shape:c3-mathutrice-reference-0": {
+      "shape:c1-cedar-reference-0": {
         "x": 30,
         "y": 70,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-mathutrice-reference-0",
+        "id": "shape:c1-cedar-reference-0",
         "type": "geo",
         "props": {
           "w": 170,
@@ -55,7 +55,7 @@
                 "content": [
                   {
                     "type": "text",
-                    "text": "Sender"
+                    "text": "Issue warning"
                   }
                 ]
               }
@@ -66,14 +66,14 @@
         "index": "a1",
         "typeName": "shape"
       },
-      "shape:c3-mathutrice-reference-1": {
+      "shape:c1-cedar-reference-1": {
         "x": 210,
         "y": 95,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-mathutrice-reference-1",
+        "id": "shape:c1-cedar-reference-1",
         "type": "geo",
         "props": {
           "w": 70,
@@ -111,14 +111,14 @@
         "index": "a2",
         "typeName": "shape"
       },
-      "shape:c3-mathutrice-reference-2": {
+      "shape:c1-cedar-reference-2": {
         "x": 290,
         "y": 70,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-mathutrice-reference-2",
+        "id": "shape:c1-cedar-reference-2",
         "type": "geo",
         "props": {
           "w": 170,
@@ -151,7 +151,7 @@
                 "content": [
                   {
                     "type": "text",
-                    "text": "Gateway refusal"
+                    "text": "Alert API"
                   }
                 ]
               }
@@ -162,14 +162,14 @@
         "index": "a3",
         "typeName": "shape"
       },
-      "shape:c3-mathutrice-reference-3": {
+      "shape:c1-cedar-reference-3": {
         "x": 470,
         "y": 95,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-mathutrice-reference-3",
+        "id": "shape:c1-cedar-reference-3",
         "type": "geo",
         "props": {
           "w": 70,
@@ -207,14 +207,14 @@
         "index": "a4",
         "typeName": "shape"
       },
-      "shape:c3-mathutrice-reference-4": {
+      "shape:c1-cedar-reference-4": {
         "x": 550,
         "y": 70,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-mathutrice-reference-4",
+        "id": "shape:c1-cedar-reference-4",
         "type": "geo",
         "props": {
           "w": 170,
@@ -247,7 +247,7 @@
                 "content": [
                   {
                     "type": "text",
-                    "text": "Error tracking"
+                    "text": "Send queue"
                   }
                 ]
               }
@@ -258,14 +258,14 @@
         "index": "a5",
         "typeName": "shape"
       },
-      "shape:c3-mathutrice-reference-5": {
+      "shape:c1-cedar-reference-5": {
         "x": 615,
         "y": 170,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-mathutrice-reference-5",
+        "id": "shape:c1-cedar-reference-5",
         "type": "geo",
         "props": {
           "w": 40,
@@ -303,14 +303,14 @@
         "index": "a6",
         "typeName": "shape"
       },
-      "shape:c3-mathutrice-reference-6": {
+      "shape:c1-cedar-reference-6": {
         "x": 30,
         "y": 230,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-mathutrice-reference-6",
+        "id": "shape:c1-cedar-reference-6",
         "type": "geo",
         "props": {
           "w": 170,
@@ -343,7 +343,7 @@
                 "content": [
                   {
                     "type": "text",
-                    "text": "Subscribers affected"
+                    "text": "Two senders"
                   }
                 ]
               }
@@ -354,14 +354,14 @@
         "index": "a7",
         "typeName": "shape"
       },
-      "shape:c3-mathutrice-reference-7": {
+      "shape:c1-cedar-reference-7": {
         "x": 210,
         "y": 255,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-mathutrice-reference-7",
+        "id": "shape:c1-cedar-reference-7",
         "type": "geo",
         "props": {
           "w": 70,
@@ -399,14 +399,14 @@
         "index": "a8",
         "typeName": "shape"
       },
-      "shape:c3-mathutrice-reference-8": {
+      "shape:c1-cedar-reference-8": {
         "x": 290,
         "y": 230,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {},
-        "id": "shape:c3-mathutrice-reference-8",
+        "id": "shape:c1-cedar-reference-8",
         "type": "geo",
         "props": {
           "w": 170,
@@ -439,7 +439,7 @@
                 "content": [
                   {
                     "type": "text",
-                    "text": "Ranking"
+                    "text": "Gateway"
                   }
                 ]
               }
@@ -448,6 +448,102 @@
         },
         "parentId": "page:page",
         "index": "a9",
+        "typeName": "shape"
+      },
+      "shape:c1-cedar-reference-9": {
+        "x": 470,
+        "y": 255,
+        "rotation": 0,
+        "isLocked": false,
+        "opacity": 1,
+        "meta": {},
+        "id": "shape:c1-cedar-reference-9",
+        "type": "geo",
+        "props": {
+          "w": 70,
+          "h": 40,
+          "geo": "arrow-right",
+          "dash": "draw",
+          "growY": 0,
+          "url": "",
+          "scale": 1,
+          "flipX": false,
+          "flipY": false,
+          "color": "black",
+          "labelColor": "black",
+          "fill": "none",
+          "size": "m",
+          "font": "draw",
+          "align": "middle",
+          "verticalAlign": "middle",
+          "richText": {
+            "type": "doc",
+            "attrs": {
+              "dir": "auto"
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "dir": "auto"
+                }
+              }
+            ]
+          }
+        },
+        "parentId": "page:page",
+        "index": "aA",
+        "typeName": "shape"
+      },
+      "shape:c1-cedar-reference-10": {
+        "x": 550,
+        "y": 230,
+        "rotation": 0,
+        "isLocked": false,
+        "opacity": 1,
+        "meta": {},
+        "id": "shape:c1-cedar-reference-10",
+        "type": "geo",
+        "props": {
+          "w": 170,
+          "h": 90,
+          "geo": "rectangle",
+          "dash": "draw",
+          "growY": 0,
+          "url": "",
+          "scale": 1,
+          "flipX": false,
+          "flipY": false,
+          "color": "black",
+          "labelColor": "black",
+          "fill": "none",
+          "size": "m",
+          "font": "draw",
+          "align": "middle",
+          "verticalAlign": "middle",
+          "richText": {
+            "type": "doc",
+            "attrs": {
+              "dir": "auto"
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "dir": "auto"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Phone"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "parentId": "page:page",
+        "index": "aB",
         "typeName": "shape"
       }
     },

@@ -10,30 +10,30 @@ from app.roster import Repository
 FIXTURES = Path(__file__).parent / "fixtures"
 NOW = datetime(2026, 12, 11, 9, 0, tzinfo=UTC)
 
-OCEENS = Repository("EPF-MDE/OceENS")
-MATHUTRICE = Repository("EPF-MDE/MATHutrice")
+WILLOW = Repository("example-course/lendly")
+CEDAR = Repository("example-course/skywatch")
 
 REPOSITORIES = {
     "empty-repository": StudentToRead(
-        "dorothy-math", "MATHutrice", Repository("dorothy-math/MATHutrice"), MATHUTRICE
+        "dorothy-cedar", "Cedar", Repository("dorothy-cedar/skywatch"), CEDAR
     ),
     "work-off-default": StudentToRead(
-        "rosalind-oceens", "OcéENS", Repository("rosalind-oceens/OceENS"), OCEENS
+        "rosalind-willow", "Willow", Repository("rosalind-willow/lendly"), WILLOW
     ),
     "deleted-pr-branch": StudentToRead(
-        "barbara-oceens", "OcéENS", Repository("barbara-oceens/OceENS"), OCEENS
+        "barbara-willow", "Willow", Repository("barbara-willow/lendly"), WILLOW
     ),
     "placeholder-email": StudentToRead(
-        "frances-oceens", "OcéENS", Repository("frances-oceens/OceENS"), OCEENS
+        "frances-willow", "Willow", Repository("frances-willow/lendly"), WILLOW
     ),
     "claude-author": StudentToRead(
-        "joan-oceens", "OcéENS", Repository("joan-oceens/OceENS"), OCEENS
+        "joan-willow", "Willow", Repository("joan-willow/lendly"), WILLOW
     ),
     "fallback-default": StudentToRead(
-        "radia-oceens", "OcéENS", Repository("radia-oceens/OceENS"), OCEENS
+        "radia-willow", "Willow", Repository("radia-willow/lendly"), WILLOW
     ),
     "both-environments": StudentToRead(
-        "emmy-math", "MATHutrice", Repository("emmy-math/MATHutrice"), MATHUTRICE
+        "emmy-cedar", "Cedar", Repository("emmy-cedar/skywatch"), CEDAR
     ),
 }
 

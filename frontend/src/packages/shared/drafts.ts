@@ -1,7 +1,12 @@
 export type DraftScope = { studentId: number; competency: string };
 
 function key(scope: DraftScope, ...rest: string[]) {
-  return ["cws", scope.studentId, scope.competency, ...rest].join(":");
+  return [
+    "practice-workspace",
+    scope.studentId,
+    scope.competency,
+    ...rest,
+  ].join(":");
 }
 
 function read<T>(name: string, fallback: T): T {

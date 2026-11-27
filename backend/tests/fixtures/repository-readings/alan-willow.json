@@ -13,12 +13,12 @@
               {
                 "additions": 80,
                 "changes": 85,
-                "path": "oceens/orders.py"
+                "path": "willow/orders.py"
               },
               {
                 "additions": 12,
                 "changes": 12,
-                "path": "oceens/settings.py"
+                "path": "willow/settings.py"
               },
               {
                 "additions": 28,
@@ -29,7 +29,7 @@
             "last_change": "2026-10-14",
             "lines_added": 120
           },
-          "link": "https://github.com/alan-oceens/OceENS/compare/course-2026-fallback-ci...feature/order-timeout",
+          "link": "https://github.com/alan-willow/lendly/compare/course-2026-fallback-ci...feature/order-timeout",
           "point": "C1",
           "text": "`feature/order-timeout` changes 3 files beyond `course-2026-fallback-ci`, 120 lines added; last change on 2026-10-14."
         }
@@ -45,7 +45,7 @@
           "detail": {
             "required_checks": ["architecture", "test"]
           },
-          "link": "https://github.com/alan-oceens/OceENS/settings/rules",
+          "link": "https://github.com/alan-willow/lendly/settings/rules",
           "point": "C2.c",
           "text": "The ruleset on `main` requires `architecture` and `test`; other rules: deletion, non fast forward."
         },
@@ -76,9 +76,9 @@
   "pull_requests_read": 2,
   "refs": {},
   "student": {
-    "evidence_project": "alan-oceens/OceENS",
-    "login": "alan-oceens",
-    "project": "OcéENS"
+    "evidence_project": "alan-willow/lendly",
+    "login": "alan-willow",
+    "project": "Willow"
   },
   "upstream_shas": {}
 }

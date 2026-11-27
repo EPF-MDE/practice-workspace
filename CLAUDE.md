@@ -18,6 +18,8 @@ The public engine a course runs so that each Student practises its Competencies,
 
 `npm run check` runs everything: file size, format, lint, types, boundaries, tests. Run it before you report a change as complete. CI runs it on every pull request, and `main` takes nothing that fails it.
 
+A change that touches the screen: run `npm run screenshots`. It starts the Demo course on its own port with fake sign-in, walks its Path with agent-browser and saves the screenshots to `docs/screenshots/`, which the README shows. Look at them before you report the change, and commit them when the screen changed.
+
 Once per clone and once per worktree: `npm run setup`. It installs the root and front-end `node_modules` and the back end's venv, and the pre-commit hook.
 
 The pre-commit hook runs the fast part of `check` in a few seconds, without the tests. It refuses any file over 5000 tokens, including one you only touched, so editing a large file means splitting it in the same change. Never skip it with `--no-verify`.

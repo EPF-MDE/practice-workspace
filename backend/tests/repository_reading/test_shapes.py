@@ -4,7 +4,7 @@ from typing import Any
 
 from app.repository_reading import PointId, RepositoryReading
 
-from .conftest import FIXTURES, MATHUTRICE, Recorded
+from .conftest import CEDAR, FIXTURES, Recorded
 
 
 def c1_refs(reading: RepositoryReading) -> dict[str, dict[str, Any]]:
@@ -224,4 +224,4 @@ def test_a_group_without_an_upstream_repository_is_read_on_its_own_history(
     assert fact.credited_to == "student"
     assert fact.detail["files"] == [{"path": "README.md"}]
     assert fact.detail["closest"] is None
-    assert not any(MATHUTRICE in request for request in r.github.requests)
+    assert not any(CEDAR in request for request in r.github.requests)
