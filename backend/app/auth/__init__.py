@@ -198,8 +198,12 @@ def current_student(request: Request) -> Student:
     if student is None:
         request.session.pop(SESSION_ID, None)
         raise HTTPException(401, "Not signed in")
-    request.session[SESSION_ID] = student.github_id
+    _sign_session_again(request, student)
     return student
+
+
+def _sign_session_again(request: Request, student: Student) -> None:
+    request.session[SESSION_ID] = student.github_id
 
 
 class SignInPage(BaseModel):
