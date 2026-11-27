@@ -5,7 +5,7 @@ The session cookie had a fixed lifetime of 60 days, counted from sign-in and nev
 - **The rule lives in `app.auth`**, beside `current_student`, which signs the session again; `add_session` sets the cookie up with the limit, and `app.main` only calls it.
 - **A Student who keeps coming back stays signed in for as long as the Instance runs**, past the Reading Day too, to read their own work. The Roster check of ADR-0004 still signs out a Student removed from it at their next request.
 - **No restart, deploy, or change to the Course folder shortens a session**: the limit depends on nothing the Instance reads, and the cookie is signed with `WORKSPACE_SESSION_SECRET`, which an Instance on Azure must set. Only an Instance without it, run locally, signs with a new secret at each start, and so signs everyone out.
-- **The session's age is read from the injected clock**, like the Close and the Reading Day, so a test moves time instead of waiting for it.
+- **The session's age is read from the injected clock**, like the Close and the Reading Day, so a test moves time instead of waiting for it. Starlette's `SessionMiddleware` takes no clock, so `app.auth` replaces the `signer` its constructor builds with an itsdangerous signer that reads the injected one. Starlette does not document that attribute as an extension point: an upgrade that renames it puts the wall clock back, and `test_session_lifetime.py`, which moves the clock past the limit, is what catches it.
 - **Sixty days idle** is longer than any break inside a Course; a Student back after one signs in again with GitHub, and loses nothing, since their work is in the Store.
 
 ## Considered options
