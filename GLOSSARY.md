@@ -34,6 +34,8 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Upstream repository**: The repository a Group's Students start their Evidence Project from, if the Course folder's settings name one. The Repository reading credits the code of its course branches to those branches, not to the Student. _Avoid_: template
 
+**Fallback Branch**: One of an Upstream repository's course branches that a Student who fell behind can start from, each built on the one before. The Evidence panel names the one a fact is credited to. _Avoid_: rescue branch
+
 ### What a Student follows
 
 **Competency**: One capability a Course assesses independently. Every Course has the same three, C1, C2 and C3, in that order: the Engine's fixed set, not a setting. The Course folder gives each its title and the minutes its Path is given, in its settings, and its content in one Markdown file. _Avoid_: skill, criterion, learning outcome
@@ -66,7 +68,7 @@ The engine a course runs so that each Student practises its Competencies on thei
 
 **Evidence panel**: For one Student and each Competency, shown beside their Path and at its closing step: what the Repository reading finds on their Evidence Project, as the Roster names it or as the Student changed it. It shows facts, each naming the point it supports, never a grade; when it could not read the Evidence Project, it says why, and that it is not a zero. What it showed at the closing step is kept with their Evidence Plan. _Avoid_: fork panel
 
-**Credit**: Whose work a fact of the Evidence panel shows: the Student's own, or the code of a Course's branch that their Evidence Project is built on, named by that branch.
+**Credit**: Whose work a fact of the Evidence panel shows: the Student's own, or the code of a Course's branch that their Evidence Project is built on, named by that branch. A point whose facts are all credited to a Course's branch is **received from the course**: neither found nor nothing found yet, it counts as found once a fact credited to the Student supports it.
 
 ### Time
 
