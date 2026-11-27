@@ -76,9 +76,9 @@ def _without_instructor(nodes: list[_Node]) -> list[_Node]:
     return kept
 
 
-def _text(nodes: Iterable[_Node]) -> str:
+def _markdown_of(nodes: Iterable[_Node]) -> str:
     return "\n".join(
-        node if isinstance(node, str) else f"\n{_text(node.children)}\n"
+        node if isinstance(node, str) else f"\n{_markdown_of(node.children)}\n"
         for node in nodes
     )
 
@@ -138,7 +138,9 @@ def parse_competency(
     intro_nodes = _tree(intro, f"{source}, intro", block_ids, problems)
     if any(isinstance(n, _Directive) for n in intro_nodes):
         problems.append(f"{source}, intro: blocks belong in a step, not the intro")
-    shown, found_in_intro = images_in(_text(intro_nodes), images, f"{source}, intro")
+    shown, found_in_intro = images_in(
+        _markdown_of(intro_nodes), images, f"{source}, intro"
+    )
     problems += found_in_intro
     raw_steps: list[_RawStep] = []
     unreadable: set[str] = set()
@@ -153,7 +155,9 @@ def parse_competency(
         for d in _walk(step.nodes):
             if d.name in ("example-drawing", "reference-drawing"):
                 d.snapshot = _snapshot(d, drawings, where, problems)
-        shown_in_step, found_in_step = images_in(_text(step.nodes), images, where)
+        shown_in_step, found_in_step = images_in(
+            _markdown_of(step.nodes), images, where
+        )
         shown |= shown_in_step
         problems += found_in_step
         if len(problems) > found:
