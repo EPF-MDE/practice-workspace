@@ -80,11 +80,12 @@ on:
     types: [labeled]
 
 # The permissions block. It is per-workflow, and it is a ceiling on the
-# GITHUB_TOKEN — and the GITHUB_TOKEN now only checks the code out. Everything
-# that writes goes through FACTORY_PAT, whose reach is set where you created
-# it, not here.
+# GITHUB_TOKEN — and the GITHUB_TOKEN only checks the code out and counts the
+# agent runs. Everything that writes goes through FACTORY_PAT, whose reach is
+# set where you created it, not here.
 permissions:
   contents: read # the checkout
+  actions: read # the agent slot: counting the agent runs
 
 # One run per ticket. A second `agent:implement` on the same issue waits for
 # the first run to finish rather than building the same ticket twice at once.
@@ -100,7 +101,7 @@ jobs:
     # Every other label on every other issue stops here, for free.
     if: github.event.label.name == 'agent:implement'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 225 # 45 for the agent, 180 to wait for its slot
 
     env:
       GH_REPO: ${{ github.repository }}
@@ -229,6 +230,16 @@ jobs:
                else "" end)
           ' /tmp/ticket.json > /tmp/ticket.md
           cat /tmp/ticket.md
+
+      - name: Wait for an agent slot
+        # At most AGENT_SLOTS agent runs talk to Claude at once, across the
+        # agent workflows (.sandcastle/agent-workflows/agent-slot/slots.ts).
+        # This job waits its turn here, for up to three hours (ADR-0020).
+        timeout-minutes: 185
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: npx tsx .sandcastle/agent-workflows/agent-slot/wait.ts
 
       - name: Build the ticket
         env:

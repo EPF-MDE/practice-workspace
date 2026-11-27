@@ -104,10 +104,11 @@ jobs:
   explore:
     if: github.event.label.name == 'agent:explore'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 225 # 45 for the agent, 180 to wait for its slot
 
     permissions:
       contents: read # the checkout. The tickets are read with FACTORY_PAT.
+      actions: read # the agent slot: counting the agent runs
 
     # The batch it was given, and the plan it came back with. The apply job
     # reads both.
@@ -246,6 +247,16 @@ jobs:
         run: |
           npm install -g agent-browser@0.27.0
           agent-browser install
+
+      - name: Wait for an agent slot
+        # At most AGENT_SLOTS agent runs talk to Claude at once, across the
+        # agent workflows (.sandcastle/agent-workflows/agent-slot/slots.ts).
+        # This job waits its turn here, for up to three hours (ADR-0020).
+        timeout-minutes: 185
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: npx tsx .sandcastle/agent-workflows/agent-slot/wait.ts
 
       - name: Explore
         if: steps.batch.outputs.numbers != '[]'
