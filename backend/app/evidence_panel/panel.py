@@ -266,7 +266,7 @@ def unavailable_panel(
 def snapshot(panel: EvidencePanel) -> dict[str, Any]:
     data = panel.model_dump(mode="json", exclude={"help"})
     if len(json.dumps(data, ensure_ascii=False)) > SNAPSHOT_MAX_CHARS:
-        for fact in data["facts"]:
+        for fact in data["facts"] + [f for r in data["received"] for f in r["facts"]]:
             fact["files"] = []
         data["files_dropped"] = True
     return data
