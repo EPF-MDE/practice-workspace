@@ -50,10 +50,14 @@ def test_a_student_away_longer_than_sixty_days_signs_in_again(
     assert signed_in_with_clock.get("/api/me").status_code == 401
 
 
-def test_a_restart_keeps_the_student_signed_in(
+def test_a_session_signed_again_before_a_restart_outlives_it(
     clock: Clock, make_client: MakeClient, signed_in_with_clock: TestClient
 ) -> None:
+    clock.advance(SIXTY_DAYS * 3 / 4)
+    assert signed_in_with_clock.get("/api/me").status_code == 200
+
     restarted = make_client(clock=clock)
     restarted.cookies = signed_in_with_clock.cookies
+    clock.advance(SIXTY_DAYS * 3 / 4)
 
     assert restarted.get("/api/me").status_code == 200
